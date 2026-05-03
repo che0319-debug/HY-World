@@ -8,8 +8,9 @@ const World = (() => {
   let lastTime = 0;
   let animId   = null;
   let paused   = false;
-  let hoverId  = null;
-  let bubble   = null; // { text, bx, by, timer }
+  let hoverId       = null; // hovered building id
+  let hoveredCharId = null; // hovered character id
+  let bubbles       = [];   // [{ text, bx, by, timer, color, borderColor }, …]
 
   // Pre-computed per-building static visuals (windows etc.)
   const bVis = {};
@@ -26,6 +27,13 @@ const World = (() => {
 
   // Default home scene for each character id
   const CHAR_HOME = { hy: 'hq', xiaoyin: 'home', itri950: 'itri' };
+
+  // ── Character dialogue lines (Task 07) ────────────────────────────
+  const DIALOGUES = {
+    hy:      ['一切都在計畫中！', '需要跨域協調嗎？', '今天的任務清單很長...'],
+    xiaoyin: ['家裡的事交給我！', '有什麼需要安排的嗎？', '孩子們今天很乖喔！'],
+    itri950: ['進度一切正常。', '正在處理研究任務。', '系統運行穩定。'],
+  };
 
   // Build a waypoint array: exit fromScene → traverse road → enter toScene
   function buildPath(fromScene, toScene) {
@@ -387,48 +395,64 @@ const World = (() => {
     }
   }
 
-  // ── speech bubble ─────────────────────────────────────────────────
-  function showBubble(text, bx, by) {
-    bubble = { text, bx, by, timer: 2.6 };
+  // ── speech bubble system (Task 07) ───────────────────────────────
+  // bx/by = tip of the tail (tail points DOWN to this position).
+  // color     = bubble fill  (default near-white)
+  // borderColor = stroke     (default cool-gray)
+  // duration  = total visible seconds
+  function showBubble(text, bx, by, color = '#f4f4ff', borderColor = '#c0c0cc', duration = 2.6) {
+    // De-duplicate: remove any bubble with identical text from same source
+    bubbles = bubbles.filter(b => b.text !== text);
+    bubbles.push({ text, bx, by, timer: duration, maxTimer: duration, color, borderColor });
   }
 
-  function drawBubble() {
-    if (!bubble) return;
-    const alpha = Math.min(1, bubble.timer / 0.35);
+  function _drawOneBubble(b) {
+    const alpha = Math.min(1, b.timer / 0.4);
+    if (alpha <= 0) return;
 
-    const { text, bx, by } = bubble;
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.font = '11px Courier New';
-    const tw = ctx.measureText(text).width;
-    const pad = 10;
-    const bw = tw + pad * 2, bh = 22;
-    const tx = Math.round(bx - bw / 2);
-    const ty = by - bh - 16;
+
+    const tw  = ctx.measureText(b.text).width;
+    const pad = 10, bh = 22, tailH = 8;
+    const bw  = tw + pad * 2;
+
+    // Bubble body sits above the tail tip (b.by)
+    const ty = Math.round(b.by - bh - tailH);
+    // Clamp x so bubble stays inside canvas
+    const tx = Math.max(4, Math.min(W - bw - 4, Math.round(b.bx - bw / 2)));
+    // Keep tail x aligned to source even when bubble is clamped
+    const tailX = Math.max(tx + 8, Math.min(tx + bw - 8, Math.round(b.bx)));
 
     // Body
-    ctx.fillStyle = '#f4f4ff';
+    ctx.fillStyle = b.color;
     rrect(ctx, tx, ty, bw, bh, 4);
     ctx.fill();
 
-    // Tail triangle
+    // Tail (points down to b.by)
     ctx.beginPath();
-    ctx.moveTo(bx - 6, ty + bh);
-    ctx.lineTo(bx + 6, ty + bh);
-    ctx.lineTo(bx,     ty + bh + 9);
+    ctx.moveTo(tailX - 5, ty + bh);
+    ctx.lineTo(tailX + 5, ty + bh);
+    ctx.lineTo(tailX,     ty + bh + tailH);
     ctx.closePath();
     ctx.fill();
 
     // Border
-    ctx.strokeStyle = '#c0c0d0';
+    ctx.strokeStyle = b.borderColor;
     ctx.lineWidth = 1;
     rrect(ctx, tx, ty, bw, bh, 4);
     ctx.stroke();
 
     // Text
-    ctx.fillStyle = '#222233';
-    ctx.fillText(text, tx + pad, ty + 15);
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillText(b.text, tx + pad, ty + 15);
+
     ctx.restore();
+  }
+
+  function drawBubbles() {
+    bubbles.forEach(_drawOneBubble);
   }
 
   // ── render loop ───────────────────────────────────────────────────
@@ -437,10 +461,7 @@ const World = (() => {
     const dt = Math.min((ts - lastTime) / 1000, 0.1);
     lastTime = ts;
 
-    if (bubble) {
-      bubble.timer -= dt;
-      if (bubble.timer <= 0) bubble = null;
-    }
+    bubbles = bubbles.filter(b => { b.timer -= dt; return b.timer > 0; });
 
     ctx.clearRect(0, 0, W, H);
     drawFloor();
@@ -454,8 +475,23 @@ const World = (() => {
       else                       drawConstruction(b, b.id === hoverId);
     });
 
+    // Hover glow ring (drawn before characters so it appears under sprite)
+    if (hoveredCharId) {
+      const hc = chars.find(c => c.id === hoveredCharId);
+      if (hc) {
+        ctx.save();
+        ctx.fillStyle   = hc.color + '28';
+        ctx.shadowColor = hc.color;
+        ctx.shadowBlur  = 10;
+        ctx.beginPath();
+        ctx.ellipse(Math.round(hc.x), Math.round(hc.y - 13), 13, 17, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
     chars.forEach(c => { c.update(dt); c.draw(ctx); });
-    drawBubble();
+    drawBubbles();
 
     animId = requestAnimationFrame(render);
   }
@@ -477,20 +513,43 @@ const World = (() => {
     ) || null;
   }
 
+  // Hit-test characters — sprite is 8×14 at scale 2 = 16×28 px, feet at (c.x, c.y)
+  function charAt(mx, my) {
+    const hw = 8, hh = 28; // half-width = 8px, full height = 28px
+    return chars.find(c =>
+      mx >= c.x - hw && mx <= c.x + hw &&
+      my >= c.y - hh && my <= c.y
+    ) || null;
+  }
+
   function onMouseMove(e) {
     const { x, y } = canvasPos(e);
-    const hit = buildingAt(x, y);
-    hoverId = hit ? hit.id : null;
-    canvas.style.cursor = hit ? 'pointer' : 'default';
+    const hc = charAt(x, y);
+    hoveredCharId = hc ? hc.id : null;
+    // Only highlight building when not hovering a character
+    const hb = hc ? null : buildingAt(x, y);
+    hoverId = hb ? hb.id : null;
+    canvas.style.cursor = (hc || hb) ? 'pointer' : 'default';
   }
 
   function onClick(e) {
     const { x, y } = canvasPos(e);
+
+    // Characters are drawn on top — check them first
+    const hc = charAt(x, y);
+    if (hc) {
+      const lines = DIALOGUES[hc.id] || ['...'];
+      const text  = lines[Math.floor(Math.random() * lines.length)];
+      // Bubble tip = just above sprite head (c.y - 28px sprite height - 4px gap)
+      showBubble(text, hc.x, hc.y - 32, '#f6f6ff', hc.color, 3.2);
+      return;
+    }
+
     const hit = buildingAt(x, y);
     if (!hit) { triggerWalkTest(); return; }
 
     if (hit.status === 'construction') {
-      showBubble('這裡還在規劃中...', hit.x + hit.width / 2, hit.y);
+      showBubble('這裡還在規劃中...', hit.x + hit.width / 2, hit.y, '#fff8ee', '#cc8800');
       return;
     }
 

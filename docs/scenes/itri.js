@@ -283,14 +283,14 @@ const ITRIScene = (() => {
   function openDash(){
     if (dashFrame) return;
     var overlay=document.getElementById('scene-overlay');
-    // zoom (not transform:scale) so layout shrinks too — overflow:auto then scrolls real content
-    // left:4 + width:472 + border:4 = 480 → flush with panel divider (PANEL_X)
+    // right:29.41% = 200/680×100%, aligns right edge with PANEL_X at any canvas scale
+    // top:0 left:0 bottom:0 → fills scene height, flush with scene boundary
     var wrap=document.createElement('div');
-    wrap.style.cssText='position:absolute;top:10px;left:4px;width:472px;height:340px;overflow-x:auto;overflow-y:auto;border:2px solid #5599ff;z-index:7';
+    wrap.style.cssText='position:absolute;top:0;left:0;right:29.41%;bottom:0;overflow-x:auto;overflow-y:auto;box-sizing:border-box;border:2px solid #5599ff;z-index:7';
     dashFrame=document.createElement('iframe');
     dashFrame.src='https://telegram-bot-t82n.onrender.com/dashboard';
-    // 960×720 internal; zoom:0.55 → layout 528×396, 56px scrollable on each axis
-    dashFrame.style.cssText='width:960px;height:720px;border:none;background:#050514;zoom:0.55;display:block';
+    // 1600×1600 internal; zoom:0.55 → 880×880 layout (covers 2× scene at 960×960)
+    dashFrame.style.cssText='width:1600px;height:1600px;border:none;background:#050514;zoom:0.55;display:block';
     wrap.appendChild(dashFrame);
     overlay.appendChild(wrap);
     dashOpen=true;

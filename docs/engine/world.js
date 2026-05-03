@@ -14,6 +14,48 @@ const World = (() => {
   // Pre-computed per-building static visuals (windows etc.)
   const bVis = {};
 
+  // ── Scene anchors & path builder (Task 06) ────────────────────────
+  // inner = character resting position inside building
+  // door  = bottom of building entrance
+  // road  = point on horizontal road (y=220) directly below door
+  const SCENE_ANCHORS = {
+    home:  { inner: {x: 120, y: 155}, door: {x: 120, y: 180}, road: {x: 120, y: 220} },
+    hq:    { inner: {x: 330, y: 155}, door: {x: 340, y: 180}, road: {x: 340, y: 220} },
+    itri:  { inner: {x: 555, y: 155}, door: {x: 560, y: 180}, road: {x: 560, y: 220} },
+  };
+
+  // Default home scene for each character id
+  const CHAR_HOME = { hy: 'hq', xiaoyin: 'home', itri950: 'itri' };
+
+  // Build a waypoint array: exit fromScene → traverse road → enter toScene
+  function buildPath(fromScene, toScene) {
+    const f = SCENE_ANCHORS[fromScene];
+    const t = SCENE_ANCHORS[toScene];
+    if (!f || !t || fromScene === toScene) return [];
+    return [f.door, f.road, t.road, t.door, t.inner];
+  }
+
+  // Toggle: first click gathers everyone to HQ; second sends them home
+  let assembled = false;
+  function triggerWalkTest() {
+    if (!assembled) {
+      chars.forEach(c => {
+        if (c.scene === 'hq' || c.state === 'walking') return;
+        const path = buildPath(c.scene, 'hq');
+        if (path.length) c.walkAlong(path, 'hq');
+      });
+      assembled = true;
+    } else {
+      chars.forEach(c => {
+        const home = CHAR_HOME[c.id];
+        if (!home || c.scene === home || c.state === 'walking') return;
+        const path = buildPath(c.scene, home);
+        if (path.length) c.walkAlong(path, home);
+      });
+      assembled = false;
+    }
+  }
+
   // ── helpers ────────────────────────────────────────────────────────
   function mkRand(seed) {
     let s = seed >>> 0;
@@ -445,7 +487,7 @@ const World = (() => {
   function onClick(e) {
     const { x, y } = canvasPos(e);
     const hit = buildingAt(x, y);
-    if (!hit) return;
+    if (!hit) { triggerWalkTest(); return; }
 
     if (hit.status === 'construction') {
       showBubble('這裡還在規劃中...', hit.x + hit.width / 2, hit.y);
@@ -492,6 +534,15 @@ const World = (() => {
       paused   = false;
       lastTime = performance.now();
       animId   = requestAnimationFrame(render);
+    },
+
+    // Console / Phase-2 helper: walk one character to a named scene
+    walkCharTo(id, scene) {
+      const c = chars.find(c => c.id === id);
+      if (!c) return console.warn('Unknown character:', id);
+      const path = buildPath(c.scene, scene);
+      if (!path.length) return console.warn('No path:', c.scene, '→', scene);
+      c.walkAlong(path, scene);
     }
   };
 })();

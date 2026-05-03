@@ -179,6 +179,36 @@ const HomeScene = (() => {
     return text + '…';
   }
 
+  function wrapText(ctx, text, x, y, maxW, lineH) {
+    var chars = text.split('');
+    var line = '', curY = y;
+    for (var i = 0; i < chars.length; i++) {
+      var test = line + chars[i];
+      if (ctx.measureText(test).width > maxW && line !== '') {
+        ctx.fillText(line, x, curY);
+        line = chars[i]; curY += lineH;
+      } else { line = test; }
+    }
+    if (line) ctx.fillText(line, x, curY);
+    return curY;
+  }
+
+  function getXiaoyinSuggestion(d) {
+    if (!d) return '資料讀取中，稍後再來看看';
+    var ms     = (d.planning && d.planning.child_1_education && d.planning.child_1_education.next_milestone) || '';
+    var msDate = (d.planning && d.planning.child_1_education && d.planning.child_1_education.next_milestone_date) || '';
+    if (ms.indexOf('會考') >= 0 && msDate) {
+      var days = Math.ceil((new Date(msDate.replace(/\//g,'-')) - new Date()) / 86400000);
+      if (days > 0 && days < 30) return '會考前建議確認考場交通與備考計畫';
+    }
+    if (ms.indexOf('會考') >= 0) return '大寶會考備考中，多關心一下壓力';
+    var sched = (d.daily && d.daily.recurring_schedule) || [];
+    if (sched.length > 0) return '記得本週 '+sched[0].day+' '+sched[0].what+'，提前 '+(sched[0].buffer_min||30)+' 分出發';
+    var events = (d.daily && d.daily.upcoming_events) || [];
+    if (events.length > 0) return '近期有「'+((events[0].what)||events[0])+'」要安排，記得提前確認';
+    return '家庭一切平穩，繼續保持！';
+  }
+
   function drawPanel(ctx, frame) {
     var px=PANEL_X+2, pw=PANEL_W-2, mw=pw-20;
     ctx.fillStyle='#07071a'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
@@ -196,93 +226,117 @@ const HomeScene = (() => {
     ctx.fillStyle='#ccaaaa'; ctx.font='11px "Segoe UI", Arial, sans-serif'; ctx.fillText('小因 · 在線',px+28,dy+4);
 
     var sections=[
-      {label:'近期行程',col:'#ff88bb',y:88},
-      {label:'孩子注意事項',col:'#ffcc88',y:182},
-      {label:'家庭備忘',col:'#88bbff',y:276},
+      {label:'🔴 需要關注',       col:'#ff6b6b', y:80 },
+      {label:'📅 近期行程（7天）', col:'#88ccff', y:200},
+      {label:'💡 小因建議',       col:'#88ffcc', y:320},
     ];
     var dots=[' ·',' ··',' ···'][Math.floor(frame*2)%3];
     var d=homeData;
 
-    // ── Section 1: 近期行程 ──
+    var DAY_MAP={'週日':0,'週一':1,'週二':2,'週三':3,'週四':4,'週五':5,'週六':6};
+    var todayIdx=new Date().getDay();
+    var nowTs=Date.now(), sevenDaysMs=7*86400000;
+
+    function secHdr(s) {
+      ctx.fillStyle=s.col+'aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.textAlign='left';
+      ctx.fillText(s.label,px+8,s.y);
+      ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
+      ctx.font='11px "Segoe UI", Arial, sans-serif';
+    }
+
+    // ── Section 1: 需要關注 ──
     var s=sections[0];
-    ctx.fillStyle=s.col+'aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText(s.label,px+8,s.y);
-    ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
-    ctx.font='11px "Segoe UI", Arial, sans-serif';
+    secHdr(s);
     if (homeErr) {
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
       ctx.fillStyle='#554444'; ctx.fillText('Render 冷啟動?',px+10,s.y+36);
     } else if (!d) {
       ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,s.y+22);
     } else {
-      var sched=d.daily&&d.daily.recurring_schedule||[];
-      var events=d.daily&&d.daily.upcoming_events||[];
-      var row=0;
-      sched.slice(0,3).forEach(function(e){
-        ctx.fillStyle='#b0b0cc';
-        ctx.fillText(trunc(ctx,e.day+' '+e.what,mw),px+10,s.y+22+row*14); row++;
-      });
-      events.slice(0,3-row).forEach(function(e){
-        ctx.fillStyle='#ffcc88';
-        ctx.fillText(trunc(ctx,'▸ '+(e.what||e),mw),px+10,s.y+22+row*14); row++;
-      });
-      if (row===0){ctx.fillStyle='#555577'; ctx.fillText('目前無近期行程',px+10,s.y+22);}
-    }
-
-    // ── Section 2: 孩子注意事項 ──
-    s=sections[1];
-    ctx.fillStyle=s.col+'aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText(s.label,px+8,s.y);
-    ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
-    ctx.font='11px "Segoe UI", Arial, sans-serif';
-    if (homeErr) {
-      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
-    } else if (!d) {
-      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,s.y+22);
-    } else {
-      var c1=d.members&&d.members.child_1||{};
-      var c2=d.members&&d.members.child_2||{};
-      var p1=d.planning&&d.planning.child_1_education||{};
-      var p2=d.planning&&d.planning.child_2_education||{};
-      ctx.fillStyle='#ffcc88'; ctx.fillText('孩一：'+(c1.grade||'—'),px+10,s.y+22);
-      if(p1.next_milestone){
-        ctx.fillStyle='#888899';
-        ctx.fillText(trunc(ctx,'  '+p1.next_milestone,mw),px+10,s.y+36);
-      }
-      ctx.fillStyle='#ffcc88'; ctx.fillText('孩二：'+(c2.grade||'—'),px+10,s.y+50);
-      if(p2.next_milestone){
-        ctx.fillStyle='#888899';
-        ctx.fillText(trunc(ctx,'  '+p2.next_milestone,mw),px+10,s.y+64);
-      }
-    }
-
-    // ── Section 3: 家庭備忘 ──
-    s=sections[2];
-    ctx.fillStyle=s.col+'aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText(s.label,px+8,s.y);
-    ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
-    ctx.font='11px "Segoe UI", Arial, sans-serif';
-    if (homeErr) {
-      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
-    } else if (!d) {
-      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,s.y+22);
-    } else {
-      var row3=0;
-      var wd=d.daily&&d.daily.weekday_residence, we=d.daily&&d.daily.weekend_residence;
-      if(wd){ctx.fillStyle='#9090cc'; ctx.fillText(trunc(ctx,'平日：'+wd,mw),px+10,s.y+22+row3*14); row3++;}
-      if(we){ctx.fillStyle='#9090cc'; ctx.fillText(trunc(ctx,'假日：'+we,mw),px+10,s.y+22+row3*14); row3++;}
-      var urgent=d.summary&&d.summary.urgent_items||[];
-      urgent.slice(0,2).forEach(function(item){
+      var row1=0;
+      var ms=(d.planning&&d.planning.child_1_education&&d.planning.child_1_education.next_milestone)||'';
+      var msDate=(d.planning&&d.planning.child_1_education&&d.planning.child_1_education.next_milestone_date)||'';
+      // 1. 會考
+      if (ms.indexOf('會考')>=0 && row1<4) {
         ctx.fillStyle='#ff9966';
-        ctx.fillText(trunc(ctx,'⚠ '+item,mw),px+10,s.y+22+row3*14); row3++;
+        if (msDate) {
+          var dl=Math.ceil((new Date(msDate.replace(/\//g,'-'))-new Date())/86400000);
+          ctx.fillText(trunc(ctx, dl>0?'國三會考：距 '+msDate+' 還有 '+dl+' 天':'國三會考備考中', mw), px+10, s.y+22+row1*14);
+        } else { ctx.fillText('國三會考備考中',px+10,s.y+22+row1*14); }
+        row1++;
+      }
+      // 2. 接送（±3天內）
+      var sched1=(d.daily&&d.daily.recurring_schedule)||[];
+      sched1.forEach(function(item){
+        if (row1>=4) return;
+        var si=DAY_MAP[item.day];
+        var near=(si===undefined)?true:(Math.min(Math.abs(si-todayIdx),7-Math.abs(si-todayIdx))<=3);
+        if (!near) return;
+        ctx.fillStyle='#ffcc88';
+        var txt=item.day+' '+item.what+(item.buffer_min?'（預留'+item.buffer_min+'分）':'');
+        ctx.fillText(trunc(ctx,txt,mw),px+10,s.y+22+row1*14); row1++;
       });
-      var tasks=d.daily&&d.daily.household_tasks||[];
-      tasks.slice(0,Math.max(0,3-row3)).forEach(function(t){
-        ctx.fillStyle='#8888aa';
-        ctx.fillText(trunc(ctx,'· '+(t.what||t),mw),px+10,s.y+22+row3*14); row3++;
+      // 3. upcoming_events 7天內
+      var evs1=(d.daily&&d.daily.upcoming_events)||[];
+      evs1.forEach(function(ev){
+        if (row1>=4) return;
+        if (!ev.date) return;
+        var evTs=new Date(ev.date.replace(/\//g,'-')).getTime();
+        if (evTs-nowTs>=0 && evTs-nowTs<=sevenDaysMs){
+          ctx.fillStyle='#bb99cc';
+          ctx.fillText(trunc(ctx,'▸ '+(ev.what||ev),mw),px+10,s.y+22+row1*14); row1++;
+        }
       });
-      if(row3===0){ctx.fillStyle='#555577'; ctx.fillText('無特別備忘',px+10,s.y+22);}
+      // 4. urgent_items
+      var urgent=(d.summary&&d.summary.urgent_items)||[];
+      urgent.forEach(function(item){
+        if (row1>=4) return;
+        ctx.fillStyle='#bb99cc';
+        ctx.fillText(trunc(ctx,'⚠ '+item,mw),px+10,s.y+22+row1*14); row1++;
+      });
+      if (row1===0){ctx.fillStyle='#555577'; ctx.fillText('目前無待關注事項',px+10,s.y+22);}
+    }
+
+    // ── Section 2: 近期行程 ──
+    s=sections[1];
+    secHdr(s);
+    if (homeErr) {
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
+    } else if (!d) {
+      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,s.y+22);
+    } else {
+      var row2=0;
+      var sched2=(d.daily&&d.daily.recurring_schedule)||[];
+      var evs2=(d.daily&&d.daily.upcoming_events)||[];
+      sched2.forEach(function(item){
+        if (row2>=4) return;
+        ctx.fillStyle='#b0b0cc';
+        ctx.fillText(trunc(ctx,item.day+' '+item.what,mw),px+10,s.y+22+row2*14); row2++;
+      });
+      evs2.forEach(function(ev){
+        if (row2>=4) return;
+        var what=ev.what||ev, dateStr='';
+        if (ev.date){var p=ev.date.split('/'); dateStr=(p.length>=3?p[1]+'/'+p[2]:ev.date)+' ';}
+        ctx.fillStyle='#ffcc88';
+        ctx.fillText(trunc(ctx,dateStr+what,mw),px+10,s.y+22+row2*14); row2++;
+      });
+      if (row2===0){ctx.fillStyle='#555577'; ctx.fillText('本週無特別行程',px+10,s.y+22);}
+    }
+
+    // ── Section 3: 小因建議 ──
+    s=sections[2];
+    secHdr(s);
+    if (homeErr) {
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
+    } else if (!d) {
+      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,s.y+22);
+    } else {
+      ctx.fillStyle='#aaccaa';
+      wrapText(ctx, getXiaoyinSuggestion(d), px+10, s.y+22, mw, 14);
     }
 
     // ── 家庭編輯按鈕 ──
-    var btnX=px+8, btnY=366, btnW=pw-16, btnH=22;
+    var btnX=px+8, btnY=410, btnW=pw-16, btnH=22;
     ctx.fillStyle=familyOpen?'#2e0a16':'#1a0a14';
     ctx.fillRect(btnX,btnY,btnW,btnH);
     ctx.strokeStyle=familyOpen?'#883344':'#662233';
@@ -339,7 +393,7 @@ const HomeScene = (() => {
       clickHandler = function(e){
         var r=canvas.getBoundingClientRect();
         var mx=(e.clientX-r.left)*(680/r.width), my=(e.clientY-r.top)*(480/r.height);
-        var btnX=PANEL_X+10, btnY=366, btnW=PANEL_W-20, btnH=22;
+        var btnX=PANEL_X+10, btnY=410, btnW=PANEL_W-20, btnH=22;
         if (mx>=btnX&&mx<=btnX+btnW&&my>=btnY&&my<=btnY+btnH){
           if (familyOpen) closeFamily(); else openFamily();
           return;

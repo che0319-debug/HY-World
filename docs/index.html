@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HY World</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0f;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+    }
+
+    #game-container {
+      position: relative;
+      width: 680px;
+      height: 480px;
+    }
+
+    #world-canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      width: 680px;
+      height: 480px;
+      background: #1a1a2e;
+    }
+
+    /* Login overlay - shown by default, hidden after auth */
+    #login-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #0a0a1a;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #login-overlay.hidden { display: none; }
+
+    #clear-login {
+      position: absolute;
+      top: 12px; right: 14px;
+      color: #444;
+      font-size: 10px;
+      cursor: pointer;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      font-family: inherit;
+    }
+    #clear-login:hover { color: #888; }
+
+    #login-canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* Scene overlay for indoor scenes */
+    #scene-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 5;
+      display: none;
+    }
+
+    #scene-overlay.active { display: block; }
+
+    #scene-canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      width: 680px;
+      height: 480px;
+    }
+
+    #back-btn {
+      position: absolute;
+      top: 12px; left: 12px;
+      background: #222233;
+      color: #aaa;
+      border: 1px solid #444;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      padding: 4px 10px;
+      cursor: pointer;
+      z-index: 6;
+    }
+    #back-btn:hover { background: #333355; color: #fff; }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <!-- World map canvas -->
+    <canvas id="world-canvas" width="680" height="480"></canvas>
+
+    <!-- Indoor scene overlay -->
+    <div id="scene-overlay">
+      <canvas id="scene-canvas" width="680" height="480"></canvas>
+      <button id="back-btn">← 返回地圖</button>
+    </div>
+
+    <!-- Login overlay -->
+    <div id="login-overlay">
+      <button id="clear-login">清除登入狀態</button>
+      <canvas id="login-canvas" width="680" height="480"></canvas>
+    </div>
+  </div>
+
+  <!-- Core engine -->
+  <script src="data/world.json" type="application/json" id="world-data-src"></script>
+  <script src="sprites/characters.js"></script>
+  <script src="engine/api.js"></script>
+  <script src="engine/character.js"></script>
+  <script src="engine/world.js"></script>
+
+  <!-- Scenes -->
+  <script src="scenes/construction.js"></script>
+  <script src="scenes/home.js"></script>
+  <script src="scenes/hq.js"></script>
+  <script src="scenes/itri.js"></script>
+
+  <!-- Bootstrap -->
+  <script>
+    const PASSWORD = 'hy2025';  // Change this to your password
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const overlay = document.getElementById('login-overlay');
+      const clearBtn = document.getElementById('clear-login');
+      const backBtn = document.getElementById('back-btn');
+      const sceneOverlay = document.getElementById('scene-overlay');
+
+      clearBtn.addEventListener('click', () => {
+        localStorage.removeItem('hy_auth');
+        overlay.classList.remove('hidden');
+        if (window.LoginScreen) LoginScreen.init();
+      });
+
+      backBtn.addEventListener('click', () => {
+        sceneOverlay.classList.remove('active');
+        if (window.World) World.resume();
+      });
+
+      if (localStorage.getItem('hy_auth') === 'ok') {
+        overlay.classList.add('hidden');
+        if (window.World) World.init();
+      } else {
+        if (window.LoginScreen) LoginScreen.init();
+      }
+    });
+  </script>
+</body>
+</html>

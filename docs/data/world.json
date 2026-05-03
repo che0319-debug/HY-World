@@ -1,0 +1,93 @@
+{
+  "tileSize": 20,
+  "canvas": { "width": 680, "height": 480 },
+  "buildings": [
+    {
+      "id": "home",
+      "label": "🏠 Home",
+      "sublabel": "小因平時在此",
+      "x": 40, "y": 60,
+      "width": 160, "height": 120,
+      "status": "active",
+      "scene": "home",
+      "statusColor": "#44ff88"
+    },
+    {
+      "id": "hq",
+      "label": "🏢 總部 HQ",
+      "sublabel": "HY 坐鎮",
+      "x": 260, "y": 60,
+      "width": 160, "height": 120,
+      "status": "active",
+      "scene": "hq",
+      "statusColor": "#44ff88"
+    },
+    {
+      "id": "itri",
+      "label": "🔬 ITRI",
+      "sublabel": "950157 上班",
+      "x": 480, "y": 60,
+      "width": 160, "height": 120,
+      "status": "active",
+      "scene": "itri",
+      "statusColor": "#44ff88"
+    },
+    {
+      "id": "cake",
+      "label": "🚧 蛋糕店",
+      "sublabel": "建設中",
+      "x": 40, "y": 300,
+      "width": 160, "height": 120,
+      "status": "construction",
+      "scene": "construction",
+      "statusColor": "#888888"
+    },
+    {
+      "id": "factory",
+      "label": "🚧 成衣廠",
+      "sublabel": "建設中",
+      "x": 260, "y": 300,
+      "width": 160, "height": 120,
+      "status": "construction",
+      "scene": "construction",
+      "statusColor": "#888888"
+    },
+    {
+      "id": "beauty",
+      "label": "🚧 美業工作室",
+      "sublabel": "建設中",
+      "x": 480, "y": 300,
+      "width": 160, "height": 120,
+      "status": "construction",
+      "scene": "construction",
+      "statusColor": "#888888"
+    }
+  ],
+  "roads": [
+    { "x1": 40,  "y1": 220, "x2": 640, "y2": 220, "width": 20 },
+    { "x1": 330, "y1": 220, "x2": 330, "y2": 300, "width": 20 }
+  ],
+  "characters": [
+    {
+      "id": "hy",
+      "name": "HY",
+      "color": "#44cc66",
+      "startX": 330, "startY": 155,
+      "scene": "hq"
+    },
+    {
+      "id": "xiaoyin",
+      "name": "小因",
+      "color": "#ff88bb",
+      "startX": 120, "startY": 155,
+      "scene": "home"
+    },
+    {
+      "id": "itri950",
+      "name": "950157",
+      "color": "#4488ff",
+      "startX": 555, "startY": 155,
+      "scene": "itri"
+    }
+  ]
+}

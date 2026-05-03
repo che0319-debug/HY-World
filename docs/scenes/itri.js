@@ -283,14 +283,18 @@ const ITRIScene = (() => {
   function openDash(){
     if (dashFrame) return;
     var overlay=document.getElementById('scene-overlay');
+    // Wrapper clips the scaled iframe to its visual footprint (800×0.55=440, 600×0.55=330)
+    var wrap=document.createElement('div');
+    wrap.style.cssText='position:absolute;top:10px;left:6px;width:440px;height:330px;overflow:hidden;border:2px solid #5599ff;z-index:7';
     dashFrame=document.createElement('iframe');
     dashFrame.src='https://telegram-bot-t82n.onrender.com/dashboard';
-    dashFrame.style.cssText='position:absolute;top:8px;left:4px;width:640px;height:452px;border:2px solid #5599ff;background:#050514;z-index:7;overflow-x:auto';
-    overlay.appendChild(dashFrame);
+    dashFrame.style.cssText='width:800px;height:600px;border:none;background:#050514;transform:scale(0.55);transform-origin:top left;display:block';
+    wrap.appendChild(dashFrame);
+    overlay.appendChild(wrap);
     dashOpen=true;
   }
   function closeDash(){
-    if (dashFrame){ dashFrame.parentNode&&dashFrame.parentNode.removeChild(dashFrame); dashFrame=null; }
+    if (dashFrame){ var w=dashFrame.parentNode; w&&w.parentNode&&w.parentNode.removeChild(w); dashFrame=null; }
     dashOpen=false;
   }
 

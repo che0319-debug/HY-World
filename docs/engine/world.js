@@ -577,7 +577,11 @@ const World = (() => {
         .then(r => r.json())
         .then(d => {
           data  = d;
-          chars = d.characters.map(c => new Character(c));
+          chars = d.characters.map(c => {
+            const ch = new Character(c);
+            ch.setState('idle'); // world map: standing, not sitting at desk
+            return ch;
+          });
           precompute(d.buildings);
           // Inject character-specific sprites (Task 05)
           const charMap = {};
@@ -606,6 +610,12 @@ const World = (() => {
         lastTime = performance.now();
         animId   = requestAnimationFrame(render);
       }, 260);
+    },
+
+    // Phase-2 morning meeting: all non-HQ characters walk to HQ
+    triggerMorning() {
+      assembled = false; // reset so triggerWalkTest assembles toward HQ
+      triggerWalkTest();
     },
 
     // Console / Phase-2 helper: walk one character to a named scene

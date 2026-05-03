@@ -165,7 +165,10 @@
       image-rendering: crisp-edges;
       width: 680px;
       height: 480px;
+      /* Must be explicit: pointer-events:none on parent does NOT cascade to children in HTML */
+      pointer-events: none;
     }
+    #scene-overlay.active #scene-canvas { pointer-events: auto; }
 
     #back-btn {
       position: absolute;
@@ -181,11 +184,13 @@
       opacity: 0;
       transform: translateX(-8px);
       transition: opacity 0.2s 0.2s, transform 0.2s 0.2s;
+      pointer-events: none;
     }
     #back-btn:hover { background: #333355; color: #fff; }
     #scene-overlay.active #back-btn {
       opacity: 1;
       transform: translateX(0);
+      pointer-events: auto;
     }
   </style>
 </head>

@@ -114,29 +114,29 @@ const World = (() => {
 
   // ── floor tiles ───────────────────────────────────────────────────
   function drawFloor() {
-    // Base ground
-    ctx.fillStyle = '#0c0c1a';
+    // Base ground — bright grass
+    ctx.fillStyle = '#68b050';
     ctx.fillRect(0, 0, W, H);
 
     // Sidewalk strip between upper buildings and road (y 180-210)
-    ctx.fillStyle = '#0e0e20';
+    ctx.fillStyle = '#ccc0a0';
     ctx.fillRect(40, 180, 600, 30);
     // Sidewalk kerb lines
-    ctx.fillStyle = '#141428';
+    ctx.fillStyle = '#aaa080';
     ctx.fillRect(40, 180, 600, 2);
     ctx.fillRect(40, 208, 600, 2);
 
-    // Subtle tile grid (all lines in one path for speed)
-    ctx.strokeStyle = '#0f0f22';
+    // Tile grid on sidewalk only (grass doesn't need gridlines)
+    ctx.strokeStyle = '#bbae8e';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    for (let x = 0; x <= W; x += TS) {
-      ctx.moveTo(x + 0.5, 0);
-      ctx.lineTo(x + 0.5, H);
+    for (let x = 40; x <= 640; x += TS) {
+      ctx.moveTo(x + 0.5, 180);
+      ctx.lineTo(x + 0.5, 210);
     }
-    for (let y = 0; y <= H; y += TS) {
-      ctx.moveTo(0, y + 0.5);
-      ctx.lineTo(W, y + 0.5);
+    for (let y = 180; y <= 210; y += TS) {
+      ctx.moveTo(40, y + 0.5);
+      ctx.lineTo(640, y + 0.5);
     }
     ctx.stroke();
   }
@@ -151,11 +151,11 @@ const World = (() => {
       const rh = isV ? r.y2 - r.y1       : r.width;
 
       // Asphalt
-      ctx.fillStyle = '#131326';
+      ctx.fillStyle = '#8899aa';
       ctx.fillRect(rx, ry, rw, rh);
 
       // Shoulder lines
-      ctx.fillStyle = '#1e1e38';
+      ctx.fillStyle = '#a0b0bc';
       if (isV) {
         ctx.fillRect(rx,       ry, 2, rh);
         ctx.fillRect(rx+rw-2,  ry, 2, rh);
@@ -164,8 +164,8 @@ const World = (() => {
         ctx.fillRect(rx, ry+rh-2, rw, 2);
       }
 
-      // Centre-line dashes (very dark yellow)
-      ctx.fillStyle = '#2c2610';
+      // Centre-line dashes (bright yellow)
+      ctx.fillStyle = '#f0d060';
       const cx = Math.round(rx + rw / 2);
       const cy = Math.round(ry + rh / 2);
       if (isV) {
@@ -184,57 +184,67 @@ const World = (() => {
     const vis = bVis[b.id] || {};
     const ROOF = 12;
 
+    // Per-building colour palette (Gather Town style)
+    const _P = ({
+      home: { wall:'#e07848', roof:'#b85428', roofHi:'#f0a870', ac:'#904020',
+              door:'#5a3010', doorIn:'#8a5030', doorStroke:'#c07040', step:'#9a7050', handle:'#e8c050',
+              signBg:'#4a1808', signStroke:'#c07040', label:'#fff8f4', sub:'#5a4020' },
+      hq:   { wall:'#3aaa70', roof:'#228850', roofHi:'#5acc90', ac:'#126040',
+              door:'#124030', doorIn:'#226050', doorStroke:'#3aaa70', step:'#307060', handle:'#d4e840',
+              signBg:'#082a18', signStroke:'#3aaa70', label:'#e0fff0', sub:'#2a5a30' },
+      itri: { wall:'#4070c8', roof:'#2050a8', roofHi:'#6090e8', ac:'#103080',
+              door:'#0c2040', doorIn:'#1c4060', doorStroke:'#4070c8', step:'#2a4870', handle:'#80c0e0',
+              signBg:'#06162a', signStroke:'#4070c8', label:'#e0f0ff', sub:'#2a4060' },
+    })[b.id] || { wall:'#8899aa', roof:'#667788', roofHi:'#aabbcc', ac:'#445566',
+              door:'#334455', doorIn:'#445566', doorStroke:'#8899aa', step:'#5a6e7e', handle:'#99aabb',
+              signBg:'#223344', signStroke:'#8899aa', label:'#ffffff', sub:'#445566' };
+
     // Drop shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.30)';
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.fillRect(x + 4, y + bh, bw, 6);
 
     // Wall body
-    ctx.fillStyle = '#161628';
+    ctx.fillStyle = _P.wall;
     ctx.fillRect(x, y, bw, bh);
 
     // Side shading
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fillStyle = 'rgba(0,0,0,0.14)';
     ctx.fillRect(x,         y, 5, bh);
     ctx.fillRect(x + bw - 5, y, 5, bh);
 
     // Roof strip
-    ctx.fillStyle = '#1e1e3c';
+    ctx.fillStyle = _P.roof;
     ctx.fillRect(x, y, bw, ROOF);
-    ctx.fillStyle = '#2a2a50'; // top highlight
+    ctx.fillStyle = _P.roofHi;
     ctx.fillRect(x, y, bw, 2);
 
     // Roof details: two small AC units
-    ctx.fillStyle = '#222244';
+    ctx.fillStyle = _P.ac;
     ctx.fillRect(x + 10,      y + 3, 14, 8);
     ctx.fillRect(x + bw - 24, y + 3, 14, 8);
-    ctx.fillStyle = '#181838';
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.fillRect(x + 10,      y + 3, 14, 2);
     ctx.fillRect(x + bw - 24, y + 3, 14, 2);
 
     // Windows
     (vis.windows || []).forEach(win => {
       if (win.lit) {
-        // Glow halo
         ctx.fillStyle = win.warm
-          ? 'rgba(255,200,80,0.10)' : 'rgba(100,140,255,0.10)';
+          ? 'rgba(255,200,80,0.18)' : 'rgba(100,140,255,0.18)';
         ctx.fillRect(win.x - 3, win.y - 3, win.w + 6, win.h + 6);
-        // Glass pane
-        ctx.fillStyle = win.warm ? '#ffcc66' : '#7799ff';
+        ctx.fillStyle = win.warm ? '#ffcc66' : '#88aaff';
         ctx.fillRect(win.x, win.y, win.w, win.h);
-        // Top-left highlight
         ctx.fillStyle = win.warm
-          ? 'rgba(255,240,190,0.55)' : 'rgba(190,210,255,0.55)';
+          ? 'rgba(255,240,190,0.65)' : 'rgba(200,220,255,0.65)';
         ctx.fillRect(win.x + 1, win.y + 1, win.w / 2 - 1, 3);
-        // Cross dividers
-        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
         ctx.fillRect(win.x + win.w / 2 - 1, win.y,            2, win.h);
         ctx.fillRect(win.x,                  win.y + win.h / 2, win.w, 2);
       } else {
-        ctx.fillStyle = '#07071a';
+        ctx.fillStyle = 'rgba(0,0,0,0.30)';
         ctx.fillRect(win.x, win.y, win.w, win.h);
       }
-      // Window frame
-      ctx.strokeStyle = '#26264a';
+      ctx.strokeStyle = 'rgba(0,0,0,0.28)';
       ctx.lineWidth = 1;
       ctx.strokeRect(win.x - 0.5, win.y - 0.5, win.w + 1, win.h + 1);
     });
@@ -243,44 +253,42 @@ const World = (() => {
     const dW = 28, dH = 36;
     const dX = Math.round(x + (bw - dW) / 2);
     const dY = y + bh - dH;
-    ctx.fillStyle = '#09091a';
+    ctx.fillStyle = _P.door;
     ctx.fillRect(dX, dY, dW, dH);
-    ctx.fillStyle = '#1a1a30';
+    ctx.fillStyle = _P.doorIn;
     ctx.fillRect(dX + 3, dY + 3, dW - 6, dH - 3);
-    ctx.strokeStyle = '#2c2c52';
+    ctx.strokeStyle = _P.doorStroke;
     ctx.lineWidth = 2;
     ctx.strokeRect(dX - 1, dY - 1, dW + 2, dH + 1);
-    // Door handle
-    ctx.fillStyle = '#5555a8';
+    ctx.fillStyle = _P.handle;
     ctx.fillRect(dX + dW - 9, dY + Math.round(dH / 2) - 2, 4, 5);
-    // Step
-    ctx.fillStyle = '#1e1e36';
+    ctx.fillStyle = _P.step;
     ctx.fillRect(dX - 5, y + bh - 4, dW + 10, 4);
 
     // Name sign board on wall (just below roof)
-    ctx.font = 'bold 9px Courier New';
+    ctx.font = 'bold 10px Courier New';
     ctx.textAlign = 'center';
     const lw = ctx.measureText(b.label).width;
     const sgnX = Math.round(x + bw / 2 - lw / 2) - 5;
     const sgnY = y + ROOF + 2;
     const sgnW = lw + 10, sgnH = 13;
-    ctx.fillStyle = '#0c0c22';
+    ctx.fillStyle = _P.signBg;
     ctx.fillRect(sgnX, sgnY, sgnW, sgnH);
-    ctx.strokeStyle = '#3a3a6a';
+    ctx.strokeStyle = _P.signStroke;
     ctx.lineWidth = 1;
     ctx.strokeRect(sgnX + 0.5, sgnY + 0.5, sgnW - 1, sgnH - 1);
-    ctx.fillStyle = '#aaaaee';
+    ctx.fillStyle = _P.label;
     ctx.fillText(b.label, x + bw / 2, sgnY + 10);
 
     // Sublabel below building
-    ctx.font = '8px Courier New';
-    ctx.fillStyle = '#38385a';
+    ctx.font = '9px Courier New';
+    ctx.fillStyle = _P.sub;
     ctx.fillText(b.sublabel, x + bw / 2, y + bh + 13);
     ctx.textAlign = 'left';
 
-    // Status light (green, glowing)
+    // Status light
     const lx = x + bw - 9, ly = y + 7;
-    ctx.fillStyle = b.statusColor + '30';
+    ctx.fillStyle = b.statusColor + '50';
     ctx.beginPath(); ctx.arc(lx, ly, 8, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = b.statusColor;
     ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fill();
@@ -288,9 +296,9 @@ const World = (() => {
     // Hover outline glow
     if (hovered) {
       ctx.save();
-      ctx.shadowColor = '#5588ff';
-      ctx.shadowBlur  = 12;
-      ctx.strokeStyle = '#5588ff';
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur  = 14;
+      ctx.strokeStyle = '#ffffff';
       ctx.lineWidth   = 2;
       ctx.strokeRect(x - 1, y - 1, bw + 2, bh + 2);
       ctx.restore();
@@ -302,31 +310,31 @@ const World = (() => {
     const { x, y, width: bw, height: bh } = b;
 
     // Drop shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.20)';
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
     ctx.fillRect(x + 4, y + bh, bw, 6);
 
-    // Base (dark, unfinished walls)
-    ctx.fillStyle = '#0d0d1c';
+    // Base (sandy unfinished walls)
+    ctx.fillStyle = '#c0a870';
     ctx.fillRect(x, y, bw, bh);
-    ctx.strokeStyle = '#1e1e30';
+    ctx.strokeStyle = '#a08850';
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 4, y + 4, bw - 8, bh - 8);
 
     // Vertical scaffold poles (every 40px)
     const poleXs = [0, 40, 80, 120, 160];
-    ctx.fillStyle = '#484858';
+    ctx.fillStyle = '#888880';
     poleXs.forEach(px => {
       ctx.fillRect(x + px - 2, y - 10, 4, bh + 20);
     });
 
     // Horizontal scaffold beams (every 32px)
-    ctx.fillStyle = '#36364a';
+    ctx.fillStyle = '#aaaaaa';
     [0, 32, 64, 96].forEach(dy => {
       ctx.fillRect(x - 2, y + dy, bw + 4, 5);
     });
 
-    // Wooden plank on beam 2 and 3
-    ctx.fillStyle = '#2c2418';
+    // Wooden planks on beam 2 and 3
+    ctx.fillStyle = '#8a6838';
     [32, 64].forEach(dy => {
       for (let col = 0; col < 4; col++) {
         ctx.fillRect(x + col * 40 + 2, y + dy + 1, 36, 3);
@@ -334,7 +342,7 @@ const World = (() => {
     });
 
     // Diagonal braces (X pattern in each bay)
-    ctx.strokeStyle = '#383848';
+    ctx.strokeStyle = '#888888';
     ctx.lineWidth = 1.5;
     for (let i = 0; i < poleXs.length - 1; i++) {
       const px1 = x + poleXs[i];
@@ -359,36 +367,36 @@ const World = (() => {
     // Warning-stripe border
     const stripes = Math.ceil(sbW / 10);
     for (let si = 0; si < stripes; si++) {
-      ctx.fillStyle = si % 2 === 0 ? '#bb5500' : '#111118';
+      ctx.fillStyle = si % 2 === 0 ? '#ee8800' : '#ffffff';
       const sw = Math.min(10, sbW - si * 10);
       ctx.fillRect(sbX + si * 10, sbY,           sw, 5);
       ctx.fillRect(sbX + si * 10, sbY + sbH - 5, sw, 5);
     }
     // Sign body
-    ctx.fillStyle = '#190e00';
+    ctx.fillStyle = '#f0e8c0';
     ctx.fillRect(sbX, sbY + 5, sbW, sbH - 10);
     // Sign text
     ctx.font = 'bold 12px Courier New';
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#dd8800';
+    ctx.fillStyle = '#c06000';
     ctx.fillText('建設中', x + bw / 2, sbY + 5 + (sbH - 10) / 2 + 4);
 
-    // Building name above (dim)
+    // Building name above
     ctx.font = '9px Courier New';
-    ctx.fillStyle = '#2e2e44';
+    ctx.fillStyle = '#665533';
     ctx.fillText(b.label, x + bw / 2, y - 4);
     ctx.textAlign = 'left';
 
-    // Status light (dim gray)
-    ctx.fillStyle = '#282838';
+    // Status light (dim)
+    ctx.fillStyle = '#c8c0b0';
     ctx.beginPath(); ctx.arc(x + bw - 9, y + 7, 4, 0, Math.PI * 2); ctx.fill();
 
     // Hover outline
     if (hovered) {
       ctx.save();
-      ctx.shadowColor = '#886633';
+      ctx.shadowColor = '#f0c060';
       ctx.shadowBlur  = 8;
-      ctx.strokeStyle = '#886633';
+      ctx.strokeStyle = '#f0c060';
       ctx.lineWidth   = 2;
       ctx.strokeRect(x - 2, y - 2, bw + 4, bh + 4);
       ctx.restore();
@@ -412,7 +420,7 @@ const World = (() => {
 
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.font = '11px Courier New';
+    ctx.font = '12px Courier New';
 
     const tw  = ctx.measureText(b.text).width;
     const pad = 10, bh = 22, tailH = 8;

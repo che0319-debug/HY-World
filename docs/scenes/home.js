@@ -41,26 +41,26 @@ const HomeScene = (() => {
     ctx.fillStyle = '#09091a';
     ctx.fillRect(0, 0, 680, H);
 
-    // ── wall (medium navy — clearly lighter than base) ──
-    ctx.fillStyle = '#242048';
+    // ── wall (warm medium purple — bright and cosy) ──
+    ctx.fillStyle = '#5c4880';
     ctx.fillRect(0, 0, SCENE_W, FLOOR_Y);
 
     // ── lower wall panel (slightly different) ──
-    ctx.fillStyle = '#1e1c3e';
+    ctx.fillStyle = '#4e3a6e';
     ctx.fillRect(0, FLOOR_Y-72, SCENE_W, 65);
-    ctx.fillStyle = '#2e2a54';
+    ctx.fillStyle = '#6e5898';
     ctx.fillRect(0, FLOOR_Y-74, SCENE_W, 2);
 
-    // ── floor ──
-    ctx.fillStyle = '#1a1830';
+    // ── floor (warm wood brown) ──
+    ctx.fillStyle = '#7a6050';
     ctx.fillRect(0, FLOOR_Y, SCENE_W, H - FLOOR_Y);
-    ctx.strokeStyle = '#141228'; ctx.lineWidth = 1; ctx.beginPath();
+    ctx.strokeStyle = '#6a5040'; ctx.lineWidth = 1; ctx.beginPath();
     for (var x=0; x<=SCENE_W; x+=20) { ctx.moveTo(x+.5,FLOOR_Y); ctx.lineTo(x+.5,H); }
     for (var y=FLOOR_Y; y<=H; y+=20) { ctx.moveTo(0,y+.5); ctx.lineTo(SCENE_W,y+.5); }
     ctx.stroke();
 
     // ── baseboard ──
-    ctx.fillStyle = '#312e5c';
+    ctx.fillStyle = '#9a8070';
     ctx.fillRect(0, FLOOR_Y-6, SCENE_W, 6);
 
     // ── windows (warm yellow, clearly visible) ──
@@ -183,17 +183,17 @@ const HomeScene = (() => {
     var px=PANEL_X+2, pw=PANEL_W-2, mw=pw-20;
     ctx.fillStyle='#07071a'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
     ctx.fillStyle='#10102c'; ctx.fillRect(px,0,pw,44);
-    ctx.fillStyle='#ff88bb'; ctx.font='bold 11px Courier New'; ctx.textAlign='center';
-    ctx.fillText('🏠 Home', px+pw/2, 16);
-    ctx.fillStyle='#886677'; ctx.font='9px Courier New';
-    ctx.fillText('小因的空間', px+pw/2, 31);
+    ctx.fillStyle='#ff88bb'; ctx.font='bold 13px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
+    ctx.fillText('🏠 Home', px+pw/2, 18);
+    ctx.fillStyle='#886677'; ctx.font='11px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('小因的空間', px+pw/2, 33);
     ctx.textAlign='left';
     ctx.fillStyle='rgba(255,136,187,0.3)'; ctx.fillRect(px+6,44,pw-12,1);
 
     var dy=62+Math.round(Math.sin(frame*3)*2);
     ctx.fillStyle='rgba(255,136,187,0.3)'; ctx.beginPath(); ctx.arc(px+16,dy,8,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#ff88bb'; ctx.beginPath(); ctx.arc(px+16,dy,4,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#ccaaaa'; ctx.font='9px Courier New'; ctx.fillText('小因 · 在線',px+28,dy+4);
+    ctx.fillStyle='#ccaaaa'; ctx.font='11px "Segoe UI", Arial, sans-serif'; ctx.fillText('小因 · 在線',px+28,dy+4);
 
     var sections=[
       {label:'近期行程',col:'#ff88bb',y:88},
@@ -205,9 +205,9 @@ const HomeScene = (() => {
 
     // ── Section 1: 近期行程 ──
     var s=sections[0];
-    ctx.fillStyle=s.col+'aa'; ctx.font='8px Courier New'; ctx.fillText(s.label,px+8,s.y);
+    ctx.fillStyle=s.col+'aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText(s.label,px+8,s.y);
     ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
-    ctx.font='9px Courier New';
+    ctx.font='11px "Segoe UI", Arial, sans-serif';
     if (homeErr) {
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
       ctx.fillStyle='#554444'; ctx.fillText('Render 冷啟動?',px+10,s.y+36);
@@ -230,9 +230,9 @@ const HomeScene = (() => {
 
     // ── Section 2: 孩子注意事項 ──
     s=sections[1];
-    ctx.fillStyle=s.col+'aa'; ctx.font='8px Courier New'; ctx.fillText(s.label,px+8,s.y);
+    ctx.fillStyle=s.col+'aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText(s.label,px+8,s.y);
     ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
-    ctx.font='9px Courier New';
+    ctx.font='11px "Segoe UI", Arial, sans-serif';
     if (homeErr) {
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
     } else if (!d) {
@@ -256,9 +256,9 @@ const HomeScene = (() => {
 
     // ── Section 3: 家庭備忘 ──
     s=sections[2];
-    ctx.fillStyle=s.col+'aa'; ctx.font='8px Courier New'; ctx.fillText(s.label,px+8,s.y);
+    ctx.fillStyle=s.col+'aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText(s.label,px+8,s.y);
     ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
-    ctx.font='9px Courier New';
+    ctx.font='11px "Segoe UI", Arial, sans-serif';
     if (homeErr) {
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
     } else if (!d) {
@@ -282,8 +282,8 @@ const HomeScene = (() => {
     }
 
     ctx.fillStyle='#10102c'; ctx.fillRect(px,H-34,pw,34);
-    ctx.fillStyle='#557788'; ctx.font='8px Courier New'; ctx.textAlign='center';
-    ctx.fillText('點擊小因對話',px+pw/2,H-16);
+    ctx.fillStyle='#557788'; ctx.font='10px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
+    ctx.fillText('點擊小因對話',px+pw/2,H-14);
     ctx.textAlign='left';
   }
 

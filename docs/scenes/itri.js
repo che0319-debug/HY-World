@@ -42,14 +42,14 @@ const ITRIScene = (() => {
     ctx.fillStyle='#08081a';
     ctx.fillRect(0,0,680,H);
 
-    // ── wall (industrial dark teal — clearly different from base) ──
-    ctx.fillStyle='#161c2e';
+    // ── wall (industrial medium navy — bright research lab feel) ──
+    ctx.fillStyle='#283055';
     ctx.fillRect(0,0,SCENE_W,FLOOR_Y);
 
     // ── floor with industrial stripe ──
-    ctx.fillStyle='#0e1020';
+    ctx.fillStyle='#485040';
     ctx.fillRect(0,FLOOR_Y,SCENE_W,H-FLOOR_Y);
-    ctx.strokeStyle='#0a0c18'; ctx.lineWidth=1; ctx.beginPath();
+    ctx.strokeStyle='#384030'; ctx.lineWidth=1; ctx.beginPath();
     for(var x=0;x<=SCENE_W;x+=20){ ctx.moveTo(x+.5,FLOOR_Y); ctx.lineTo(x+.5,H); }
     for(var y=FLOOR_Y;y<=H;y+=20){ ctx.moveTo(0,y+.5); ctx.lineTo(SCENE_W,y+.5); }
     ctx.stroke();
@@ -197,10 +197,10 @@ const ITRIScene = (() => {
     var px=PANEL_X+2, pw=PANEL_W-2, mw=pw-20;
     ctx.fillStyle='#050514'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
     ctx.fillStyle='#09091c'; ctx.fillRect(px,0,pw,44);
-    ctx.fillStyle='#5599ff'; ctx.font='bold 11px Courier New'; ctx.textAlign='center';
-    ctx.fillText('ITRI 研究室',px+pw/2,16);
-    ctx.fillStyle='#335577'; ctx.font='9px Courier New';
-    ctx.fillText('950157 工作站',px+pw/2,31);
+    ctx.fillStyle='#5599ff'; ctx.font='bold 13px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
+    ctx.fillText('ITRI 研究室',px+pw/2,18);
+    ctx.fillStyle='#335577'; ctx.font='11px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('950157 工作站',px+pw/2,33);
     ctx.textAlign='left';
     ctx.fillStyle='rgba(68,136,255,0.3)'; ctx.fillRect(px+6,44,pw-12,1);
 
@@ -208,15 +208,15 @@ const ITRIScene = (() => {
     ctx.fillStyle='rgba(68,136,255,'+(0.25+pulse*0.4)+')';
     ctx.beginPath(); ctx.arc(px+16,62,8,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#5599ff'; ctx.beginPath(); ctx.arc(px+16,62,4,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#aaaacc'; ctx.font='9px Courier New'; ctx.fillText('950157 · 在線',px+28,66);
+    ctx.fillStyle='#aaaacc'; ctx.font='11px "Segoe UI", Arial, sans-serif'; ctx.fillText('950157 · 在線',px+28,66);
 
     var dots=[' ·',' ··',' ···'][Math.floor(frame*2)%3];
     var bi=itriStats;
 
     // ── Section 1: 專案進度 ──
-    ctx.fillStyle='#5599ffaa'; ctx.font='8px Courier New'; ctx.fillText('專案進度',px+8,90);
+    ctx.fillStyle='#5599ffaa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('專案進度',px+8,90);
     ctx.fillStyle='#5599ff33'; ctx.fillRect(px+8,95,pw-16,1);
-    ctx.font='9px Courier New';
+    ctx.font='11px "Segoe UI", Arial, sans-serif';
     if(itriErr){
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,112);
       ctx.fillStyle='#554444'; ctx.fillText('Render 冷啟動?',px+10,126);
@@ -232,9 +232,9 @@ const ITRIScene = (() => {
     }
 
     // ── Section 2: 待辦任務 ──
-    ctx.fillStyle='#ffdd44aa'; ctx.font='8px Courier New'; ctx.fillText('待辦任務',px+8,183);
+    ctx.fillStyle='#ffdd44aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('待辦任務',px+8,183);
     ctx.fillStyle='#ffdd4433'; ctx.fillRect(px+8,188,pw-16,1);
-    ctx.font='9px Courier New';
+    ctx.font='11px "Segoe UI", Arial, sans-serif';
     if(itriErr){
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,205);
     } else if(!bi){
@@ -248,9 +248,9 @@ const ITRIScene = (() => {
     }
 
     // ── Section 3: 系統狀態 ──
-    ctx.fillStyle='#44ff88aa'; ctx.font='8px Courier New'; ctx.fillText('系統狀態',px+8,276);
+    ctx.fillStyle='#44ff88aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('系統狀態',px+8,276);
     ctx.fillStyle='#44ff8833'; ctx.fillRect(px+8,281,pw-16,1);
-    ctx.font='9px Courier New';
+    ctx.font='11px "Segoe UI", Arial, sans-serif';
     if(itriErr){
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,298);
     } else if(!bi){
@@ -275,7 +275,7 @@ const ITRIScene = (() => {
     ctx.textAlign='left';
 
     ctx.fillStyle='#08081c'; ctx.fillRect(px,H-22,pw,22);
-    ctx.fillStyle='#445566'; ctx.font='8px Courier New'; ctx.textAlign='center';
+    ctx.fillStyle='#445566'; ctx.font='10px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
     ctx.fillText('點擊 950157 對話',px+pw/2,H-8);
     ctx.textAlign='left';
   }

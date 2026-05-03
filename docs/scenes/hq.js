@@ -41,20 +41,20 @@ const HQScene = (() => {
     ctx.fillStyle = '#09091a';
     ctx.fillRect(0, 0, 680, H);
 
-    // ── wall (medium navy — clearly visible against dark base) ──
-    ctx.fillStyle = '#1e2044';
+    // ── wall (medium navy-blue — bright HQ feel) ──
+    ctx.fillStyle = '#3a4888';
     ctx.fillRect(0, 0, SCENE_W, FLOOR_Y);
 
-    // ── floor ──
-    ctx.fillStyle = '#161830';
+    // ── floor (warm gray) ──
+    ctx.fillStyle = '#726858';
     ctx.fillRect(0, FLOOR_Y, SCENE_W, H-FLOOR_Y);
-    ctx.strokeStyle='#10122a'; ctx.lineWidth=1; ctx.beginPath();
+    ctx.strokeStyle='#625848'; ctx.lineWidth=1; ctx.beginPath();
     for(var x=0;x<=SCENE_W;x+=20){ ctx.moveTo(x+.5,FLOOR_Y); ctx.lineTo(x+.5,H); }
     for(var y=FLOOR_Y;y<=H;y+=20){ ctx.moveTo(0,y+.5); ctx.lineTo(SCENE_W,y+.5); }
     ctx.stroke();
 
     // baseboard
-    ctx.fillStyle='#2e2e5c'; ctx.fillRect(0,FLOOR_Y-6,SCENE_W,6);
+    ctx.fillStyle='#888070'; ctx.fillRect(0,FLOOR_Y-6,SCENE_W,6);
 
     // ── back wall windows (BRIGHT BLUE) ──
     [38, 132, 226, 320].forEach(function(wx){
@@ -176,10 +176,10 @@ const HQScene = (() => {
     var px=PANEL_X+2, pw=PANEL_W-2, mw=pw-20;
     ctx.fillStyle='#060614'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
     ctx.fillStyle='#0c1a12'; ctx.fillRect(px,0,pw,44);
-    ctx.fillStyle='#55ee77'; ctx.font='bold 11px Courier New'; ctx.textAlign='center';
-    ctx.fillText('🏢 總部 HQ',px+pw/2,16);
-    ctx.fillStyle='#337744'; ctx.font='9px Courier New';
-    ctx.fillText('HY 的指揮中心',px+pw/2,31);
+    ctx.fillStyle='#55ee77'; ctx.font='bold 13px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
+    ctx.fillText('🏢 總部 HQ',px+pw/2,18);
+    ctx.fillStyle='#337744'; ctx.font='11px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('HY 的指揮中心',px+pw/2,33);
     ctx.textAlign='left';
     ctx.fillStyle='rgba(68,204,102,0.3)'; ctx.fillRect(px+6,44,pw-12,1);
 
@@ -187,15 +187,15 @@ const HQScene = (() => {
     ctx.fillStyle='rgba(68,204,102,'+(0.3+pulse*0.4)+')';
     ctx.beginPath(); ctx.arc(px+16,62,8,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#55ee77'; ctx.beginPath(); ctx.arc(px+16,62,4,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#aaaacc'; ctx.font='9px Courier New'; ctx.fillText('HY · 在線',px+28,66);
+    ctx.fillStyle='#aaaacc'; ctx.font='11px "Segoe UI", Arial, sans-serif'; ctx.fillText('HY · 在線',px+28,66);
 
     var dots=[' ·',' ··',' ···'][Math.floor(frame*2)%3];
     var d=overviewData;
 
     // ── Section 1: Claude 跨域建議 ──
-    ctx.fillStyle='#5599ffaa'; ctx.font='8px Courier New'; ctx.fillText('Claude 跨域建議',px+8,90);
+    ctx.fillStyle='#5599ffaa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('Claude 跨域建議',px+8,90);
     ctx.fillStyle='#5599ff33'; ctx.fillRect(px+8,95,pw-16,1);
-    ctx.font='9px Courier New';
+    ctx.font='11px "Segoe UI", Arial, sans-serif';
     if (overviewErr) {
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,112);
       ctx.fillStyle='#554444'; ctx.fillText('Render 冷啟動?',px+10,126);
@@ -215,9 +215,9 @@ const HQScene = (() => {
     }
 
     // ── Section 2: 三 Bot 狀態摘要 ──
-    ctx.fillStyle='#55ee77aa'; ctx.font='8px Courier New'; ctx.fillText('三 Bot 狀態摘要',px+8,180);
+    ctx.fillStyle='#55ee77aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('三 Bot 狀態摘要',px+8,180);
     ctx.fillStyle='#55ee7733'; ctx.fillRect(px+8,185,pw-16,1);
-    ctx.font='9px Courier New';
+    ctx.font='11px "Segoe UI", Arial, sans-serif';
     if (overviewErr) {
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,202);
     } else if (!d) {
@@ -234,9 +234,9 @@ const HQScene = (() => {
     }
 
     // ── Section 3: 今日任務清單 ──
-    ctx.fillStyle='#ffdd44aa'; ctx.font='8px Courier New'; ctx.fillText('今日任務清單',px+8,285);
+    ctx.fillStyle='#ffdd44aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('今日任務清單',px+8,285);
     ctx.fillStyle='#ffdd4433'; ctx.fillRect(px+8,290,pw-16,1);
-    ctx.font='9px Courier New';
+    ctx.font='11px "Segoe UI", Arial, sans-serif';
     if (overviewErr) {
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,307);
     } else if (!d) {
@@ -253,8 +253,8 @@ const HQScene = (() => {
     }
 
     ctx.fillStyle='#0c1412'; ctx.fillRect(px,H-34,pw,34);
-    ctx.fillStyle='#557766'; ctx.font='8px Courier New'; ctx.textAlign='center';
-    ctx.fillText('點擊 HY 對話',px+pw/2,H-16);
+    ctx.fillStyle='#557766'; ctx.font='10px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
+    ctx.fillText('點擊 HY 對話',px+pw/2,H-14);
     ctx.textAlign='left';
   }
 

@@ -383,8 +383,8 @@
     renderStringList('skills-list', g.skills_in_progress || []);
     renderStringList('books-list',  g.books_this_quarter  || []);
 
-    document.getElementById('last-updated').textContent =
-      '更新：' + (d.last_updated || '—');
+    var lu = (d.summary && d.summary.last_updated) || d.last_updated || '—';
+    document.getElementById('last-updated').textContent = '更新：' + lu.slice(0,10);
   }
 
   function sv(id, val) {
@@ -479,7 +479,8 @@
     g.skills_in_progress = readStringList('skills-list');
     g.books_this_quarter = readStringList('books-list');
 
-    d.last_updated = new Date().toISOString().slice(0, 10);
+    if (!d.summary) d.summary = {};
+    d.summary.last_updated = new Date().toISOString();
     return d;
   }
 
@@ -540,7 +541,8 @@
     .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function() {
       state = payload;
-      document.getElementById('last-updated').textContent = '更新：' + payload.last_updated;
+      var lu2 = payload.summary && payload.summary.last_updated;
+      document.getElementById('last-updated').textContent = '更新：' + (lu2 ? lu2.slice(0,10) : '—');
       showToast('✅ 已儲存', true);
     })
     .catch(function(e) {

@@ -496,6 +496,18 @@ const World = (() => {
     animId = requestAnimationFrame(render);
   }
 
+  // ── scene transition (Task 08) ────────────────────────────────────
+  function enterScene(initFn) {
+    paused = true;
+    hoverId = null;
+    hoveredCharId = null;
+    canvas.style.cursor = 'default';
+    initFn();
+    const overlay = document.getElementById('scene-overlay');
+    // Double-rAF ensures the browser paints once before adding .active
+    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('active')));
+  }
+
   // ── events ────────────────────────────────────────────────────────
   function canvasPos(e) {
     const rect = canvas.getBoundingClientRect();
@@ -553,14 +565,9 @@ const World = (() => {
       return;
     }
 
-    paused = true;
-    hoverId = null;
-    canvas.style.cursor = 'default';
-    document.getElementById('scene-overlay').classList.add('active');
-
-    if      (hit.scene === 'home') HomeScene.init(data);
-    else if (hit.scene === 'hq')   HQScene.init(data);
-    else if (hit.scene === 'itri') ITRIScene.init(data);
+    if      (hit.scene === 'home') enterScene(() => HomeScene.init(data));
+    else if (hit.scene === 'hq')   enterScene(() => HQScene.init(data));
+    else if (hit.scene === 'itri') enterScene(() => ITRIScene.init(data));
   }
 
   // ── public ────────────────────────────────────────────────────────
@@ -590,9 +597,15 @@ const World = (() => {
     },
 
     resume() {
-      paused   = false;
-      lastTime = performance.now();
-      animId   = requestAnimationFrame(render);
+      const overlay = document.getElementById('scene-overlay');
+      overlay.classList.remove('active');
+      BaseScene.stopLoop();
+      // Wait for CSS fade (250ms) before re-starting the world loop
+      setTimeout(() => {
+        paused   = false;
+        lastTime = performance.now();
+        animId   = requestAnimationFrame(render);
+      }, 260);
     },
 
     // Console / Phase-2 helper: walk one character to a named scene

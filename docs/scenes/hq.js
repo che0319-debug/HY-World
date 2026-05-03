@@ -277,7 +277,7 @@ const HQScene = (() => {
     wrap.id='personal-wrap';
     wrap.style.cssText='position:absolute;top:0;left:0;right:29.41%;bottom:0;overflow-x:auto;overflow-y:auto;box-sizing:border-box;border:2px solid #3a88ee;z-index:7';
     personalFrame=document.createElement('iframe');
-    personalFrame.src='personal-dashboard.html';
+    personalFrame.src='personal-dashboard.html?t='+Date.now();
     personalFrame.style.cssText='width:1600px;height:1600px;border:none;background:#07071a;zoom:0.55;display:block';
     wrap.appendChild(personalFrame);
     overlay.appendChild(wrap);

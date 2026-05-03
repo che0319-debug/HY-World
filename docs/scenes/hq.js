@@ -37,128 +37,301 @@ const HQScene = (() => {
   }
 
   function drawScene(ctx) {
-    // ── full canvas base ──
-    ctx.fillStyle = '#09091a';
+    var SW = SCENE_W, FY = FLOOR_Y;
+
+    // ══ 全畫布底色 ══
+    ctx.fillStyle = '#1a0e08';
     ctx.fillRect(0, 0, 680, H);
 
-    // ── wall (medium navy-blue — bright HQ feel) ──
-    ctx.fillStyle = '#3a4888';
-    ctx.fillRect(0, 0, SCENE_W, FLOOR_Y);
+    // ══ 後牆（磚紅色） ══
+    ctx.fillStyle = '#6a3820';
+    ctx.fillRect(0, 0, SW, FY - 60);
+    // 磚紋（橫向）
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    for (var wy = 0; wy < FY - 60; wy += 16) ctx.fillRect(0, wy, SW, 2);
+    // 磚縫（縱向，交錯）
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    var bOff = 0;
+    for (var wy2 = 0; wy2 < FY - 60; wy2 += 16) {
+      bOff = bOff === 0 ? 24 : 0;
+      for (var bx = bOff; bx < SW; bx += 48) ctx.fillRect(bx, wy2, 2, 14);
+    }
+    // 牆面右側略暗
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.fillRect(SW - 60, 0, 60, FY - 60);
+    // 牆面左側略暗
+    ctx.fillRect(0, 0, 40, FY - 60);
 
-    // ── floor (warm gray) ──
-    ctx.fillStyle = '#726858';
-    ctx.fillRect(0, FLOOR_Y, SCENE_W, H-FLOOR_Y);
-    ctx.strokeStyle='#625848'; ctx.lineWidth=1; ctx.beginPath();
-    for(var x=0;x<=SCENE_W;x+=20){ ctx.moveTo(x+.5,FLOOR_Y); ctx.lineTo(x+.5,H); }
-    for(var y=FLOOR_Y;y<=H;y+=20){ ctx.moveTo(0,y+.5); ctx.lineTo(SCENE_W,y+.5); }
+    // ══ 下牆板 ══
+    ctx.fillStyle = '#5a2c14';
+    ctx.fillRect(0, FY - 62, SW, 57);
+    ctx.fillStyle = '#7a4020';
+    ctx.fillRect(0, FY - 64, SW, 4);
+    ctx.fillStyle = '#3a1c08';
+    ctx.fillRect(0, FY - 7, SW, 3);
+
+    // ══ 木質地板（橫向條紋） ══
+    var plankH = 14;
+    for (var py = FY; py < H; py += plankH) {
+      var row = Math.floor((py - FY) / plankH);
+      ctx.fillStyle = row % 2 === 0 ? '#7a4c28' : '#6e4222';
+      ctx.fillRect(0, py, SW, plankH);
+    }
+    // 木條縫線
+    ctx.strokeStyle = '#5a3218'; ctx.lineWidth = 1; ctx.beginPath();
+    for (var py2 = FY; py2 <= H; py2 += plankH) { ctx.moveTo(0,py2+.5); ctx.lineTo(SW,py2+.5); }
     ctx.stroke();
-
-    // baseboard
-    ctx.fillStyle='#888070'; ctx.fillRect(0,FLOOR_Y-6,SCENE_W,6);
-
-    // ── back wall windows (BRIGHT BLUE) ──
-    [38, 132, 226, 320].forEach(function(wx){
-      ctx.fillStyle='#282a50'; ctx.fillRect(wx-4,46,30,66); // surround
-      ctx.fillStyle='#5599ee'; ctx.fillRect(wx,50,22,58);   // bright blue glass
-      ctx.fillStyle='rgba(180,220,255,0.4)'; ctx.fillRect(wx+1,51,10,22); // glint
-      ctx.fillStyle='rgba(0,0,20,0.3)';
-      ctx.fillRect(wx+10,50,2,58); ctx.fillRect(wx,78,22,2); // panes
+    // 木紋隨機短線
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
+    [[30,FY+10,80],[120,FY+24,60],[220,FY+8,90],[350,FY+18,70],[420,FY+4,50],
+     [60,FY+38,40],[180,FY+46,80],[300,FY+34,60],[440,FY+42,50]].forEach(function(l){
+      ctx.beginPath(); ctx.moveTo(l[0],l[1]); ctx.lineTo(l[0]+l[2],l[1]); ctx.stroke();
     });
-    // window rail
-    ctx.fillStyle='#242450'; ctx.fillRect(32,44,320,4);
+    // 地板高光
+    ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(0,FY,SW,4);
+    // 踢腳線
+    ctx.fillStyle = '#4a2810'; ctx.fillRect(0,FY-7,SW,7);
+    ctx.fillStyle = '#6a3c18'; ctx.fillRect(0,FY-7,SW,2);
 
-    // ── HQ sign on back wall ──
-    ctx.fillStyle='#162a1e'; ctx.fillRect(356,50,114,38);
-    ctx.strokeStyle='#3a6a44'; ctx.lineWidth=1;
-    ctx.strokeRect(357,51,112,36);
-    ctx.fillStyle='#55ee77'; ctx.font='bold 10px Courier New'; ctx.textAlign='center';
-    ctx.fillText('HY WORLD HQ',413,65);
-    ctx.fillStyle='#33bb55'; ctx.font='8px Courier New';
-    ctx.fillText('總部指揮中心',413,79);
-    ctx.textAlign='left';
+    // ══ 吊燈（復古燈泡） ══
+    function lamp(lx2, bright) {
+      // 燈線
+      ctx.fillStyle = '#2a1c10'; ctx.fillRect(lx2-1,0,2,28);
+      // 燈座
+      ctx.fillStyle = '#4a3820'; ctx.fillRect(lx2-8,28,16,8);
+      ctx.fillStyle = '#6a5030'; ctx.fillRect(lx2-6,30,12,4);
+      // 燈泡
+      ctx.fillStyle = bright ? '#ffd860' : '#c8a040';
+      ctx.beginPath(); ctx.arc(lx2,42,10,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = bright ? '#fff4a0' : '#e8c060';
+      ctx.beginPath(); ctx.arc(lx2-3,38,5,0,Math.PI*2); ctx.fill();
+      // 燈光暈
+      if (bright) {
+        ctx.fillStyle = 'rgba(255,220,80,0.12)';
+        ctx.beginPath(); ctx.arc(lx2,42,30,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,200,60,0.06)';
+        ctx.beginPath(); ctx.arc(lx2,42,55,0,Math.PI*2); ctx.fill();
+      }
+    }
+    lamp(80, true); lamp(200, true); lamp(320, true); lamp(420, true);
 
-    // ── whiteboard (left — VERY LIGHT, clearly visible) ──
-    ctx.fillStyle='#282a52'; ctx.fillRect(4,92,92,124);   // frame (medium blue)
-    ctx.fillStyle='#dce4f4'; ctx.fillRect(8,96,84,116);   // BRIGHT surface
-    // lines on board (dark blue ink)
-    ctx.strokeStyle='#3355bb'; ctx.lineWidth=1.5;
-    [[12,114,78,114],[12,124,62,124],[12,134,70,134],[12,146,48,146],[12,156,66,156]].forEach(function(l){
+    // ══ 後牆霓虹招牌 ══
+    // 招牌底板
+    ctx.fillStyle = '#1a0e08'; ctx.fillRect(130,52,220,38);
+    ctx.fillStyle = '#0e0808'; ctx.fillRect(132,54,216,34);
+    // 霓虹字（橘黃發光）
+    ctx.shadowColor = '#ff8800'; ctx.shadowBlur = 12;
+    ctx.fillStyle = '#ffaa22';
+    ctx.font = 'bold 18px "Courier New"'; ctx.textAlign = 'center';
+    ctx.fillText('HY WORLD HQ', 240, 72);
+    ctx.shadowBlur = 0;
+    // 副標題
+    ctx.fillStyle = '#cc8822'; ctx.font = '9px "Courier New"';
+    ctx.fillText('指揮中心 Command Center', 240, 84);
+    ctx.textAlign = 'left';
+    // 招牌外框
+    ctx.strokeStyle = '#8a5020'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(130.5,52.5,219,37);
+
+    // ══ 左側窗戶（磚牆上） ══
+    function win(wx3, wy3) {
+      ctx.fillStyle = '#2a1408'; ctx.fillRect(wx3-4,wy3-4,56,70);
+      ctx.fillStyle = '#3a1c0c'; ctx.fillRect(wx3-2,wy3-2,52,66);
+      ctx.fillStyle = '#88aacc'; ctx.fillRect(wx3,wy3,48,62);
+      ctx.fillStyle = 'rgba(200,230,255,0.35)'; ctx.fillRect(wx3+1,wy3+1,22,28);
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(wx3+23,wy3,2,62); ctx.fillRect(wx3,wy3+30,48,2);
+      ctx.fillStyle = '#2a1408'; ctx.fillRect(wx3-4,wy3+62,56,6);
+    }
+    win(10, 24); win(10, 108);
+
+    // ══ 植物工具 ══
+    function plant(px4, py4, size) {
+      // 投影
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.beginPath(); ctx.ellipse(px4+3,py4+4,size*0.5,size*0.2,0,0,Math.PI*2); ctx.fill();
+      // 盆
+      ctx.fillStyle = '#7a3c18'; ctx.fillRect(px4-Math.floor(size*0.35),py4,Math.floor(size*0.7),Math.floor(size*0.5));
+      ctx.fillStyle = '#5a2c10'; ctx.fillRect(px4-Math.floor(size*0.3),py4+Math.floor(size*0.45),Math.floor(size*0.6),Math.floor(size*0.1));
+      ctx.fillStyle = '#2a1408'; ctx.fillRect(px4-Math.floor(size*0.32),py4+2,Math.floor(size*0.64),Math.floor(size*0.2));
+      // 葉冠
+      var leaves = [
+        {dx:-size*0.3,dy:-size*0.5,r:size*0.42,c:'#2a6a18'},
+        {dx: size*0.25,dy:-size*0.45,r:size*0.36,c:'#308820'},
+        {dx:-size*0.1,dy:-size*0.65,r:size*0.46,c:'#389828'},
+        {dx: size*0.12,dy:-size*0.4,r:size*0.32,c:'#44aa30'},
+        {dx:-size*0.05,dy:-size*0.8,r:size*0.36,c:'#4aba38'},
+      ];
+      leaves.forEach(function(l){
+        ctx.fillStyle=l.c;
+        ctx.beginPath(); ctx.arc(px4+l.dx,py4+l.dy,l.r,0,Math.PI*2); ctx.fill();
+      });
+      ctx.fillStyle='rgba(100,200,50,0.2)';
+      ctx.beginPath(); ctx.arc(px4-size*0.15,py4-size*0.72,size*0.16,0,Math.PI*2); ctx.fill();
+    }
+
+    // 植物散落
+    plant(72, 168, 24);   // 左中
+    plant(18, 340, 20);   // 左下
+    plant(440, 140, 22);  // 右後
+    plant(456, 320, 18);  // 右下
+    plant(200, 350, 16);  // 中下
+    plant(340, 360, 16);  // 中右下
+
+    // ══ 工作桌工具 ══
+    function desk(dx, dy, dw, dh) {
+      // 投影
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(dx+4,dy+dh,dw,8);
+      // 桌面
+      ctx.fillStyle = '#5a3c1a'; ctx.fillRect(dx,dy,dw,dh);
+      ctx.fillStyle = '#7a5428'; ctx.fillRect(dx+2,dy+2,dw-4,dh-4);
+      ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.fillRect(dx+2,dy+2,dw-4,3);
+      // 桌腳
+      ctx.fillStyle = '#2a1808';
+      ctx.fillRect(dx+4,dy+dh,6,10); ctx.fillRect(dx+dw-10,dy+dh,6,10);
+      ctx.strokeStyle = '#3a2010'; ctx.lineWidth=1;
+      ctx.strokeRect(dx+.5,dy+.5,dw-1,dh-1);
+    }
+    function monitor(mx2, my2, w, h) {
+      ctx.fillStyle = '#0a0a18'; ctx.fillRect(mx2-2,my2-2,w+4,h+4);
+      ctx.fillStyle = '#141428'; ctx.fillRect(mx2,my2,w,h);
+      ctx.fillStyle = 'rgba(40,100,220,0.7)'; ctx.fillRect(mx2+2,my2+2,w-4,h-4);
+      ctx.fillStyle = 'rgba(180,220,255,0.2)'; ctx.fillRect(mx2+2,my2+2,w-4,6);
+      ctx.fillStyle = 'rgba(0,200,120,0.3)';
+      for (var i=0;i<4;i++) ctx.fillRect(mx2+4,my2+10+i*5,w-12+i*2,2);
+      ctx.fillStyle='#1a1c30'; ctx.fillRect(mx2+Math.floor(w/2)-3,my2+h,6,5);
+    }
+    function chair(cx2, cy2, color) {
+      ctx.fillStyle='rgba(0,0,0,0.2)'; ctx.fillRect(cx2-12,cy2+14,24,6);
+      ctx.fillStyle=color||'#2a3848'; ctx.fillRect(cx2-12,cy2,24,18);
+      ctx.fillStyle=color?color+'cc':'#3a4858'; ctx.fillRect(cx2-10,cy2+2,20,14);
+      ctx.fillStyle='rgba(255,255,255,0.08)'; ctx.fillRect(cx2-10,cy2+2,20,4);
+      ctx.fillStyle=color||'#2a3848'; ctx.fillRect(cx2-10,cy2-14,20,14);
+      ctx.fillStyle=color?color+'cc':'#3a4858'; ctx.fillRect(cx2-8,cy2-12,16,10);
+    }
+
+    // ══ 主管大桌（後方居中） ══
+    desk(148, 90, 180, 54);
+    // 主管椅（後方，氣派深色）
+    chair(238, 82, '#1a2838');
+    // 桌上：大螢幕 x2
+    monitor(158, 52, 54, 36);
+    monitor(224, 52, 54, 36);
+    // 桌上：文件
+    ctx.fillStyle='#e0dcc8'; ctx.fillRect(290,100,28,18);
+    ctx.fillStyle='#f0ece0'; ctx.fillRect(288,98,28,18);
+    ctx.fillStyle='#8899aa';
+    for (var fi=0;fi<3;fi++) ctx.fillRect(290,101+fi*4,24,2);
+    // 桌上：咖啡杯
+    ctx.fillStyle='#8a5030'; ctx.fillRect(302,106,12,16);
+    ctx.fillStyle='#5a3018'; ctx.fillRect(304,108,8,8);
+    ctx.fillStyle='#aa7040'; ctx.fillRect(314,110,5,9);
+    // 名牌
+    ctx.fillStyle='#c8a030'; ctx.fillRect(196,134,64,8);
+    ctx.fillStyle='#e8c040'; ctx.fillRect(197,135,62,6);
+    ctx.fillStyle='#1a1008'; ctx.font='bold 6px Courier New'; ctx.textAlign='center';
+    ctx.fillText('HY · 總指揮', 228, 141);
+
+    // ══ 監控牆（右後方） ══
+    // 機架底座
+    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(354,22,118,120);
+    ctx.fillStyle='#1a1a28'; ctx.fillRect(352,20,118,120);
+    ctx.fillStyle='#222238'; ctx.fillRect(354,22,114,116);
+    ctx.strokeStyle='#303050'; ctx.lineWidth=1; ctx.strokeRect(352.5,20.5,117,119);
+    // 多螢幕（3x2）
+    [[356,24],[396,24],[436,24],[356,62],[396,62],[436,62]].forEach(function(p,i){
+      ctx.fillStyle='#0a0a18'; ctx.fillRect(p[0],p[1],36,34);
+      ctx.fillStyle='#0e1030'; ctx.fillRect(p[0]+1,p[1]+1,34,32);
+      var colors=['rgba(40,100,220,0.7)','rgba(200,60,60,0.6)','rgba(40,180,80,0.6)',
+                  'rgba(180,120,40,0.6)','rgba(40,100,220,0.7)','rgba(80,40,200,0.6)'];
+      ctx.fillStyle=colors[i]; ctx.fillRect(p[0]+2,p[1]+2,32,30);
+      ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.fillRect(p[0]+2,p[1]+2,32,6);
+      // 格線感
+      ctx.strokeStyle='rgba(0,0,0,0.2)'; ctx.lineWidth=0.5;
+      ctx.strokeRect(p[0]+2,p[1]+2,32,30);
+    });
+    // 底部控制台
+    ctx.fillStyle='#141428'; ctx.fillRect(354,100,114,36);
+    ctx.fillStyle='#1e1e38'; ctx.fillRect(356,102,110,32);
+    // 控制鈕
+    ['#44ff44','#ff4444','#ffcc44','#4488ff'].forEach(function(c,i){
+      ctx.fillStyle=c; ctx.beginPath(); ctx.arc(364+i*14,116,4,0,Math.PI*2); ctx.fill();
+    });
+    // 旋鈕
+    [420,434,448].forEach(function(kx){
+      ctx.fillStyle='#303050'; ctx.beginPath(); ctx.arc(kx,116,5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#505080'; ctx.beginPath(); ctx.arc(kx,116,3,0,Math.PI*2); ctx.fill();
+    });
+    // 監控台椅
+    chair(406, 146, '#2a3040');
+
+    // ══ 工作站 1（左中） ══
+    desk(82, 200, 110, 40);
+    chair(132, 192, '#3a4858');
+    monitor(92, 172, 44, 28);
+    // 鍵盤
+    ctx.fillStyle='#1a1828'; ctx.fillRect(108,204,50,12);
+    for (var ki=0;ki<6;ki++) ctx.fillRect(110+ki*8,206,6,8);
+    // 滑鼠
+    ctx.fillStyle='#282838'; ctx.fillRect(166,206,10,14);
+    ctx.fillStyle='#343448'; ctx.fillRect(167,207,8,10);
+
+    // ══ 工作站 2（中央） ══
+    desk(188, 246, 110, 40);
+    chair(238, 238, '#3a4858');
+    monitor(198, 218, 44, 28);
+    ctx.fillStyle='#1a1828'; ctx.fillRect(214,250,50,12);
+    for (var ki2=0;ki2<6;ki2++) ctx.fillRect(216+ki2*8,252,6,8);
+    ctx.fillStyle='#282838'; ctx.fillRect(272,252,10,14);
+    // 桌上文件
+    ctx.fillStyle='#e8e4d4'; ctx.fillRect(290,248,18,14);
+    ctx.fillStyle='#f0ece0'; ctx.fillRect(289,247,18,14);
+
+    // ══ 工作站 3（右中） ══
+    desk(298, 200, 110, 40);
+    chair(348, 192, '#3a4858');
+    monitor(308, 172, 44, 28);
+    ctx.fillStyle='#1a1828'; ctx.fillRect(314,204,50,12);
+    for (var ki3=0;ki3<6;ki3++) ctx.fillRect(316+ki3*8,206,6,8);
+    ctx.fillStyle='#282838'; ctx.fillRect(378,206,10,14);
+    // 桌上咖啡
+    ctx.fillStyle='#7a4820'; ctx.fillRect(380,204,10,12);
+    ctx.fillStyle='#4a2c10'; ctx.fillRect(382,206,6,6);
+
+    // ══ 右側白板 ══
+    // 白板架
+    ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.fillRect(426,186,50,162);
+    ctx.fillStyle='#c8ccd0'; ctx.fillRect(424,184,50,162);
+    ctx.fillStyle='#e8ecf0'; ctx.fillRect(426,186,46,158);
+    ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.fillRect(426,186,46,12);
+    ctx.strokeStyle='#a8acb0'; ctx.lineWidth=1.5; ctx.strokeRect(424.5,184.5,49,161);
+    // 白板上內容（圖表感）
+    ctx.strokeStyle='#4466cc'; ctx.lineWidth=1.5;
+    [[428,206,466,206],[428,218,454,218],[428,230,460,230]].forEach(function(l){
       ctx.beginPath(); ctx.moveTo(l[0],l[1]); ctx.lineTo(l[2],l[3]); ctx.stroke();
     });
-    ctx.strokeStyle='#cc3333'; ctx.lineWidth=1; ctx.strokeRect(12,164,30,24);
-    ctx.strokeStyle='#33aa33';
-    ctx.beginPath(); ctx.moveTo(44,176); ctx.lineTo(74,176); ctx.stroke();
-    // marker tray
-    ctx.fillStyle='#242450'; ctx.fillRect(8,212,84,6);
-
-    // ── bookshelf (right — COLOURFUL SPINES) ──
-    var bsX=430,bsY=76,bsW=46,bsH=204;
-    ctx.fillStyle='#1e1408'; ctx.fillRect(bsX,bsY,bsW,bsH);
-    // shelf boards
-    ctx.fillStyle='#2c1c0c'; [46,96,146,196].forEach(function(dy){ ctx.fillRect(bsX,bsY+dy,bsW,5); });
-    // books (vivid spines)
-    var cols=['#ee2222','#2244ee','#22ee44','#ee8822','#8822ee','#ee2288','#44eecc','#eeee22'];
-    [0,50,100,150].forEach(function(shelf,si){
-      var bkx=bsX+2;
-      for(var bi=0;bi<5;bi++){
-        var bw2=6+(bi%2)*4;
-        ctx.fillStyle=cols[(si*3+bi)%cols.length];
-        ctx.fillRect(bkx,bsY+shelf+7,bw2,37);
-        ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.fillRect(bkx,bsY+shelf+7,1,37);
-        bkx+=bw2+1;
-      }
+    // 圓圈圖
+    ctx.strokeStyle='#cc4444'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(438,252,12,0,Math.PI*2); ctx.stroke();
+    ctx.strokeStyle='#44aa44';
+    ctx.beginPath(); ctx.arc(458,252,10,0,Math.PI*2); ctx.stroke();
+    ctx.strokeStyle='#4466cc'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(450,252); ctx.lineTo(448,252); ctx.stroke();
+    // 箭頭和說明
+    ctx.strokeStyle='#884488'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(428,270); ctx.lineTo(466,270); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(428,280); ctx.lineTo(454,280); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(428,290); ctx.lineTo(460,290); ctx.stroke();
+    // 筆托盤
+    ctx.fillStyle='#a0a8b0'; ctx.fillRect(424,344,50,8);
+    [[428,'#cc4444'],[436,'#4488cc'],[444,'#44aa44'],[452,'#cc8800']].forEach(function(p){
+      ctx.fillStyle=p[1]; ctx.fillRect(p[0],345,6,5);
     });
+    // 白板架腳架
+    ctx.fillStyle='#888890'; ctx.fillRect(434,344,4,30); ctx.fillRect(452,344,4,30);
+    ctx.fillRect(426,370,56,5);
 
-    // ── work desks (front — VISIBLE AMBER-BROWN) ──
-    function desk(dx,dy,dw){
-      ctx.fillStyle='#7a5020'; ctx.fillRect(dx,dy,dw,24); // BRIGHT AMBER
-      ctx.fillStyle='rgba(255,255,255,0.1)'; ctx.fillRect(dx,dy,dw,3);
-      ctx.strokeStyle='#4a2c0c'; ctx.lineWidth=1; ctx.strokeRect(dx,dy,dw,24);
-      ctx.fillStyle='#3a1c08'; ctx.fillRect(dx+6,dy+24,6,14); ctx.fillRect(dx+dw-12,dy+24,6,14);
-    }
-    function monitor(mx,my){
-      ctx.fillStyle='#141428'; ctx.fillRect(mx,my,34,26);
-      ctx.fillStyle='#0c1634'; ctx.fillRect(mx+2,my+2,30,20);
-      ctx.fillStyle='rgba(50,110,240,0.6)'; ctx.fillRect(mx+3,my+3,28,18);
-      ctx.fillStyle='rgba(0,255,128,0.25)';
-      for(var i=0;i<4;i++) ctx.fillRect(mx+4,my+5+i*3,18,1);
-      ctx.fillStyle='#1c1c34'; ctx.fillRect(mx+13,my+24,8,5); ctx.fillRect(mx+9,my+29,16,3);
-    }
-    function chair(chx,chy){
-      ctx.fillStyle='#2e2e58'; ctx.fillRect(chx,chy,22,12); ctx.fillRect(chx+2,chy-12,18,12);
-      ctx.fillStyle='rgba(255,255,255,0.06)'; ctx.fillRect(chx+2,chy-12,18,3);
-    }
-    desk(28,FLOOR_Y-70,118); monitor(54,FLOOR_Y-100); chair(66,FLOOR_Y-48);
-    ctx.fillStyle='#131330'; ctx.fillRect(58,FLOOR_Y-72,44,8); // keyboard area
-    desk(226,FLOOR_Y-70,118); monitor(252,FLOOR_Y-100); chair(264,FLOOR_Y-48);
-    ctx.fillStyle='#131330'; ctx.fillRect(256,FLOOR_Y-72,44,8);
-
-    // ── conference table (BRIGHT AMBER centre) ──
-    var ctX=96,ctY=FLOOR_Y-164,ctW=228,ctH=54;
-    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(ctX+5,ctY+ctH,ctW,9); // shadow
-    ctx.fillStyle='#9a6e28'; ctx.fillRect(ctX,ctY,ctW,ctH); // BRIGHT AMBER TABLE
-    ctx.fillStyle='rgba(255,255,255,0.1)'; ctx.fillRect(ctX,ctY,ctW,4);
-    ctx.strokeStyle='#5a3c0c'; ctx.lineWidth=1; ctx.strokeRect(ctX+.5,ctY+.5,ctW-1,ctH-1);
-    ctx.fillStyle='#3c2008'; ctx.fillRect(ctX+8,ctY+ctH,7,14); ctx.fillRect(ctX+ctW-15,ctY+ctH,7,14);
-    // HY nameplate on table
-    ctx.fillStyle='#0e2418'; ctx.fillRect(ctX+ctW/2-34,ctY+ctH/2-9,68,18);
-    ctx.strokeStyle='#33cc55'; ctx.lineWidth=1; ctx.strokeRect(ctX+ctW/2-34,ctY+ctH/2-9,68,18);
-    ctx.fillStyle='#55ee77'; ctx.font='bold 10px Courier New'; ctx.textAlign='center';
-    ctx.fillText('HY',ctX+ctW/2,ctY+ctH/2+5);
-    ctx.textAlign='left';
-    // paper stacks
-    [ctX+18,ctX+168].forEach(function(ix){
-      ctx.fillStyle='#d8d8c4'; ctx.fillRect(ix,ctY+10,24,17);
-      ctx.fillStyle='#9090a0';
-      for(var li=0;li<3;li++){ ctx.fillRect(ix+2,ctY+13+li*4,18,1); }
-    });
-    // chairs around table
-    [ctX+12,ctX+70,ctX+148,ctX+200].forEach(function(cx){ chair(cx,ctY+ctH+4); });
-    // HY chair behind table
-    ctx.fillStyle='#3a3a68'; ctx.fillRect(ctX+ctW/2-12,ctY-16,24,12);
-    ctx.fillRect(ctX+ctW/2-10,ctY-28,20,12);
-
-    // ── panel divider ──
+    // ══ 面板分隔線 ══
     ctx.fillStyle='#06060f'; ctx.fillRect(PANEL_X,0,2,H);
   }
 

@@ -37,149 +37,155 @@ const HomeScene = (() => {
   }
 
   function drawScene(ctx) {
-    // ── full canvas base ──
-    ctx.fillStyle = '#0e0e1e';
+    // ── full canvas base (very dark) ──
+    ctx.fillStyle = '#09091a';
     ctx.fillRect(0, 0, 680, H);
 
-    // ── wall ──
-    ctx.fillStyle = '#1c1c38';
+    // ── wall (medium navy — clearly lighter than base) ──
+    ctx.fillStyle = '#242048';
     ctx.fillRect(0, 0, SCENE_W, FLOOR_Y);
 
+    // ── lower wall panel (slightly different) ──
+    ctx.fillStyle = '#1e1c3e';
+    ctx.fillRect(0, FLOOR_Y-72, SCENE_W, 65);
+    ctx.fillStyle = '#2e2a54';
+    ctx.fillRect(0, FLOOR_Y-74, SCENE_W, 2);
+
     // ── floor ──
-    ctx.fillStyle = '#151528';
+    ctx.fillStyle = '#1a1830';
     ctx.fillRect(0, FLOOR_Y, SCENE_W, H - FLOOR_Y);
-    ctx.strokeStyle = '#111122'; ctx.lineWidth = 1; ctx.beginPath();
+    ctx.strokeStyle = '#141228'; ctx.lineWidth = 1; ctx.beginPath();
     for (var x=0; x<=SCENE_W; x+=20) { ctx.moveTo(x+.5,FLOOR_Y); ctx.lineTo(x+.5,H); }
     for (var y=FLOOR_Y; y<=H; y+=20) { ctx.moveTo(0,y+.5); ctx.lineTo(SCENE_W,y+.5); }
     ctx.stroke();
 
     // ── baseboard ──
-    ctx.fillStyle = '#252548'; ctx.fillRect(0, FLOOR_Y-5, SCENE_W, 5);
-    ctx.fillStyle = '#2a2a52'; ctx.fillRect(0, FLOOR_Y-7, SCENE_W, 2);
-
-    // ── lower wall panel ──
-    ctx.fillStyle = '#181830'; ctx.fillRect(0, FLOOR_Y-70, SCENE_W, 63);
-    ctx.fillStyle = '#222244'; ctx.fillRect(0, FLOOR_Y-72, SCENE_W, 2);
+    ctx.fillStyle = '#312e5c';
+    ctx.fillRect(0, FLOOR_Y-6, SCENE_W, 6);
 
     // ── windows (warm yellow, clearly visible) ──
+    ctx.fillStyle = '#302856'; // curtain rods surround
+    ctx.fillRect(20,42,100,4); ctx.fillRect(208,42,100,4);
     function win(wx, wy) {
-      ctx.fillStyle = '#282848'; ctx.fillRect(wx-3,wy-3,26,30);    // frame
-      ctx.fillStyle = '#ffcc44'; ctx.fillRect(wx,wy,20,24);         // glass
-      ctx.fillStyle = 'rgba(255,240,160,0.5)'; ctx.fillRect(wx+2,wy+2,8,4); // glint
+      ctx.fillStyle = '#3a3060'; ctx.fillRect(wx-4,wy-4,28,34); // frame
+      ctx.fillStyle = '#ffcc44'; ctx.fillRect(wx,wy,20,26);      // bright yellow glass
+      ctx.fillStyle = 'rgba(255,240,160,0.6)'; ctx.fillRect(wx+2,wy+2,8,5); // glint
       ctx.fillStyle = 'rgba(0,0,0,0.2)';
-      ctx.fillRect(wx+9,wy,2,24); ctx.fillRect(wx,wy+12,20,2);    // panes
+      ctx.fillRect(wx+9,wy,2,26); ctx.fillRect(wx,wy+13,20,2);  // panes
     }
-    // curtain rods
-    ctx.fillStyle = '#303055';
-    ctx.fillRect(22,44,92,3); ctx.fillRect(210,44,92,3);
-    win(28,50); win(62,50); win(80,50);
-    win(216,50); win(250,50); win(268,50);
+    win(28,50); win(62,50); win(82,50);
+    win(216,50); win(250,50); win(270,50);
     // curtains
-    ctx.fillStyle = 'rgba(200,140,170,0.22)';
-    ctx.fillRect(22,44,12,70); ctx.fillRect(108,44,8,70);
-    ctx.fillRect(210,44,10,70); ctx.fillRect(296,44,8,70);
+    ctx.fillStyle = 'rgba(200,120,160,0.35)';
+    ctx.fillRect(20,42,12,80); ctx.fillRect(110,42,10,80);
+    ctx.fillRect(208,42,10,80); ctx.fillRect(300,42,10,80);
 
-    // ── sofa (CLEARLY VISIBLE — medium rose-red) ──
-    var sx=18, sy=FLOOR_Y-62;
-    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(sx+4,sy+58,148,6); // shadow
-    ctx.fillStyle = '#5c2038'; ctx.fillRect(sx,sy,152,20);    // backrest
-    ctx.fillStyle = '#4a1830'; ctx.fillRect(sx,sy+20,20,38);  // left arm
-    ctx.fillRect(sx+132,sy+20,20,38);                          // right arm
+    // ── sofa (BRIGHT ROSE-RED — very visible) ──
+    var sx=18, sy=FLOOR_Y-64;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(sx+4,sy+58,152,8); // shadow
+    ctx.fillStyle = '#7a2c48'; ctx.fillRect(sx,sy,154,22);    // backrest
+    ctx.fillStyle = '#5a1c30'; ctx.fillRect(sx,sy+22,22,38);  // left arm
+    ctx.fillRect(sx+132,sy+22,22,38);                          // right arm
     for (var ci=0; ci<3; ci++) {
-      ctx.fillStyle = '#6a2848'; ctx.fillRect(sx+20+ci*38,sy+20,36,36);
-      ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(sx+21+ci*38,sy+21,34,4);
-      ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(sx+20+ci*38,sy+52,36,2);
+      ctx.fillStyle = '#c04868'; ctx.fillRect(sx+22+ci*38,sy+22,36,36); // cushions BRIGHT
+      ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(sx+23+ci*38,sy+23,34,5);
+      ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(sx+22+ci*38,sy+54,36,2);
     }
-    ctx.fillStyle = '#1e1020';
-    ctx.fillRect(sx+5,sy+58,6,10); ctx.fillRect(sx+141,sy+58,6,10);
+    ctx.fillStyle = '#2a1828';
+    ctx.fillRect(sx+5,sy+60,7,10); ctx.fillRect(sx+142,sy+60,7,10);
 
-    // ── coffee table ──
-    var ctX=58, ctY=FLOOR_Y-22;
-    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(ctX+4,ctY+14,68,6);
-    ctx.fillStyle = '#4a3422'; ctx.fillRect(ctX,ctY,70,14);
-    ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(ctX,ctY,70,2);
-    ctx.fillStyle = '#2a1c10';
-    ctx.fillRect(ctX+5,ctY+14,4,8); ctx.fillRect(ctX+61,ctY+14,4,8);
-    // plant
-    ctx.fillStyle = '#2a4420'; ctx.fillRect(ctX+52,ctY-14,8,14);
-    ctx.fillStyle = '#3aaa2a';
-    ctx.beginPath(); ctx.arc(ctX+56,ctY-14,8,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#2a882a';
-    ctx.beginPath(); ctx.arc(ctX+53,ctY-10,5,0,Math.PI*2); ctx.fill();
+    // ── coffee table (visible warm brown) ──
+    var ctX=58, ctY=FLOOR_Y-24;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(ctX+4,ctY+14,70,8);
+    ctx.fillStyle = '#7a5a30'; ctx.fillRect(ctX,ctY,72,16); // table BRIGHT BROWN
+    ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(ctX,ctY,72,3);
+    ctx.strokeStyle = '#4a3018'; ctx.lineWidth=1; ctx.strokeRect(ctX+.5,ctY+.5,71,15);
+    ctx.fillStyle = '#3c2814';
+    ctx.fillRect(ctX+5,ctY+16,5,8); ctx.fillRect(ctX+62,ctY+16,5,8);
+    // plant on table
+    ctx.fillStyle = '#3a5a28'; ctx.fillRect(ctX+52,ctY-18,10,18);
+    ctx.fillStyle = '#4acc3a';
+    ctx.beginPath(); ctx.arc(ctX+57,ctY-18,10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#38aa28';
+    ctx.beginPath(); ctx.arc(ctX+53,ctY-12,6,0,Math.PI*2); ctx.fill();
 
     // ── floor lamp (warm glow) ──
-    var lx=182, ly=FLOOR_Y-74;
-    ctx.fillStyle = '#38385a'; ctx.fillRect(lx+2,ly,4,68);
-    ctx.fillStyle = '#28283a'; ctx.fillRect(lx-2,ly+68,12,6);
-    ctx.fillStyle = '#ddaa22'; ctx.fillRect(lx-8,ly-16,22,16);
-    ctx.fillStyle = '#bb8810'; ctx.fillRect(lx-8,ly-16,22,3);
-    ctx.fillStyle = 'rgba(255,200,80,0.07)';
-    ctx.beginPath(); ctx.ellipse(lx+3,ly+8,30,24,0,0,Math.PI*2); ctx.fill();
+    var lx=186, ly=FLOOR_Y-76;
+    ctx.fillStyle = '#484870'; ctx.fillRect(lx+2,ly,5,70); // pole
+    ctx.fillStyle = '#343458'; ctx.fillRect(lx-3,ly+70,14,7); // base
+    ctx.fillStyle = '#eecc44'; ctx.fillRect(lx-10,ly-18,26,18); // shade BRIGHT
+    ctx.fillStyle = '#cc9922'; ctx.fillRect(lx-10,ly-18,26,4);
+    ctx.fillStyle = 'rgba(255,210,80,0.12)';
+    ctx.beginPath(); ctx.ellipse(lx+3,ly+10,36,28,0,0,Math.PI*2); ctx.fill();
 
-    // ── TV + cabinet ──
-    var tvX=290, tvY=FLOOR_Y-92;
-    ctx.fillStyle = '#181828'; ctx.fillRect(tvX,tvY+48,120,44);
-    ctx.fillStyle = '#111120';
-    ctx.fillRect(tvX+4,tvY+52,52,36); ctx.fillRect(tvX+60,tvY+52,56,36);
-    ctx.fillStyle = '#3a3a5a';
-    ctx.fillRect(tvX+26,tvY+68,12,4); ctx.fillRect(tvX+80,tvY+68,12,4);
-    ctx.fillStyle = '#0d0d1c'; ctx.fillRect(tvX+8,tvY,104,50);
-    ctx.fillStyle = '#1a2844'; ctx.fillRect(tvX+10,tvY+2,100,46);
-    ctx.fillStyle = 'rgba(60,100,220,0.45)'; ctx.fillRect(tvX+11,tvY+3,98,44);
-    ctx.fillStyle = 'rgba(0,0,0,0.12)';
-    for (var sl=0; sl<22; sl++) ctx.fillRect(tvX+11,tvY+3+sl*2,98,1);
-    ctx.fillStyle = '#202030'; ctx.fillRect(tvX+52,tvY+48,16,6);
+    // ── TV + cabinet (right side) ──
+    var tvX=296, tvY=FLOOR_Y-94;
+    // TV cabinet
+    ctx.fillStyle = '#2a2848'; ctx.fillRect(tvX,tvY+50,118,44);
+    ctx.strokeStyle = '#1c1838'; ctx.lineWidth=1; ctx.strokeRect(tvX,tvY+50,118,44);
+    ctx.fillStyle = '#1e1c38';
+    ctx.fillRect(tvX+4,tvY+54,52,36); ctx.fillRect(tvX+62,tvY+54,52,36);
+    ctx.fillStyle = '#484870';
+    ctx.fillRect(tvX+28,tvY+70,14,5); ctx.fillRect(tvX+82,tvY+70,14,5);
+    // TV screen
+    ctx.fillStyle = '#181828'; ctx.fillRect(tvX+6,tvY,106,52);
+    ctx.fillStyle = '#1c2848'; ctx.fillRect(tvX+8,tvY+2,102,48);
+    ctx.fillStyle = 'rgba(60,100,240,0.55)'; ctx.fillRect(tvX+9,tvY+3,100,46);
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    for (var sl=0; sl<22; sl++) ctx.fillRect(tvX+9,tvY+3+sl*2,100,1);
+    // stand
+    ctx.fillStyle = '#242240'; ctx.fillRect(tvX+52,tvY+50,18,7);
 
-    // ── kitchen divider ──
-    ctx.fillStyle = '#141422'; ctx.fillRect(280,0,8,FLOOR_Y);
-    ctx.fillStyle = '#20203a'; ctx.fillRect(280,0,2,FLOOR_Y);
+    // ── kitchen divider (visible) ──
+    ctx.fillStyle = '#1c1838'; ctx.fillRect(280,0,10,FLOOR_Y);
+    ctx.fillStyle = '#2c2a50'; ctx.fillRect(280,0,2,FLOOR_Y);
 
     // ── kitchen ──
-    var kx=292;
+    var kx=294;
     // upper cabinets
-    ctx.fillStyle = '#1e1e38'; ctx.fillRect(kx,88,SCENE_W-kx-4,88);
-    ctx.strokeStyle = '#2c2c50'; ctx.lineWidth=1;
-    ctx.strokeRect(kx+4,92,84,80); ctx.strokeRect(kx+90,92,82,80);
-    ctx.fillStyle = '#4a4a7a';
-    ctx.fillRect(kx+36,130,14,4); ctx.fillRect(kx+118,130,14,4);
-    // counter
-    var cy2=FLOOR_Y-62;
-    ctx.fillStyle = '#2a2218'; ctx.fillRect(kx,cy2,SCENE_W-kx-4,62);
-    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(kx,cy2,SCENE_W-kx-4,3);
-    ctx.strokeStyle = '#18140c'; ctx.lineWidth=1;
-    ctx.strokeRect(kx+.5,cy2+.5,SCENE_W-kx-5,61);
-    // sink
-    ctx.fillStyle = '#111128'; ctx.fillRect(kx+8,cy2+8,58,42);
-    ctx.fillStyle = '#191930'; ctx.fillRect(kx+10,cy2+10,54,38);
-    ctx.strokeStyle = '#22223a'; ctx.strokeRect(kx+8,cy2+8,58,42);
-    // faucet
-    ctx.fillStyle = '#4a4a6a';
-    ctx.fillRect(kx+32,cy2-12,6,14); ctx.fillRect(kx+22,cy2-12,26,4);
+    ctx.fillStyle = '#2a2846'; ctx.fillRect(kx,86,SCENE_W-kx-4,90);
+    ctx.strokeStyle = '#3c3860'; ctx.lineWidth=1;
+    ctx.strokeRect(kx+4,90,82,82); ctx.strokeRect(kx+88,90,84,82);
+    ctx.fillStyle = '#6060a0'; // bright handles
+    ctx.fillRect(kx+38,130,16,5); ctx.fillRect(kx+120,130,16,5);
+    // counter (VISIBLE WARM BROWN)
+    var cy2=FLOOR_Y-64;
+    ctx.fillStyle = '#5a4828'; ctx.fillRect(kx,cy2,SCENE_W-kx-4,64); // BRIGHT BROWN
+    ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(kx,cy2,SCENE_W-kx-4,3);
+    ctx.strokeStyle = '#382e14'; ctx.lineWidth=1;
+    ctx.strokeRect(kx+.5,cy2+.5,SCENE_W-kx-5,63);
+    // sink (clearly different from counter)
+    ctx.fillStyle = '#1a1c30'; ctx.fillRect(kx+8,cy2+8,60,44);
+    ctx.fillStyle = '#222240'; ctx.fillRect(kx+10,cy2+10,56,40);
+    ctx.strokeStyle = '#303060'; ctx.strokeRect(kx+8,cy2+8,60,44);
+    // faucet (bright silver)
+    ctx.fillStyle = '#6a6a90';
+    ctx.fillRect(kx+34,cy2-14,6,16); ctx.fillRect(kx+22,cy2-14,28,5);
     // stove
-    ctx.fillStyle = '#14142a'; ctx.fillRect(kx+74,cy2+6,100,48);
-    [[kx+92,cy2+18],[kx+136,cy2+18],[kx+92,cy2+40],[kx+136,cy2+40]].forEach(function(p){
-      ctx.fillStyle='#0c0c1e'; ctx.beginPath(); ctx.arc(p[0],p[1],10,0,Math.PI*2); ctx.fill();
-      ctx.strokeStyle='#22223a'; ctx.beginPath(); ctx.arc(p[0],p[1],10,0,Math.PI*2); ctx.stroke();
-      ctx.fillStyle='#1c1c36'; ctx.beginPath(); ctx.arc(p[0],p[1],5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#1e1c30'; ctx.fillRect(kx+76,cy2+6,98,50);
+    [[kx+94,cy2+20],[kx+138,cy2+20],[kx+94,cy2+42],[kx+138,cy2+42]].forEach(function(p){
+      ctx.fillStyle='#0e0e22'; ctx.beginPath(); ctx.arc(p[0],p[1],11,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#303060'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(p[0],p[1],11,0,Math.PI*2); ctx.stroke();
+      ctx.fillStyle='#282848'; ctx.beginPath(); ctx.arc(p[0],p[1],5,0,Math.PI*2); ctx.fill();
     });
 
     // ── panel divider ──
-    ctx.fillStyle = '#0a0a18'; ctx.fillRect(PANEL_X,0,2,H);
+    ctx.fillStyle = '#06060f'; ctx.fillRect(PANEL_X,0,2,H);
   }
 
   function drawPanel(ctx, frame) {
     var px=PANEL_X+2, pw=PANEL_W-2;
     ctx.fillStyle='#07071a'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
-    ctx.fillStyle='#10102a'; ctx.fillRect(px,0,pw,44);
+    ctx.fillStyle='#10102c'; ctx.fillRect(px,0,pw,44);
     ctx.fillStyle='#ff88bb'; ctx.font='bold 11px Courier New'; ctx.textAlign='center';
     ctx.fillText('🏠 Home', px+pw/2, 16);
-    ctx.fillStyle='#664455'; ctx.font='9px Courier New';
+    ctx.fillStyle='#886677'; ctx.font='9px Courier New';
     ctx.fillText('小因的空間', px+pw/2, 31);
     ctx.textAlign='left';
-    ctx.fillStyle='rgba(255,136,187,0.2)'; ctx.fillRect(px+6,44,pw-12,1);
+    ctx.fillStyle='rgba(255,136,187,0.3)'; ctx.fillRect(px+6,44,pw-12,1);
 
     var dy=62+Math.round(Math.sin(frame*3)*2);
-    ctx.fillStyle='rgba(255,136,187,0.25)'; ctx.beginPath(); ctx.arc(px+16,dy,8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,136,187,0.3)'; ctx.beginPath(); ctx.arc(px+16,dy,8,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#ff88bb'; ctx.beginPath(); ctx.arc(px+16,dy,4,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#ccaaaa'; ctx.font='9px Courier New'; ctx.fillText('小因 · 在線',px+28,dy+4);
 
@@ -188,15 +194,15 @@ const HomeScene = (() => {
       {label:'孩子注意事項',col:'#ffcc88',y:182},
       {label:'家庭備忘',   col:'#88bbff',y:276},
     ].forEach(function(s){
-      ctx.fillStyle=s.col+'88'; ctx.font='8px Courier New'; ctx.fillText(s.label,px+8,s.y);
-      ctx.fillStyle=s.col+'22'; ctx.fillRect(px+8,s.y+5,pw-16,1);
-      ctx.fillStyle='#3a3a55'; ctx.font='9px Courier New'; ctx.fillText('[Task 12 串接 API]',px+10,s.y+22);
-      ctx.fillStyle='#252540'; ctx.fillText('— 資料讀取中 —',px+14,s.y+40);
-      ctx.fillStyle='#181830';
+      ctx.fillStyle=s.col+'aa'; ctx.font='8px Courier New'; ctx.fillText(s.label,px+8,s.y);
+      ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
+      ctx.fillStyle='#5a5a7a'; ctx.font='9px Courier New'; ctx.fillText('[Task 12 串接 API]',px+10,s.y+22);
+      ctx.fillStyle='#3a3a55'; ctx.fillText('— 資料讀取中 —',px+14,s.y+40);
+      ctx.fillStyle='#1e1e40';
       ctx.fillRect(px+10,s.y+54,pw-24,5); ctx.fillRect(px+10,s.y+64,pw-38,5); ctx.fillRect(px+10,s.y+74,pw-30,5);
     });
-    ctx.fillStyle='#10102a'; ctx.fillRect(px,H-34,pw,34);
-    ctx.fillStyle='#445566'; ctx.font='8px Courier New'; ctx.textAlign='center';
+    ctx.fillStyle='#10102c'; ctx.fillRect(px,H-34,pw,34);
+    ctx.fillStyle='#557788'; ctx.font='8px Courier New'; ctx.textAlign='center';
     ctx.fillText('點擊小因對話',px+pw/2,H-16);
     ctx.textAlign='left';
   }
@@ -207,7 +213,7 @@ const HomeScene = (() => {
   return {
     init: function(worldData) {
       var cfg = worldData && worldData.characters.find(function(c){ return c.id==='xiaoyin'; });
-      var cx=148, cy=FLOOR_Y-4;
+      var cx=150, cy=FLOOR_Y-6;
       xiaoyin = cfg ? new Character(cfg) : null;
       if (xiaoyin) { CharacterSprites.applyAll({xiaoyin:xiaoyin}); xiaoyin.setState('idle'); }
       bubbles=[];
@@ -216,15 +222,17 @@ const HomeScene = (() => {
       clickHandler = function(e){
         var r=canvas.getBoundingClientRect();
         var mx=(e.clientX-r.left)*(680/r.width), my=(e.clientY-r.top)*(480/r.height);
-        if (mx>=cx-8&&mx<=cx+8&&my>=cy-28&&my<=cy)
+        if (mx>=cx-10&&mx<=cx+10&&my>=cy-30&&my<=cy)
           showBubble(LINES[Math.floor(Math.random()*LINES.length)],cx,cy-32,'#fff0f6','#ff88bb');
       };
       canvas.addEventListener('click',clickHandler);
       BaseScene.startLoop(function(ctx, dt){
-        drawScene(ctx);
-        drawPanel(ctx, xiaoyin ? xiaoyin.frame : 0);
-        if (xiaoyin) { xiaoyin.frame+=dt; xiaoyin.drawAt(ctx,cx,cy,'idle'); }
-        drawBubbles(ctx,dt);
+        try {
+          drawScene(ctx);
+          drawPanel(ctx, xiaoyin ? xiaoyin.frame : 0);
+          if (xiaoyin) { xiaoyin.frame+=dt; xiaoyin.drawAt(ctx,cx,cy,'idle'); }
+          drawBubbles(ctx,dt);
+        } catch(e) { console.error('[HomeScene]', e); }
       });
     },
     cleanup: function(){

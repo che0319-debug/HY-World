@@ -19,8 +19,6 @@
 
     #game-container {
       position: relative;
-      width: 680px;
-      height: 480px;
     }
 
     /* ── World canvas ─────────────────────────────────── */
@@ -28,8 +26,6 @@
       display: block;
       image-rendering: pixelated;
       image-rendering: crisp-edges;
-      width: 680px;
-      height: 480px;
       background: #1a1a2e;
     }
 
@@ -60,14 +56,12 @@
       display: block;
       image-rendering: pixelated;
       image-rendering: crisp-edges;
-      width: 680px;
-      height: 480px;
     }
 
     /* ── Login form (HTML, layered over canvas) ─────── */
     #login-form {
       position: absolute;
-      top: 270px;
+      top: 56.25%;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -163,8 +157,6 @@
       display: block;
       image-rendering: pixelated;
       image-rendering: crisp-edges;
-      width: 680px;
-      height: 480px;
       /* Must be explicit: pointer-events:none on parent does NOT cascade to children in HTML */
       pointer-events: none;
     }
@@ -244,6 +236,23 @@
   <!-- Bootstrap -->
   <script>
     window.PASSWORD = 'hy2025';  // ← 請自行修改密碼
+
+    function applyScale() {
+      const scale = Math.max(1, Math.min(
+        Math.floor(window.innerWidth  / 680),
+        Math.floor(window.innerHeight / 480)
+      ));
+      const cw = 680 * scale, ch = 480 * scale;
+      const container = document.getElementById('game-container');
+      container.style.width  = cw + 'px';
+      container.style.height = ch + 'px';
+      ['world-canvas', 'login-canvas', 'scene-canvas'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) { el.style.width = cw + 'px'; el.style.height = ch + 'px'; }
+      });
+    }
+    window.addEventListener('resize', applyScale);
+    applyScale();
 
     window.addEventListener('DOMContentLoaded', () => {
       const overlay    = document.getElementById('login-overlay');

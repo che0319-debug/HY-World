@@ -1,284 +1,356 @@
-// Home indoor scene — Task 09
+// Home indoor scene — Task 09 (fixed)
 // 客廳 + 廚房，小因（xiaoyin）在場，右側資料面板
 
 const HomeScene = (() => {
 
-  // ── layout constants ──────────────────────────────────────────────
-  const PANEL_X = 480; // right panel starts here
-  const PANEL_W = 200; // panel width (480+200=680)
-  const SCENE_W = 480; // left scene area width
+  // ── layout ────────────────────────────────────────────────────────
+  const PANEL_X = 480;
+  const PANEL_W = 200;
+  const SCENE_W = 480;
   const H = 480;
+  const FLOOR_Y = H - 60; // y=420 — floor starts here
 
-  // ── bubble system (scene-local) ───────────────────────────────────
+  // ── rounded-rect helper (avoids ctx.roundRect compatibility issues) ─
+  function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y,     x + w, y + r,     r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h);
+    ctx.arcTo(x,     y + h, x,     y + h - r, r);
+    ctx.lineTo(x,     y + r);
+    ctx.arcTo(x,     y,     x + r, y,         r);
+    ctx.closePath();
+  }
+
+  // ── scene-local bubble system ─────────────────────────────────────
   let bubbles = [];
 
-  function showBubble(ctx, text, bx, by, color, borderColor, duration = 2.8) {
-    bubbles = bubbles.filter(b => b.text !== text);
-    bubbles.push({ text, bx, by, timer: duration, color, borderColor });
+  function showBubble(text, bx, by, color, borderColor, duration) {
+    duration = duration || 2.8;
+    bubbles = bubbles.filter(function(b) { return b.text !== text; });
+    bubbles.push({ text: text, bx: bx, by: by, timer: duration, color: color, borderColor: borderColor });
   }
 
   function drawBubbles(ctx, dt) {
-    bubbles = bubbles.filter(b => { b.timer -= dt; return b.timer > 0; });
-    bubbles.forEach(b => {
-      const alpha = Math.min(1, b.timer / 0.4);
+    bubbles = bubbles.filter(function(b) { b.timer -= dt; return b.timer > 0; });
+    bubbles.forEach(function(b) {
+      var alpha = Math.min(1, b.timer / 0.4);
       if (alpha <= 0) return;
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.font = '11px Courier New';
-      const tw = ctx.measureText(b.text).width;
-      const pad = 10, bh = 22, tailH = 8;
-      const bw = tw + pad * 2;
-      const ty = Math.round(b.by - bh - tailH);
-      const tx = Math.max(4, Math.min(SCENE_W - bw - 4, Math.round(b.bx - bw / 2)));
-      const tailX = Math.max(tx + 8, Math.min(tx + bw - 8, Math.round(b.bx)));
+      var tw  = ctx.measureText(b.text).width;
+      var pad = 10, bh = 22, tailH = 8;
+      var bw  = tw + pad * 2;
+      var ty  = Math.round(b.by - bh - tailH);
+      var tx  = Math.max(4, Math.min(SCENE_W - bw - 4, Math.round(b.bx - bw / 2)));
+      var tailX = Math.max(tx + 8, Math.min(tx + bw - 8, Math.round(b.bx)));
 
-      // Body
       ctx.fillStyle = b.color;
-      ctx.beginPath();
-      ctx.roundRect(tx, ty, bw, bh, 4);
+      rrect(ctx, tx, ty, bw, bh, 4);
       ctx.fill();
-      // Tail
       ctx.beginPath();
       ctx.moveTo(tailX - 5, ty + bh);
       ctx.lineTo(tailX + 5, ty + bh);
       ctx.lineTo(tailX,     ty + bh + tailH);
       ctx.closePath();
       ctx.fill();
-      // Border
       ctx.strokeStyle = b.borderColor;
       ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(tx, ty, bw, bh, 4);
+      rrect(ctx, tx, ty, bw, bh, 4);
       ctx.stroke();
-      // Text
       ctx.fillStyle = '#1a1a2e';
       ctx.fillText(b.text, tx + pad, ty + 15);
       ctx.restore();
     });
   }
 
+  // ── floor (scene-area only, no full-canvas flood) ─────────────────
+  function drawFloor(ctx) {
+    ctx.fillStyle = '#12122a';
+    ctx.fillRect(0, FLOOR_Y, SCENE_W, H - FLOOR_Y);
+    ctx.strokeStyle = '#0d0d20';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var x = 0; x <= SCENE_W; x += 20) {
+      ctx.moveTo(x + 0.5, FLOOR_Y);
+      ctx.lineTo(x + 0.5, H);
+    }
+    for (var y = FLOOR_Y; y <= H; y += 20) {
+      ctx.moveTo(0, y + 0.5);
+      ctx.lineTo(SCENE_W, y + 0.5);
+    }
+    ctx.stroke();
+  }
+
   // ── scene drawing ─────────────────────────────────────────────────
   function drawScene(ctx) {
-    // Back wall
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, SCENE_W, H);
+    // 1. Wall background
+    ctx.fillStyle = '#181830';
+    ctx.fillRect(0, 0, SCENE_W, FLOOR_Y);
 
-    // Wall baseboard
-    ctx.fillStyle = '#13132a';
-    ctx.fillRect(0, H - 60, SCENE_W, 60);
-    ctx.fillStyle = '#0e0e24';
-    ctx.fillRect(0, H - 62, SCENE_W, 4);
+    // 2. Floor
+    drawFloor(ctx);
 
-    // Floor tiles (bottom 60px = floor)
-    BaseScene.drawFloor('#13132a', '#0f0f22');
-    // Re-draw walls above floor (floor draws full canvas)
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, SCENE_W, H - 60);
+    // 3. Baseboard trim
+    ctx.fillStyle = '#1f1f3a';
+    ctx.fillRect(0, FLOOR_Y - 4, SCENE_W, 4);
 
-    // Wainscoting (lower wall trim)
-    ctx.fillStyle = '#15152c';
-    ctx.fillRect(0, H - 110, SCENE_W, 48);
-    ctx.fillStyle = '#1f1f38';
-    ctx.fillRect(0, H - 112, SCENE_W, 3);
-    ctx.fillStyle = '#0d0d1e';
-    ctx.fillRect(0, H - 64, SCENE_W, 3);
-
-    // ── Windows (back wall) ───────────────────────────────────────
-    BaseScene.drawWindow( 40, 60, true, true);   // warm left
-    BaseScene.drawWindow( 90, 60, true, true);   // warm right
-    BaseScene.drawWindow(220, 60, true, false);  // cool (kitchen side)
-    BaseScene.drawWindow(280, 60, true, false);
-
-    // Window curtain rod
-    ctx.fillStyle = '#2a2a44';
-    ctx.fillRect(30, 54, 90, 3);
-    ctx.fillRect(210, 54, 90, 3);
-    // Curtain panels
-    ctx.fillStyle = 'rgba(180,120,160,0.18)';
-    ctx.fillRect(30, 54, 14, 60);
-    ctx.fillRect(110, 54, 14, 60);
-    ctx.fillStyle = 'rgba(120,140,200,0.15)';
-    ctx.fillRect(208, 54, 12, 60);
-    ctx.fillRect(298, 54, 12, 60);
-
-    // ── Living room (left half) ───────────────────────────────────
-    // Sofa (dark red-purple, 3-seat)
-    const sofaX = 20, sofaY = H - 60 - 52;
-    ctx.fillStyle = '#3a1a28';
-    ctx.fillRect(sofaX, sofaY, 150, 52);           // base
-    ctx.fillStyle = '#4a2235';
-    ctx.fillRect(sofaX, sofaY, 150, 18);           // backrest
-    ctx.fillStyle = '#3a1a28';
-    ctx.fillRect(sofaX,       sofaY + 18, 18, 34); // left arm
-    ctx.fillRect(sofaX + 132, sofaY + 18, 18, 34); // right arm
-    // Cushions
-    ctx.fillStyle = '#5a2a40';
-    for (let i = 0; i < 3; i++) {
-      ctx.fillRect(sofaX + 18 + i * 38, sofaY + 19, 36, 30);
-      ctx.fillStyle = '#4a2235';
-      ctx.fillRect(sofaX + 19 + i * 38, sofaY + 20, 34, 2);
-      ctx.fillStyle = '#5a2a40';
-    }
-    // Sofa legs
-    ctx.fillStyle = '#1a1220';
-    [sofaX + 4, sofaX + 140].forEach(lx => ctx.fillRect(lx, sofaY + 48, 6, 12));
-
-    // Coffee table (small, in front of sofa)
-    const ctX = 60, ctY = H - 60 - 18;
-    ctx.fillStyle = '#2a1e14';
-    ctx.fillRect(ctX, ctY, 70, 12);
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
-    ctx.fillRect(ctX, ctY, 70, 2);
-    // Table legs
-    ctx.fillStyle = '#1a1208';
-    [ctX + 4, ctX + 62].forEach(lx => ctx.fillRect(lx, ctY + 12, 4, 6));
-    // Decor: tiny plant on table
-    ctx.fillStyle = '#1a3a1a';
-    ctx.fillRect(ctX + 50, ctY - 10, 8, 10);
-    ctx.fillStyle = '#22aa22';
-    ctx.beginPath(); ctx.arc(ctX + 54, ctY - 10, 6, 0, Math.PI * 2); ctx.fill();
-
-    // TV unit (right side of living room)
-    const tvX = 340, tvY = H - 60 - 80;
-    ctx.fillStyle = '#111120';
-    ctx.fillRect(tvX, tvY, 90, 80);
-    ctx.fillStyle = '#0a0a18';
-    ctx.fillRect(tvX + 5, tvY + 5, 80, 50); // TV screen
-    ctx.fillStyle = 'rgba(30,60,120,0.6)';
-    ctx.fillRect(tvX + 6, tvY + 6, 78, 48);
-    // Screen content (simple scanlines)
-    ctx.fillStyle = 'rgba(100,160,255,0.08)';
-    for (let i = 0; i < 24; i++) ctx.fillRect(tvX + 6, tvY + 6 + i * 2, 78, 1);
-    // TV stand
-    ctx.fillStyle = '#1a1a2c';
-    ctx.fillRect(tvX + 35, tvY + 55, 20, 8);
-    ctx.fillRect(tvX + 25, tvY + 63, 40, 4);
-
-    // Side table (between sofa and TV)
-    ctx.fillStyle = '#2a1e14';
-    ctx.fillRect(190, H - 60 - 28, 30, 22);
-    ctx.fillStyle = '#1a1208';
-    ctx.fillRect(194, H - 60 - 6, 4, 6);
-    ctx.fillRect(214, H - 60 - 6, 4, 6);
-    // Lamp on side table
-    ctx.fillStyle = '#3a3a5a';
-    ctx.fillRect(200, H - 60 - 52, 8, 24);  // pole
-    ctx.fillStyle = '#cc9922';
-    ctx.fillRect(196, H - 60 - 62, 16, 12); // shade
-    // Lamp glow
-    ctx.fillStyle = 'rgba(255,200,80,0.08)';
-    ctx.beginPath(); ctx.ellipse(204, H - 60 - 50, 20, 15, 0, 0, Math.PI * 2); ctx.fill();
-
-    // ── Kitchen divider (visual only) ────────────────────────────
+    // 4. Lower wall wainscoting
     ctx.fillStyle = '#141428';
-    ctx.fillRect(310, 0, 6, H - 60);
-    ctx.fillStyle = '#1e1e3a';
-    ctx.fillRect(310, 0, 2, H - 60);
+    ctx.fillRect(0, FLOOR_Y - 60, SCENE_W, 56);
+    ctx.fillStyle = '#1c1c34';
+    ctx.fillRect(0, FLOOR_Y - 62, SCENE_W, 3);
 
-    // ── Kitchen area (right of divider, up to PANEL_X) ───────────
-    const kitX = 318;
-    // Counter top
-    ctx.fillStyle = '#1e1a14';
-    ctx.fillRect(kitX, H - 60 - 55, SCENE_W - kitX, 55);
+    // 5. Windows (back wall, y=60)
+    var winY = 55;
+    // Curtain rod
+    ctx.fillStyle = '#282844';
+    ctx.fillRect(28, winY - 6, 82, 3);
+    ctx.fillRect(210, winY - 6, 82, 3);
+    // Left window pair (warm light)
+    BaseScene.drawWindow(34,  winY, true, true);
+    BaseScene.drawWindow(68,  winY, true, true);
+    // Right window pair (warm light)
+    BaseScene.drawWindow(216, winY, true, true);
+    BaseScene.drawWindow(250, winY, true, true);
+    // Curtain panels (translucent drapes either side)
+    ctx.fillStyle = 'rgba(180,130,155,0.18)';
+    ctx.fillRect(28,  winY - 6, 10, 65);
+    ctx.fillRect(100, winY - 6, 10, 65);
+    ctx.fillRect(210, winY - 6, 10, 65);
+    ctx.fillRect(282, winY - 6, 10, 65);
+
+    // 6. Sofa (3-seater, left of scene)
+    var sofaX = 18, sofaY = FLOOR_Y - 55;
+    // Drop shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(sofaX + 3, sofaY + 52, 148, 6);
+    // Back rest
+    ctx.fillStyle = '#3a1a28';
+    ctx.fillRect(sofaX, sofaY, 150, 18);
+    // Arms
+    ctx.fillStyle = '#321520';
+    ctx.fillRect(sofaX,       sofaY + 18, 18, 37);
+    ctx.fillRect(sofaX + 132, sofaY + 18, 18, 37);
+    // Seat cushions (3 segments)
+    for (var ci = 0; ci < 3; ci++) {
+      ctx.fillStyle = '#512238';
+      ctx.fillRect(sofaX + 18 + ci * 38, sofaY + 18, 36, 34);
+      // Cushion highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.04)';
+      ctx.fillRect(sofaX + 19 + ci * 38, sofaY + 19, 34, 3);
+      // Cushion crease
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(sofaX + 18 + ci * 38, sofaY + 46, 36, 2);
+    }
+    // Legs
+    ctx.fillStyle = '#1a1020';
+    ctx.fillRect(sofaX + 4,   sofaY + 52, 6, 8);
+    ctx.fillRect(sofaX + 140, sofaY + 52, 6, 8);
+
+    // 7. Coffee table (in front of sofa)
+    var ctX = 55, ctY = FLOOR_Y - 20;
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(ctX + 3, ctY + 13, 70, 5);
+    ctx.fillStyle = '#2c2018';
+    ctx.fillRect(ctX, ctY, 70, 13);
     ctx.fillStyle = 'rgba(255,255,255,0.05)';
-    ctx.fillRect(kitX, H - 60 - 55, SCENE_W - kitX, 3);
-    // Cabinet doors (above counter)
-    ctx.fillStyle = '#17172e';
-    ctx.fillRect(kitX, 100, SCENE_W - kitX, 80);
-    ctx.strokeStyle = '#222240';
+    ctx.fillRect(ctX, ctY, 70, 2);
+    ctx.fillStyle = '#1a1208';
+    ctx.fillRect(ctX + 4,  ctY + 13, 4, 7);
+    ctx.fillRect(ctX + 62, ctY + 13, 4, 7);
+    // Tiny plant on table
+    ctx.fillStyle = '#203020';
+    ctx.fillRect(ctX + 50, ctY - 12, 8, 12);
+    ctx.fillStyle = '#2aaa2a';
+    ctx.beginPath(); ctx.arc(ctX + 54, ctY - 12, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1a881a';
+    ctx.beginPath(); ctx.arc(ctX + 51, ctY - 9, 4, 0, Math.PI * 2); ctx.fill();
+
+    // 8. Floor lamp (beside sofa, right side)
+    var lampX = 178, lampY = FLOOR_Y - 70;
+    // Pole
+    ctx.fillStyle = '#38385a';
+    ctx.fillRect(lampX + 3, lampY, 4, 65);
+    // Base
+    ctx.fillStyle = '#28283a';
+    ctx.fillRect(lampX, lampY + 65, 10, 5);
+    // Shade
+    ctx.fillStyle = '#cc9922';
+    ctx.fillRect(lampX - 5, lampY - 14, 20, 14);
+    ctx.fillStyle = '#aa7710';
+    ctx.fillRect(lampX - 5, lampY - 14, 20, 3);
+    // Glow
+    ctx.fillStyle = 'rgba(255,200,80,0.06)';
+    ctx.beginPath(); ctx.ellipse(lampX + 5, lampY + 5, 28, 22, 0, 0, Math.PI * 2); ctx.fill();
+
+    // 9. TV unit (right of living room)
+    var tvX = 290, tvY = FLOOR_Y - 85;
+    // Cabinet
+    ctx.fillStyle = '#0f0f20';
+    ctx.fillRect(tvX, tvY + 45, 120, 40);
+    ctx.fillStyle = '#0a0a18';
+    ctx.fillRect(tvX + 3, tvY + 48, 50, 34);
+    ctx.fillRect(tvX + 57, tvY + 48, 60, 34);
+    // Door handles
+    ctx.fillStyle = '#444466';
+    ctx.fillRect(tvX + 26, tvY + 63, 10, 3);
+    ctx.fillRect(tvX + 80, tvY + 63, 10, 3);
+    // TV screen
+    ctx.fillStyle = '#0a0a1a';
+    ctx.fillRect(tvX + 10, tvY, 100, 46);
+    ctx.fillStyle = '#1a2a4a';
+    ctx.fillRect(tvX + 12, tvY + 2, 96, 42);
+    // Screen glow (blue)
+    ctx.fillStyle = 'rgba(40,80,180,0.4)';
+    ctx.fillRect(tvX + 13, tvY + 3, 94, 40);
+    // Scanlines
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    for (var sl = 0; sl < 20; sl++) ctx.fillRect(tvX + 13, tvY + 3 + sl * 2, 94, 1);
+    // TV stand
+    ctx.fillStyle = '#181828';
+    ctx.fillRect(tvX + 52, tvY + 46, 16, 4);
+
+    // 10. Kitchen divider wall
+    ctx.fillStyle = '#12121e';
+    ctx.fillRect(280, 0, 8, FLOOR_Y);
+    ctx.fillStyle = '#1c1c2e';
+    ctx.fillRect(280, 0, 2, FLOOR_Y);
+
+    // 11. Kitchen (right of divider)
+    var kitX = 292;
+    // Upper cabinets
+    ctx.fillStyle = '#161628';
+    ctx.fillRect(kitX, 90, SCENE_W - kitX - 4, 85);
+    ctx.strokeStyle = '#202038';
     ctx.lineWidth = 1;
-    [0, 52].forEach(dx => {
-      ctx.strokeRect(kitX + 4 + dx, 104, 46, 72);
-    });
+    // Cabinet door lines
+    var cabW = Math.floor((SCENE_W - kitX - 8) / 2);
+    ctx.strokeRect(kitX + 4, 94, cabW - 2, 77);
+    ctx.strokeRect(kitX + cabW + 4, 94, cabW - 2, 77);
     // Cabinet handles
     ctx.fillStyle = '#4a4a7a';
-    [kitX + 22, kitX + 74].forEach(hx => ctx.fillRect(hx, 136, 12, 4));
+    ctx.fillRect(kitX + cabW / 2 - 6, 128, 12, 3);
+    ctx.fillRect(kitX + cabW + cabW / 2 - 2, 128, 12, 3);
 
-    // Sink (inset in counter)
-    ctx.fillStyle = '#111122';
-    ctx.fillRect(kitX + 10, H - 60 - 45, 50, 35);
-    ctx.strokeStyle = '#1e1e38';
+    // Counter top
+    var counterY = FLOOR_Y - 58;
+    ctx.fillStyle = '#1e1a14';
+    ctx.fillRect(kitX, counterY, SCENE_W - kitX - 4, 58);
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fillRect(kitX, counterY, SCENE_W - kitX - 4, 3);
+    ctx.strokeStyle = '#14100a';
     ctx.lineWidth = 1;
-    ctx.strokeRect(kitX + 11, H - 60 - 44, 48, 33);
+    ctx.strokeRect(kitX + 0.5, counterY + 0.5, SCENE_W - kitX - 5, 57);
+
+    // Sink
+    var sinkX = kitX + 8, sinkY = counterY + 8;
+    ctx.fillStyle = '#0e0e1c';
+    ctx.fillRect(sinkX, sinkY, 56, 38);
+    ctx.fillStyle = '#181830';
+    ctx.fillRect(sinkX + 2, sinkY + 2, 52, 34);
+    ctx.strokeStyle = '#202040';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(sinkX + 0.5, sinkY + 0.5, 55, 37);
     // Faucet
-    ctx.fillStyle = '#3a3a5a';
-    ctx.fillRect(kitX + 30, H - 60 - 52, 6, 10);
-    ctx.fillRect(kitX + 24, H - 60 - 52, 18, 4);
+    ctx.fillStyle = '#3a3a58';
+    ctx.fillRect(sinkX + 22, counterY - 10, 6, 12);
+    ctx.fillRect(sinkX + 14, counterY - 10, 22, 4);
 
-    // Small appliance (microwave on counter)
-    ctx.fillStyle = '#1a1a28';
-    ctx.fillRect(kitX + 70, H - 60 - 50, 60, 38);
-    ctx.fillStyle = '#0d0d1a';
-    ctx.fillRect(kitX + 73, H - 60 - 47, 36, 30);
-    ctx.fillStyle = 'rgba(0,200,100,0.7)';
-    ctx.fillRect(kitX + 116, H - 60 - 44, 8, 8); // LED display
+    // Stovetop (right of sink)
+    var stoveX = kitX + 72, stoveY = counterY + 6;
+    ctx.fillStyle = '#111124';
+    ctx.fillRect(stoveX, stoveY, 100, 44);
+    // Burners
+    [[stoveX + 18, stoveY + 13], [stoveX + 60, stoveY + 13],
+     [stoveX + 18, stoveY + 33], [stoveX + 60, stoveY + 33]].forEach(function(pos) {
+      ctx.fillStyle = '#0a0a1a';
+      ctx.beginPath(); ctx.arc(pos[0], pos[1], 9, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#282840';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(pos[0], pos[1], 9, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#1a1a30';
+      ctx.beginPath(); ctx.arc(pos[0], pos[1], 5, 0, Math.PI * 2); ctx.fill();
+    });
+    // Knob panel
+    ctx.fillStyle = '#0e0e20';
+    ctx.fillRect(stoveX + 82, stoveY + 8, 14, 32);
 
-    // ── Panel divider line ────────────────────────────────────────
-    ctx.fillStyle = '#0c0c22';
+    // 12. Panel divider
+    ctx.fillStyle = '#080818';
     ctx.fillRect(PANEL_X, 0, 1, H);
-    ctx.fillStyle = '#1a1a38';
+    ctx.fillStyle = '#181830';
     ctx.fillRect(PANEL_X + 1, 0, 1, H);
   }
 
+  // ── right data panel ──────────────────────────────────────────────
   function drawPanel(ctx, frame) {
-    const px = PANEL_X + 1;
-    const pw = PANEL_W - 1;
+    var px = PANEL_X + 2;
+    var pw = PANEL_W - 2;
 
-    // Panel background
-    ctx.fillStyle = '#0a0a1e';
-    ctx.fillRect(px, 0, pw, H);
+    // Background
+    ctx.fillStyle = '#080816';
+    ctx.fillRect(PANEL_X, 0, PANEL_W, H);
 
-    // Header
-    ctx.fillStyle = '#151530';
-    ctx.fillRect(px, 0, pw, 40);
+    // Header band
+    ctx.fillStyle = '#12122a';
+    ctx.fillRect(px, 0, pw, 44);
     ctx.fillStyle = '#ff88bb';
     ctx.font = 'bold 11px Courier New';
     ctx.textAlign = 'center';
-    ctx.fillText('🏠 Home', px + pw / 2, 16);
-    ctx.fillStyle = '#664455';
+    ctx.fillText('Home', px + pw / 2, 15);
+    ctx.fillStyle = '#884466';
     ctx.font = '9px Courier New';
     ctx.fillText('小因的空間', px + pw / 2, 30);
     ctx.textAlign = 'left';
 
-    // Separator
+    // Header separator
     ctx.fillStyle = '#ff88bb33';
-    ctx.fillRect(px + 8, 40, pw - 16, 1);
+    ctx.fillRect(px + 6, 44, pw - 12, 1);
 
-    // Status indicator (idle bounce of dot)
-    const dotY = 58 + Math.sin(frame * 3) * 2;
-    ctx.fillStyle = '#44ff88';
-    ctx.beginPath(); ctx.arc(px + 16, dotY, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#44ff8840';
+    // Status dot (idle bounce)
+    var dotY = 62 + Math.round(Math.sin(frame * 3) * 2);
+    ctx.fillStyle = 'rgba(255,136,187,0.25)';
     ctx.beginPath(); ctx.arc(px + 16, dotY, 8, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#aaaacc';
+    ctx.fillStyle = '#ff88bb';
+    ctx.beginPath(); ctx.arc(px + 16, dotY, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ccaaaa';
     ctx.font = '9px Courier New';
-    ctx.fillText('小因 · 在線', px + 28, dotY + 3);
+    ctx.fillText('小因 · 在線', px + 28, dotY + 4);
 
-    // Sections
-    const sections = [
-      { label: '近期行程', y: 90, items: ['[Task 12 串接 API]', '— 資料讀取中 —'] },
-      { label: '孩子注意事項', y: 170, items: ['[Task 12 串接 API]', '— 資料讀取中 —'] },
-      { label: '家庭備忘', y: 250, items: ['[Task 12 串接 API]', '— 資料讀取中 —'] },
+    // Data sections
+    var sections = [
+      { label: '近期行程',      col: '#ff88bb', y: 90  },
+      { label: '孩子注意事項',  col: '#ffcc88', y: 185 },
+      { label: '家庭備忘',      col: '#88bbff', y: 280 },
     ];
-
-    sections.forEach(sec => {
-      // Section label
-      ctx.fillStyle = '#ff88bb88';
+    sections.forEach(function(sec) {
+      // Label
+      ctx.fillStyle = sec.col + '99';
       ctx.font = '8px Courier New';
-      ctx.fillText(sec.label, px + 10, sec.y);
-      // Separator
-      ctx.fillStyle = '#ff88bb22';
-      ctx.fillRect(px + 10, sec.y + 4, pw - 20, 1);
-      // Items
-      ctx.fillStyle = '#555566';
+      ctx.fillText(sec.label, px + 8, sec.y);
+      // Rule
+      ctx.fillStyle = sec.col + '22';
+      ctx.fillRect(px + 8, sec.y + 5, pw - 16, 1);
+      // Placeholder lines
+      ctx.fillStyle = '#3a3a55';
       ctx.font = '9px Courier New';
-      sec.items.forEach((item, i) => {
-        ctx.fillText(item, px + 12, sec.y + 20 + i * 16);
-      });
+      ctx.fillText('[Task 12 串接 API]', px + 10, sec.y + 22);
+      ctx.fillStyle = '#282840';
+      ctx.fillText('— 資料讀取中 —', px + 14, sec.y + 40);
+      // Dim skeleton bars
+      ctx.fillStyle = '#1a1a30';
+      ctx.fillRect(px + 10, sec.y + 55, pw - 24, 6);
+      ctx.fillRect(px + 10, sec.y + 66, pw - 40, 6);
+      ctx.fillRect(px + 10, sec.y + 77, pw - 32, 6);
     });
 
-    // Footer: click hint
-    ctx.fillStyle = '#2a2a44';
+    // Footer hint
+    ctx.fillStyle = '#141428';
     ctx.fillRect(px, H - 36, pw, 36);
     ctx.fillStyle = '#555577';
     ctx.font = '8px Courier New';
@@ -287,8 +359,8 @@ const HomeScene = (() => {
     ctx.textAlign = 'left';
   }
 
-  // ── character click detection ─────────────────────────────────────
-  const DIALOGUES = [
+  // ── character dialogues ───────────────────────────────────────────
+  var DIALOGUES = [
     '家裡的事交給我！',
     '有什麼需要安排的嗎？',
     '孩子們今天很乖喔！',
@@ -296,20 +368,18 @@ const HomeScene = (() => {
     '購物清單我幫你記著！',
   ];
 
-  let xiaoyin = null;
-  let charX = 0, charY = 0;
-  let clickHandler = null;
+  var xiaoyin = null;
+  var clickHandler = null;
 
   function setupClick(canvas, cx, cy) {
-    charX = cx; charY = cy;
-    const hw = 8, hh = 28;
-    clickHandler = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const mx = (e.clientX - rect.left) * (680 / rect.width);
-      const my = (e.clientY - rect.top)  * (480 / rect.height);
-      if (mx >= charX - hw && mx <= charX + hw && my >= charY - hh && my <= charY) {
-        const text = DIALOGUES[Math.floor(Math.random() * DIALOGUES.length)];
-        showBubble(null, text, charX, charY - 32, '#fff0f6', '#ff88bb');
+    var hw = 8, hh = 28;
+    clickHandler = function(e) {
+      var rect = canvas.getBoundingClientRect();
+      var mx = (e.clientX - rect.left) * (680 / rect.width);
+      var my = (e.clientY - rect.top)  * (480 / rect.height);
+      if (mx >= cx - hw && mx <= cx + hw && my >= cy - hh && my <= cy) {
+        var text = DIALOGUES[Math.floor(Math.random() * DIALOGUES.length)];
+        showBubble(text, cx, cy - 32, '#fff0f6', '#ff88bb');
       }
     };
     canvas.addEventListener('click', clickHandler);
@@ -317,30 +387,26 @@ const HomeScene = (() => {
 
   // ── public ────────────────────────────────────────────────────────
   return {
-    init(worldData) {
-      // Find xiaoyin character from world data
-      const charCfg = worldData ? worldData.characters.find(c => c.id === 'xiaoyin') : null;
-      // Character position in indoor scene
-      const sceneCharX = 140;
-      const sceneCharY = H - 60 - 10; // standing on floor
+    init: function(worldData) {
+      var charCfg = worldData
+        ? worldData.characters.find(function(c) { return c.id === 'xiaoyin'; })
+        : null;
 
-      // Create a local Character instance for indoor rendering
+      var sceneCharX = 148;
+      var sceneCharY = FLOOR_Y - 4; // feet just above floor line
+
       xiaoyin = charCfg ? new Character(charCfg) : null;
       if (xiaoyin) {
-        // Apply sprites
-        const cm = { xiaoyin };
-        CharacterSprites.applyAll(cm);
+        CharacterSprites.applyAll({ xiaoyin: xiaoyin });
         xiaoyin.setState('idle');
       }
 
       bubbles = [];
-
-      // Remove any previous click handler
-      const canvas = BaseScene.canvas;
+      var canvas = BaseScene.canvas;
       if (clickHandler) canvas.removeEventListener('click', clickHandler);
       setupClick(canvas, sceneCharX, sceneCharY);
 
-      BaseScene.startLoop((ctx, dt, W, H) => {
+      BaseScene.startLoop(function(ctx, dt) {
         drawScene(ctx);
         drawPanel(ctx, xiaoyin ? xiaoyin.frame : 0);
 
@@ -353,8 +419,7 @@ const HomeScene = (() => {
       });
     },
 
-    // Called by World.resume() → BaseScene.stopLoop() handles the loop
-    cleanup() {
+    cleanup: function() {
       if (clickHandler) {
         BaseScene.canvas.removeEventListener('click', clickHandler);
         clickHandler = null;

@@ -9,6 +9,21 @@ const HQScene = (() => {
   const SCENE_W = 480;
   const H = 480;
 
+  // ── rounded-rect helper (avoids ctx.roundRect compatibility issues) ─
+  function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y,     x + w, y + r,     r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h);
+    ctx.arcTo(x,     y + h, x,     y + h - r, r);
+    ctx.lineTo(x,     y + r);
+    ctx.arcTo(x,     y,     x + r, y,         r);
+    ctx.closePath();
+  }
+
   // ── scene-local bubble system ─────────────────────────────────────
   let bubbles = [];
 
@@ -33,7 +48,7 @@ const HQScene = (() => {
       const tailX = Math.max(tx + 8, Math.min(tx + bw - 8, Math.round(b.bx)));
 
       ctx.fillStyle = b.color;
-      ctx.beginPath(); ctx.roundRect(tx, ty, bw, bh, 4); ctx.fill();
+      rrect(ctx, tx, ty, bw, bh, 4); ctx.fill();
       ctx.beginPath();
       ctx.moveTo(tailX - 5, ty + bh);
       ctx.lineTo(tailX + 5, ty + bh);
@@ -41,7 +56,7 @@ const HQScene = (() => {
       ctx.closePath(); ctx.fill();
       ctx.strokeStyle = b.borderColor;
       ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.roundRect(tx, ty, bw, bh, 4); ctx.stroke();
+      rrect(ctx, tx, ty, bw, bh, 4); ctx.stroke();
       ctx.fillStyle = '#1a1a2e';
       ctx.fillText(b.text, tx + pad, ty + 15);
       ctx.restore();

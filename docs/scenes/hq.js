@@ -10,6 +10,7 @@ const HQScene = (() => {
         ctx.fillText('🏢 總部 HQ — HY 的基地（Task 10 實作）', W / 2, H / 2);
         ctx.textAlign = 'left';
       });
-    }
+    },
+    cleanup() {}
   };
 })();

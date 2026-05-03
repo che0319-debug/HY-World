@@ -497,11 +497,14 @@ const World = (() => {
   }
 
   // ── scene transition (Task 08) ────────────────────────────────────
-  function enterScene(initFn) {
+  let activeScene = null; // tracks current indoor scene for cleanup
+
+  function enterScene(sceneObj, initFn) {
     paused = true;
     hoverId = null;
     hoveredCharId = null;
     canvas.style.cursor = 'default';
+    activeScene = sceneObj;
     initFn();
     const overlay = document.getElementById('scene-overlay');
     // Double-rAF ensures the browser paints once before adding .active
@@ -565,9 +568,9 @@ const World = (() => {
       return;
     }
 
-    if      (hit.scene === 'home') enterScene(() => HomeScene.init(data));
-    else if (hit.scene === 'hq')   enterScene(() => HQScene.init(data));
-    else if (hit.scene === 'itri') enterScene(() => ITRIScene.init(data));
+    if      (hit.scene === 'home') enterScene(HomeScene, () => HomeScene.init(data));
+    else if (hit.scene === 'hq')   enterScene(HQScene,   () => HQScene.init(data));
+    else if (hit.scene === 'itri') enterScene(ITRIScene,  () => ITRIScene.init(data));
   }
 
   // ── public ────────────────────────────────────────────────────────
@@ -603,6 +606,8 @@ const World = (() => {
     resume() {
       const overlay = document.getElementById('scene-overlay');
       overlay.classList.remove('active');
+      if (activeScene && typeof activeScene.cleanup === 'function') activeScene.cleanup();
+      activeScene = null;
       BaseScene.stopLoop();
       // Wait for CSS fade (250ms) before re-starting the world loop
       setTimeout(() => {

@@ -10,6 +10,7 @@ const ITRIScene = (() => {
         ctx.fillText('🔬 ITRI — 950157 的工作站（Task 11 實作）', W / 2, H / 2);
         ctx.textAlign = 'left';
       });
-    }
+    },
+    cleanup() {}
   };
 })();

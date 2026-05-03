@@ -384,7 +384,6 @@ header {
 <div class="toast" id="toast"></div>
 
 <script>
-  console.log('[PD] script start — DOM ready:', document.readyState);
   var API    = 'https://telegram-bot-t82n.onrender.com';
   var SECRET = '950157secret';
   var HEADERS = { 'Content-Type': 'application/json', 'X-Secret': SECRET };
@@ -459,11 +458,10 @@ header {
   // ── Bind a single input → state ──
   function bindField(id, setter, parser) {
     var el = document.getElementById(id);
-    if (!el) { console.warn('[PD] bindField: element not found:', id); return; }
+    if (!el) return;
     el.addEventListener('input', function(e) {
       var val = parser ? parser(e.target.value) : e.target.value;
       setter(val);
-      console.log('[PD] state updated:', id, '=', val);
     });
   }
 
@@ -480,7 +478,6 @@ header {
     bindField('travel-destination',    function(v){ lt_().this_quarter_destination=v; });
     bindField('travel-target',         function(v){ lt_().quarterly_target=v;        }, function(v){ return parseInt(v,10)||0; });
     bindField('current-focus',         function(v){ g_().current_focus=v;            });
-    console.log('[PD] all scalar fields bound');
   }
 
   // ── Sync list DOM → state (called before save and on list mutations) ──
@@ -488,8 +485,6 @@ header {
     lr_().this_quarter_visited = readRestaurantList();
     g_().skills_in_progress    = readStringList('skills-list');
     g_().books_this_quarter    = readStringList('books-list');
-    console.log('[PD] lists synced → restaurants:', lr_().this_quarter_visited.length,
-      'skills:', g_().skills_in_progress.length, 'books:', g_().books_this_quarter.length);
   }
 
   // ── Restaurant list ──
@@ -556,43 +551,6 @@ header {
     if (el) el.addEventListener('input', function() { syncListsToState(); });
   });
 
-  // ── Collect state ──
-  function collectState() {
-    var d = JSON.parse(JSON.stringify(state));
-
-    var h = d.health = d.health || {};
-    h.this_week_exercise_count = numVal('exercise-count');
-    h.weekly_exercise_target   = numVal('exercise-target');
-    h.sleep_avg_this_week      = floatVal('sleep-avg');
-    h.last_checkup             = strVal('last-checkup');
-
-    var f = d.finance = d.finance || {};
-    f.investment_portfolio  = strVal('investment-portfolio');
-    f.monthly_saving_target = numVal('monthly-saving-target');
-    f.this_month_saved      = numVal('this-month-saved');
-
-    var l  = d.leisure       = d.leisure      || {};
-    var lr = l.restaurant    = l.restaurant   || {};
-    var lt = l.travel        = l.travel       || {};
-    lr.quarterly_target         = numVal('restaurant-target');
-    lr.this_quarter_visited     = readRestaurantList();
-    lt.this_quarter_destination = strVal('travel-destination');
-    lt.quarterly_target         = numVal('travel-target');
-
-    var g = d.growth = d.growth || {};
-    g.current_focus      = strVal('current-focus');
-    g.skills_in_progress = readStringList('skills-list');
-    g.books_this_quarter = readStringList('books-list');
-
-    if (!d.summary) d.summary = {};
-    d.summary.last_updated = new Date().toISOString();
-    return d;
-  }
-
-  function numVal(id)   { return parseInt(document.getElementById(id).value, 10) || 0; }
-  function floatVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
-  function strVal(id)   { return document.getElementById(id).value; }
-
   function readRestaurantList() {
     var items = [];
     document.querySelectorAll('#restaurant-list .list-item').forEach(function(row) {
@@ -614,58 +572,38 @@ header {
 
   // ── Load ──
   function loadData() {
-    console.log('[PD] loadData() called');
     document.getElementById('lastUpdated').textContent = '載入中…';
     fetch(API + '/api/personal-data', { cache: 'no-store', headers: GET_HEADERS })
-      .then(function(r) {
-        console.log('[PD] GET response status:', r.status);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      })
-      .then(function(d) {
-        console.log('[PD] GET fetched data:', d);
-        fillForm(d);
-        console.log('[PD] exercise-count after fill:', document.getElementById('exercise-count').value);
-        console.log('[PD] current-focus after fill:', document.getElementById('current-focus').value);
-      })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(d) { fillForm(d); })
       .catch(function(e) {
         document.getElementById('lastUpdated').textContent = '⚠ 載入失敗';
-        console.error('[PD] load error:', e);
+        console.error('[personal-dashboard] load:', e);
       });
   }
 
   // ── Save ──
-  console.log('[PD] binding saveBtn, element:', document.getElementById('saveBtn'));
   document.getElementById('saveBtn').addEventListener('click', function() {
-    syncListsToState();                              // flush list DOM → state
-    var payload = JSON.parse(JSON.stringify(state)); // deep-clone state as payload
-    // exercise-count: read-only on frontend, but carry GET value through unchanged
+    syncListsToState();
+    var payload = JSON.parse(JSON.stringify(state));
     if (!payload.summary) payload.summary = {};
     payload.summary.last_updated = new Date().toISOString();
-    console.log('[PD] SAVE clicked, payload.health:', payload.health);
-    console.log('[PD] body to POST (payload):', JSON.stringify(payload).slice(0, 300));
     var btn = document.getElementById('saveBtn');
     btn.disabled = true;
     fetch(API + '/api/personal-data', {
       method: 'POST',
       headers: HEADERS,
-      body: JSON.stringify(payload)  // payload built from state, not DOM
+      body: JSON.stringify(payload)
     })
-    .then(function(r) {
-      console.log('[PD] POST response status:', r.status);
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function(resp) {
-      console.log('[PD] POST success response:', resp);
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function() {
       state = payload;
-      var lu = payload.summary.last_updated;
-      document.getElementById('lastUpdated').textContent = '更新：' + lu.slice(0, 10);
+      document.getElementById('lastUpdated').textContent = '更新：' + payload.summary.last_updated.slice(0, 10);
       showToast('✅ 已儲存', 'success');
     })
     .catch(function(e) {
       showToast('❌ 儲存失敗', 'error');
-      console.error('[PD] save error:', e);
+      console.error('[personal-dashboard] save:', e);
     })
     .finally(function() { btn.disabled = false; });
   });
@@ -674,10 +612,8 @@ header {
   document.getElementById('refreshBtn').addEventListener('click', loadData);
 
   // ── Init ──
-  bindAllFields();  // bind scalar input → state listeners
-  console.log('[PD] calling loadData() on init');
+  bindAllFields();
   loadData();
-  console.log('[PD] script end');
 </script>
 </body>
 </html>

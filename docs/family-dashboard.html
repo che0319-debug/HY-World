@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭資料中心</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f2f5;
+  --card-bg: #ffffff;
+  --border: #d8dce4;
+  --text: #172b4d;
+  --text-muted: #5e6c84;
+  --text-dim: #97a0af;
+  --blue: #0052cc;
+  --blue-light: #deebff;
+  --green: #006644;
+  --red: #de350b;
+  --header-bg: #0a1628;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+  --radius: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Noto Sans TC',sans-serif; min-height:100vh; display:flex; flex-direction:column; }
+
+header { background:var(--header-bg); padding:0 24px; display:flex; align-items:center; gap:16px; height:56px; position:sticky; top:0; z-index:100; border-bottom:1px solid rgba(255,255,255,0.06); }
+.logo-wrap { display:flex; align-items:center; gap:10px; }
+.logo-badge { background:#c35;color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;padding:3px 10px;border-radius:4px;letter-spacing:.5px; }
+.logo-sub { font-size:13px;color:rgba(255,255,255,.45);font-weight:500; }
+.header-right { margin-left:auto;display:flex;align-items:center;gap:10px; }
+.last-updated { font-size:12px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.06);padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.08); }
+
+.btn { padding:7px 14px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:'Noto Sans TC',sans-serif;display:inline-flex;align-items:center;gap:5px; }
+.btn-blue { background:var(--blue);color:#fff; }
+.btn-blue:hover { background:#0065ff; }
+.btn-ghost { background:rgba(255,255,255,.08);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.12); }
+.btn-ghost:hover { background:rgba(255,255,255,.14);color:#fff; }
+
+.tabs { background:#fff;border-bottom:1px solid var(--border);padding:0 24px;display:flex;box-shadow:var(--shadow-sm); }
+.tab { padding:14px 18px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;display:flex;align-items:center;gap:6px;user-select:none; }
+.tab:hover { color:var(--text); }
+.tab.active { color:var(--blue);border-bottom-color:var(--blue);font-weight:700; }
+
+.tab-content { display:none;flex:1; }
+.tab-content.active { display:block; }
+
+.content-wrap { padding:24px 28px 40px;max-width:1000px; }
+
+/* member sections */
+.member-card { background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:14px;box-shadow:var(--shadow-sm); }
+.member-title { font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px; }
+
+.section-card { background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:14px;box-shadow:var(--shadow-sm); }
+.section-title { font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px; }
+
+.form-row { display:flex;gap:14px;flex-wrap:wrap; }
+.form-group { flex:1;min-width:160px;margin-bottom:10px; }
+.form-group.full { flex:0 0 100%; }
+.form-label { display:block;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px; }
+.form-input, .form-textarea { width:100%;background:#fff;border:1.5px solid var(--border);border-radius:5px;color:var(--text);font-size:13px;padding:7px 10px;font-family:'Noto Sans TC',sans-serif;transition:border-color .15s; }
+.form-input:focus, .form-textarea:focus { outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,82,204,.1); }
+.form-input[type="number"] { width:150px; }
+.form-input[type="date"]   { width:190px;color-scheme:light; }
+.form-textarea { resize:vertical;min-height:70px;line-height:1.55; }
+
+.sub-label { font-size:11px;font-weight:700;color:var(--text-muted);margin:10px 0 6px;text-transform:uppercase;letter-spacing:.5px; }
+
+/* list items */
+.list-item { display:flex;align-items:center;gap:6px;margin-bottom:5px; }
+.list-item .form-input { flex:1;margin:0; }
+.list-item .form-input.w-sm  { flex:0 0 100px; }
+.list-item .form-input.w-med { flex:0 0 140px; }
+.list-item .form-input.w-date { flex:0 0 160px; }
+
+.del-btn { background:none;border:1px solid #ffd2cc;color:var(--red);cursor:pointer;padding:4px 8px;font-size:12px;border-radius:4px;flex-shrink:0;transition:all .15s; }
+.del-btn:hover { background:#fff0ee; }
+
+.add-list-btn { display:inline-flex;align-items:center;gap:6px;background:#fff;border:2px dashed var(--border);border-radius:6px;color:var(--text-muted);font-size:12px;font-family:'Noto Sans TC',sans-serif;padding:5px 12px;cursor:pointer;margin-top:4px;transition:all .15s;font-weight:500; }
+.add-list-btn:hover { border-color:var(--blue);color:var(--blue);background:var(--blue-light); }
+
+/* sched row */
+.sched-row { display:flex;align-items:center;gap:6px;margin-bottom:5px; }
+.sched-row .form-input { margin:0; }
+.sched-row .day-col  { flex:0 0 80px; }
+.sched-row .what-col { flex:2; }
+.sched-row .who-col  { flex:1;min-width:80px; }
+.sched-row .buf-col  { flex:0 0 70px; }
+
+/* event row */
+.event-row { display:flex;align-items:center;gap:6px;margin-bottom:5px; }
+.event-row .form-input { margin:0; }
+.event-row .date-col { flex:0 0 160px; }
+.event-row .what-col { flex:1; }
+
+.toast { position:fixed;bottom:24px;right:24px;padding:11px 18px;border-radius:7px;font-size:13px;font-weight:600;opacity:0;transform:translateY(10px);transition:all .22s;pointer-events:none;z-index:999;box-shadow:var(--shadow-md);display:flex;align-items:center;gap:8px; }
+.toast.show { opacity:1;transform:translateY(0); }
+.toast-success { background:var(--green);color:#fff; }
+.toast-error   { background:var(--red);  color:#fff; }
+
+::-webkit-scrollbar { width:5px;height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:#c1c7d0;border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:#97a0af; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <div class="logo-badge">家</div>
+    <div class="logo-sub">家庭資料中心</div>
+  </div>
+  <div class="header-right">
+    <span class="last-updated" id="lastUpdated">載入中…</span>
+    <button class="btn btn-ghost" id="refreshBtn">↺ 重新整理</button>
+    <button class="btn btn-blue" id="saveBtn">✓ 儲存</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="members">👨‍👩‍👧‍👦 成員</div>
+  <div class="tab" data-tab="finance">💰 財務</div>
+  <div class="tab" data-tab="planning">📋 規劃</div>
+  <div class="tab" data-tab="daily">🗓️ 日常</div>
+</div>
+
+<!-- 成員 -->
+<div class="tab-content active" id="tab-members">
+  <div class="content-wrap">
+
+    <div class="member-card">
+      <div class="member-title">💑 老婆</div>
+      <div class="sub-label">健康備注</div>
+      <div id="wife-health"></div>
+      <button class="add-list-btn" data-list="wife-health">＋ 新增</button>
+      <div class="sub-label" style="margin-top:14px">備注 / 提醒</div>
+      <div id="wife-notes"></div>
+      <button class="add-list-btn" data-list="wife-notes">＋ 新增</button>
+    </div>
+
+    <div class="member-card">
+      <div class="member-title">👦 孩子 1</div>
+      <div class="form-group" style="max-width:240px;margin-bottom:12px">
+        <label class="form-label">年級</label>
+        <input class="form-input" type="text" id="c1-grade" placeholder="例：小三">
+      </div>
+      <div class="sub-label">健康備注</div>
+      <div id="c1-health"></div>
+      <button class="add-list-btn" data-list="c1-health">＋ 新增</button>
+      <div class="sub-label" style="margin-top:14px">備注 / 提醒</div>
+      <div id="c1-notes"></div>
+      <button class="add-list-btn" data-list="c1-notes">＋ 新增</button>
+    </div>
+
+    <div class="member-card">
+      <div class="member-title">👧 孩子 2</div>
+      <div class="form-group" style="max-width:240px;margin-bottom:12px">
+        <label class="form-label">年級</label>
+        <input class="form-input" type="text" id="c2-grade" placeholder="例：幼小班">
+      </div>
+      <div class="sub-label">課外活動</div>
+      <div id="c2-extra"></div>
+      <button class="add-list-btn" data-list="c2-extra">＋ 新增</button>
+      <div class="sub-label" style="margin-top:14px">健康備注</div>
+      <div id="c2-health"></div>
+      <button class="add-list-btn" data-list="c2-health">＋ 新增</button>
+      <div class="sub-label" style="margin-top:14px">備注 / 提醒</div>
+      <div id="c2-notes"></div>
+      <button class="add-list-btn" data-list="c2-notes">＋ 新增</button>
+    </div>
+
+    <div class="member-card">
+      <div class="member-title">👴 父親</div>
+      <div class="sub-label">健康備注</div>
+      <div id="dad-health"></div>
+      <button class="add-list-btn" data-list="dad-health">＋ 新增</button>
+      <div class="sub-label" style="margin-top:14px">備注 / 提醒</div>
+      <div id="dad-notes"></div>
+      <button class="add-list-btn" data-list="dad-notes">＋ 新增</button>
+    </div>
+
+    <div class="member-card">
+      <div class="member-title">👵 母親</div>
+      <div class="sub-label">健康備注</div>
+      <div id="mom-health"></div>
+      <button class="add-list-btn" data-list="mom-health">＋ 新增</button>
+      <div class="sub-label" style="margin-top:14px">備注 / 提醒</div>
+      <div id="mom-notes"></div>
+      <button class="add-list-btn" data-list="mom-notes">＋ 新增</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- 財務 -->
+<div class="tab-content" id="tab-finance">
+  <div class="content-wrap">
+    <div class="section-card">
+      <div class="section-title">💵 月收支</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">月收入（元）</label><input class="form-input" type="number" id="fin-income" min="0"></div>
+        <div class="form-group"><label class="form-label">月支出（元）</label><input class="form-input" type="number" id="fin-expense" min="0"></div>
+        <div class="form-group"><label class="form-label">月儲蓄（元）</label><input class="form-input" type="number" id="fin-savings" min="0"></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🎓 教育金</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">孩子 1 目標（元）</label><input class="form-input" type="number" id="edu-c1" min="0"></div>
+        <div class="form-group"><label class="form-label">孩子 2 目標（元）</label><input class="form-input" type="number" id="edu-c2" min="0"></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🏖️ 退休金</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">目標金額（元）</label><input class="form-input" type="number" id="ret-target" min="0"></div>
+        <div class="form-group"><label class="form-label">目前累積（元）</label><input class="form-input" type="number" id="ret-current" min="0"></div>
+        <div class="form-group"><label class="form-label">目標退休年齡</label><input class="form-input" type="number" id="ret-age" min="40" max="80"></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🛡️ 保險</div>
+      <div class="form-group" style="max-width:220px">
+        <label class="form-label">下次檢視日期</label>
+        <input class="form-input" type="date" id="ins-review">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 規劃 -->
+<div class="tab-content" id="tab-planning">
+  <div class="content-wrap">
+    <div class="section-card">
+      <div class="section-title">📚 孩子教育</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">孩子 1 下一里程碑</label>
+          <input class="form-input" type="text" id="c1-milestone">
+        </div>
+        <div class="form-group">
+          <label class="form-label">孩子 2 下一里程碑</label>
+          <input class="form-input" type="text" id="c2-milestone">
+        </div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🤝 長輩照護</div>
+      <div class="form-group full" style="margin-bottom:14px">
+        <label class="form-label">父親照護計畫</label>
+        <textarea class="form-textarea" id="father-plan" rows="4"></textarea>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">母親照護計畫</label>
+        <textarea class="form-textarea" id="mother-plan" rows="4"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 日常 -->
+<div class="tab-content" id="tab-daily">
+  <div class="content-wrap">
+    <div class="section-card">
+      <div class="section-title">🏠 居住安排</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">平日居所</label><input class="form-input" type="text" id="weekday-res"></div>
+        <div class="form-group"><label class="form-label">假日居所</label><input class="form-input" type="text" id="weekend-res"></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔁 固定行程</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">星期 ／ 事項 ／ 負責人 ／ 緩衝（分鐘）</div>
+      <div id="sched-list"></div>
+      <button class="add-list-btn" id="add-sched">＋ 新增行程</button>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📅 即將到來事件</div>
+      <div id="events-list"></div>
+      <button class="add-list-btn" id="add-event">＋ 新增事件</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  var API    = 'https://telegram-bot-t82n.onrender.com';
+  var SECRET = '950157secret';
+  var HEADERS     = { 'Content-Type': 'application/json', 'X-Secret': SECRET };
+  var GET_HEADERS = { 'X-Secret': SECRET, 'Cache-Control': 'no-store' };
+
+  var state = {};
+
+  // ── Tabs ──
+  document.querySelectorAll('.tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var id = tab.dataset.tab;
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+      tab.classList.add('active');
+      document.getElementById('tab-' + id).classList.add('active');
+    });
+  });
+
+  // ── Toast ──
+  function showToast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show toast-' + (type || 'success');
+    setTimeout(function() { t.className = 'toast'; }, 2200);
+  }
+
+  // ── State path helpers ──
+  function mem_()  { if (!state.members)  state.members  = {}; return state.members; }
+  function wife_() { var m=mem_(); if (!m.wife)   m.wife   = {}; return m.wife; }
+  function c1_()   { var m=mem_(); if (!m.child_1) m.child_1 = {}; return m.child_1; }
+  function c2_()   { var m=mem_(); if (!m.child_2) m.child_2 = {}; return m.child_2; }
+  function dad_()  { var m=mem_(); if (!m.father) m.father  = {}; return m.father; }
+  function mom_()  { var m=mem_(); if (!m.mother) m.mother  = {}; return m.mother; }
+  function fin_()  { if (!state.finance)  state.finance  = {}; return state.finance; }
+  function edu_()  { var f=fin_(); if (!f.education_fund) f.education_fund={}; return f.education_fund; }
+  function ret_()  { var f=fin_(); if (!f.retirement)     f.retirement={};     return f.retirement; }
+  function ins_()  { var f=fin_(); if (!f.insurance)      f.insurance={};      return f.insurance; }
+  function plan_() { if (!state.planning) state.planning = {}; return state.planning; }
+  function c1edu_(){ var p=plan_(); if (!p.child_1_education) p.child_1_education={}; return p.child_1_education; }
+  function c2edu_(){ var p=plan_(); if (!p.child_2_education) p.child_2_education={}; return p.child_2_education; }
+  function care_() { var p=plan_(); if (!p.parents_care)  p.parents_care={};  return p.parents_care; }
+  function daily_(){ if (!state.daily)    state.daily    = {}; return state.daily; }
+
+  // ── Bind a single input → state ──
+  function bindField(id, setter, parser) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', function(e) {
+      setter(parser ? parser(e.target.value) : e.target.value);
+    });
+  }
+
+  // ── Bind all scalar fields ──
+  function bindAllFields() {
+    var toNum = function(v){ return parseInt(v,10)||0; };
+    // members
+    bindField('c1-grade',    function(v){ c1_().grade=v; });
+    bindField('c2-grade',    function(v){ c2_().grade=v; });
+    // finance
+    bindField('fin-income',  function(v){ fin_().monthly_income=v;   }, toNum);
+    bindField('fin-expense', function(v){ fin_().monthly_expense=v;  }, toNum);
+    bindField('fin-savings', function(v){ fin_().monthly_savings=v;  }, toNum);
+    bindField('edu-c1',      function(v){ edu_().child_1_target=v;   }, toNum);
+    bindField('edu-c2',      function(v){ edu_().child_2_target=v;   }, toNum);
+    bindField('ret-target',  function(v){ ret_().target=v;           }, toNum);
+    bindField('ret-current', function(v){ ret_().current=v;          }, toNum);
+    bindField('ret-age',     function(v){ ret_().target_age=v;       }, toNum);
+    bindField('ins-review',  function(v){ ins_().review_date=v;      });
+    // planning
+    bindField('c1-milestone', function(v){ c1edu_().next_milestone=v; });
+    bindField('c2-milestone', function(v){ c2edu_().next_milestone=v; });
+    bindField('father-plan',  function(v){ care_().father_plan=v;    });
+    bindField('mother-plan',  function(v){ care_().mother_plan=v;    });
+    // daily
+    bindField('weekday-res',  function(v){ daily_().weekday_residence=v; });
+    bindField('weekend-res',  function(v){ daily_().weekend_residence=v; });
+  }
+
+  // ── Sync all lists → state ──
+  function syncListsToState() {
+    wife_().health_notes = readStringList('wife-health');
+    wife_().notes        = readStringList('wife-notes');
+    c1_().health_notes   = readStringList('c1-health');
+    c1_().notes          = readStringList('c1-notes');
+    c2_().health_notes   = readStringList('c2-health');
+    c2_().notes          = readStringList('c2-notes');
+    c2_().extracurricular = readStringList('c2-extra');
+    dad_().health_notes  = readStringList('dad-health');
+    dad_().notes         = readStringList('dad-notes');
+    mom_().health_notes  = readStringList('mom-health');
+    mom_().notes         = readStringList('mom-notes');
+    daily_().recurring_schedule = readSchedList();
+    daily_().upcoming_events    = readEventList();
+  }
+
+  // ── Fill form ──
+  function fillForm(d) {
+    state = d;
+    var mem  = d.members  || {};
+    var wife = mem.wife   || {};
+    var c1   = mem.child_1 || {};
+    var c2   = mem.child_2 || {};
+    var dad  = mem.father || {};
+    var mom  = mem.mother || {};
+    var fin  = d.finance  || {};
+    var edu  = fin.education_fund || {};
+    var ret  = fin.retirement     || {};
+    var ins  = fin.insurance      || {};
+    var pln  = d.planning || {};
+    var c1e  = pln.child_1_education || {};
+    var c2e  = pln.child_2_education || {};
+    var care = pln.parents_care      || {};
+    var dai  = d.daily || {};
+
+    // members
+    sv('c1-grade', c1.grade);
+    sv('c2-grade', c2.grade);
+    renderStringList('wife-health', wife.health_notes  || []);
+    renderStringList('wife-notes',  wife.notes          || []);
+    renderStringList('c1-health',   c1.health_notes     || []);
+    renderStringList('c1-notes',    c1.notes             || []);
+    renderStringList('c2-health',   c2.health_notes     || []);
+    renderStringList('c2-notes',    c2.notes             || []);
+    renderStringList('c2-extra',    c2.extracurricular  || []);
+    renderStringList('dad-health',  dad.health_notes    || []);
+    renderStringList('dad-notes',   dad.notes            || []);
+    renderStringList('mom-health',  mom.health_notes    || []);
+    renderStringList('mom-notes',   mom.notes            || []);
+
+    // finance
+    sv('fin-income',  fin.monthly_income);
+    sv('fin-expense', fin.monthly_expense);
+    sv('fin-savings', fin.monthly_savings);
+    sv('edu-c1',      edu.child_1_target);
+    sv('edu-c2',      edu.child_2_target);
+    sv('ret-target',  ret.target);
+    sv('ret-current', ret.current);
+    sv('ret-age',     ret.target_age);
+    sv('ins-review',  ins.review_date);
+
+    // planning
+    sv('c1-milestone', c1e.next_milestone);
+    sv('c2-milestone', c2e.next_milestone);
+    sv('father-plan',  care.father_plan);
+    sv('mother-plan',  care.mother_plan);
+
+    // daily
+    sv('weekday-res', dai.weekday_residence);
+    sv('weekend-res', dai.weekend_residence);
+    renderSchedList(dai.recurring_schedule || []);
+    renderEventList(dai.upcoming_events    || []);
+
+    var lu = (d.summary && d.summary.last_updated) || d.last_updated || '—';
+    document.getElementById('lastUpdated').textContent = '更新：' + lu.slice(0,10);
+  }
+
+  function sv(id, val) {
+    var el = document.getElementById(id);
+    if (!el || val === undefined || val === null) return;
+    el.value = val;
+  }
+
+  // ── Generic string list ──
+  function renderStringList(listId, items) {
+    var list = document.getElementById(listId);
+    list.innerHTML = '';
+    items.forEach(function(val) { list.appendChild(makeStringRow(val)); });
+  }
+  function makeStringRow(val) {
+    var row = document.createElement('div');
+    row.className = 'list-item';
+    row.appendChild(mkInput('text', val, '輸入內容…'));
+    row.appendChild(mkDel(row));
+    return row;
+  }
+  function readStringList(id) {
+    var items = [];
+    document.querySelectorAll('#' + id + ' .list-item input').forEach(function(inp) {
+      if (inp.value.trim()) items.push(inp.value.trim());
+    });
+    return items;
+  }
+
+  // ── Schedule list {day, what, who, buffer_min} ──
+  function renderSchedList(items) {
+    var list = document.getElementById('sched-list');
+    list.innerHTML = '';
+    items.forEach(function(item) { list.appendChild(makeSchedRow(item)); });
+  }
+  function makeSchedRow(item) {
+    item = item || {};
+    var row = document.createElement('div');
+    row.className = 'sched-row';
+    var d = mkInput('text', item.day||'', '星期');   d.className='form-input day-col';
+    var w = mkInput('text', item.what||'', '事項');  w.className='form-input what-col';
+    var u = mkInput('text', item.who||'', '負責人');  u.className='form-input who-col';
+    var b = mkInput('number', item.buffer_min||'', '緩衝'); b.className='form-input buf-col'; b.min='0';
+    row.appendChild(d); row.appendChild(w); row.appendChild(u); row.appendChild(b);
+    row.appendChild(mkDel(row));
+    return row;
+  }
+  function readSchedList() {
+    var items = [];
+    document.querySelectorAll('#sched-list .sched-row').forEach(function(row) {
+      var ins = row.querySelectorAll('input');
+      var day = ins[0]?ins[0].value.trim():'';
+      var what = ins[1]?ins[1].value.trim():'';
+      if (day || what) items.push({
+        day: day, what: what,
+        who: ins[2]?ins[2].value.trim():'',
+        buffer_min: parseInt(ins[3]?ins[3].value:0,10)||0
+      });
+    });
+    return items;
+  }
+  document.getElementById('add-sched').addEventListener('click', function() {
+    document.getElementById('sched-list').appendChild(makeSchedRow({}));
+    syncListsToState();
+  });
+
+  // ── Event list {date, what} ──
+  function renderEventList(items) {
+    var list = document.getElementById('events-list');
+    list.innerHTML = '';
+    items.forEach(function(item) { list.appendChild(makeEventRow(item)); });
+  }
+  function makeEventRow(item) {
+    item = item || {};
+    var row = document.createElement('div');
+    row.className = 'event-row';
+    var d = mkInput('date', item.date||'', '');  d.className='form-input date-col';
+    var w = mkInput('text', item.what||'', '事件說明');  w.className='form-input what-col';
+    row.appendChild(d); row.appendChild(w); row.appendChild(mkDel(row));
+    return row;
+  }
+  function readEventList() {
+    var items = [];
+    document.querySelectorAll('#events-list .event-row').forEach(function(row) {
+      var ins = row.querySelectorAll('input');
+      var date = ins[0]?ins[0].value:'';
+      var what = ins[1]?ins[1].value.trim():'';
+      if (date || what) items.push({ date: date, what: what });
+    });
+    return items;
+  }
+  document.getElementById('add-event').addEventListener('click', function() {
+    document.getElementById('events-list').appendChild(makeEventRow({}));
+    syncListsToState();
+  });
+
+  // ── Helpers ──
+  function mkInput(type, val, ph) {
+    var el = document.createElement('input');
+    el.type = type; el.value = val || ''; el.placeholder = ph || '';
+    return el;
+  }
+  function mkDel(row) {
+    var b = document.createElement('button');
+    b.className = 'del-btn'; b.textContent = '✕';
+    b.onclick = function() { row.remove(); syncListsToState(); };
+    return b;
+  }
+
+  // ── Wire add-list-btn buttons (member string lists) ──
+  document.querySelectorAll('.add-list-btn[data-list]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.getElementById(btn.dataset.list).appendChild(makeStringRow(''));
+      syncListsToState();
+    });
+  });
+
+  // ── Event delegation: list input edits → state ──
+  var listIds = ['wife-health','wife-notes','c1-health','c1-notes',
+    'c2-health','c2-notes','c2-extra','dad-health','dad-notes',
+    'mom-health','mom-notes','sched-list','events-list'];
+  listIds.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', function() { syncListsToState(); });
+  });
+
+  // ── Load ──
+  function loadData() {
+    document.getElementById('lastUpdated').textContent = '載入中…';
+    fetch(API + '/api/family-data', { cache: 'no-store', headers: GET_HEADERS })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(d) { fillForm(d); })
+      .catch(function(e) {
+        document.getElementById('lastUpdated').textContent = '⚠ 載入失敗';
+        console.error('[family-dashboard] load:', e);
+      });
+  }
+
+  // ── Save ──
+  document.getElementById('saveBtn').addEventListener('click', function() {
+    syncListsToState();
+    var payload = JSON.parse(JSON.stringify(state));
+    if (!payload.summary) payload.summary = {};
+    payload.summary.last_updated = new Date().toISOString();
+    var btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    fetch(API + '/api/family-data', {
+      method: 'POST',
+      headers: HEADERS,
+      body: JSON.stringify(payload)
+    })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function() {
+      state = payload;
+      document.getElementById('lastUpdated').textContent = '更新：' + payload.summary.last_updated.slice(0,10);
+      showToast('✅ 已儲存', 'success');
+    })
+    .catch(function(e) {
+      showToast('❌ 儲存失敗', 'error');
+      console.error('[family-dashboard] save:', e);
+    })
+    .finally(function() { btn.disabled = false; });
+  });
+
+  // ── Refresh ──
+  document.getElementById('refreshBtn').addEventListener('click', loadData);
+
+  // ── Init ──
+  bindAllFields();
+  loadData();
+</script>
+</body>
+</html>

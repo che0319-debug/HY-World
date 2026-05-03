@@ -281,6 +281,17 @@ const HomeScene = (() => {
       if(row3===0){ctx.fillStyle='#555577'; ctx.fillText('無特別備忘',px+10,s.y+22);}
     }
 
+    // ── 家庭編輯按鈕 ──
+    var btnX=px+8, btnY=366, btnW=pw-16, btnH=22;
+    ctx.fillStyle=familyOpen?'#2e0a16':'#1a0a14';
+    ctx.fillRect(btnX,btnY,btnW,btnH);
+    ctx.strokeStyle=familyOpen?'#883344':'#662233';
+    ctx.lineWidth=1; ctx.strokeRect(btnX+.5,btnY+.5,btnW-1,btnH-1);
+    ctx.fillStyle=familyOpen?'#ff88aa':'#cc7799';
+    ctx.font='11px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
+    ctx.fillText(familyOpen?'✕ 關閉編輯':'📝 開啟家庭編輯',px+pw/2,btnY+15);
+    ctx.textAlign='left';
+
     ctx.fillStyle='#10102c'; ctx.fillRect(px,H-34,pw,34);
     ctx.fillStyle='#557788'; ctx.font='10px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
     ctx.fillText('點擊小因對話',px+pw/2,H-14);
@@ -290,6 +301,25 @@ const HomeScene = (() => {
   var LINES = ['家裡的事交給我！','有什麼需要安排的嗎？','孩子們今天很乖喔！','今天晚餐想吃什麼？'];
   var xiaoyin=null, clickHandler=null;
   var homeData=null, homeErr=false;
+  var familyFrame=null, familyOpen=false;
+
+  function openFamily(){
+    if (familyFrame) return;
+    var overlay=document.getElementById('scene-overlay');
+    var wrap=document.createElement('div');
+    wrap.id='family-wrap';
+    wrap.style.cssText='position:absolute;top:0;left:0;right:29.41%;bottom:0;overflow-x:auto;overflow-y:auto;box-sizing:border-box;border:2px solid #c35;z-index:7';
+    familyFrame=document.createElement('iframe');
+    familyFrame.src='family-dashboard.html?t='+Date.now();
+    familyFrame.style.cssText='width:1600px;height:1600px;border:none;background:#f0f2f5;zoom:0.55;display:block';
+    wrap.appendChild(familyFrame);
+    overlay.appendChild(wrap);
+    familyOpen=true;
+  }
+  function closeFamily(){
+    if (familyFrame){ var w=familyFrame.parentNode; w&&w.parentNode&&w.parentNode.removeChild(w); familyFrame=null; }
+    familyOpen=false;
+  }
 
   return {
     init: function(worldData) {
@@ -309,6 +339,11 @@ const HomeScene = (() => {
       clickHandler = function(e){
         var r=canvas.getBoundingClientRect();
         var mx=(e.clientX-r.left)*(680/r.width), my=(e.clientY-r.top)*(480/r.height);
+        var btnX=PANEL_X+10, btnY=366, btnW=PANEL_W-20, btnH=22;
+        if (mx>=btnX&&mx<=btnX+btnW&&my>=btnY&&my<=btnY+btnH){
+          if (familyOpen) closeFamily(); else openFamily();
+          return;
+        }
         if (mx>=cx-10&&mx<=cx+10&&my>=cy-30&&my<=cy)
           showBubble(LINES[Math.floor(Math.random()*LINES.length)],cx,cy-32,'#fff0f6','#ff88bb');
       };
@@ -324,6 +359,7 @@ const HomeScene = (() => {
     },
     cleanup: function(){
       if (clickHandler){ BaseScene.canvas.removeEventListener('click',clickHandler); clickHandler=null; }
+      closeFamily();
       bubbles=[];
     }
   };

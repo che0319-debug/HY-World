@@ -23,6 +23,7 @@
       height: 480px;
     }
 
+    /* ── World canvas ─────────────────────────────────── */
     #world-canvas {
       display: block;
       image-rendering: pixelated;
@@ -32,41 +33,118 @@
       background: #1a1a2e;
     }
 
-    /* Login overlay - shown by default, hidden after auth */
+    /* ── Login overlay ────────────────────────────────── */
     #login-overlay {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: #0a0a1a;
       z-index: 10;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
     }
-
     #login-overlay.hidden { display: none; }
 
     #clear-login {
       position: absolute;
       top: 12px; right: 14px;
-      color: #444;
+      color: #33335a;
       font-size: 10px;
       cursor: pointer;
       text-decoration: underline;
       background: none;
       border: none;
       font-family: inherit;
+      z-index: 12;
     }
-    #clear-login:hover { color: #888; }
+    #clear-login:hover { color: #7777aa; }
 
     #login-canvas {
       display: block;
       image-rendering: pixelated;
       image-rendering: crisp-edges;
+      width: 680px;
+      height: 480px;
     }
 
-    /* Scene overlay for indoor scenes */
+    /* ── Login form (HTML, layered over canvas) ─────── */
+    #login-form {
+      position: absolute;
+      top: 270px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      z-index: 11;
+      width: 260px;
+    }
+
+    #login-title {
+      color: #6688cc;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+
+    #pw-input {
+      width: 220px;
+      background: #07071a;
+      border: 2px solid #3a3a7a;
+      color: #aaccff;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      padding: 8px 14px;
+      text-align: center;
+      letter-spacing: 6px;
+      outline: none;
+      display: block;
+    }
+    #pw-input:focus {
+      border-color: #6666cc;
+      box-shadow: 0 0 8px rgba(80,80,200,0.4);
+    }
+    #pw-input::placeholder {
+      letter-spacing: 2px;
+      font-size: 11px;
+      color: #334;
+    }
+
+    #login-btn {
+      background: #0e0e2e;
+      border: 2px solid #5555aa;
+      color: #8899cc;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      padding: 8px 28px;
+      cursor: pointer;
+      letter-spacing: 2px;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    #login-btn:hover {
+      background: #1a1a44;
+      border-color: #9999ee;
+      color: #ccd4ff;
+    }
+    #login-btn:active {
+      background: #2a2a66;
+    }
+
+    /* ── Shake animation ─────────────────────────────── */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      15%       { transform: translateX(-9px); }
+      35%       { transform: translateX(9px); }
+      55%       { transform: translateX(-6px); }
+      75%       { transform: translateX(6px); }
+      90%       { transform: translateX(-3px); }
+    }
+    #pw-input.shake {
+      animation: shake 0.42s ease;
+      border-color: #cc4444;
+      box-shadow: 0 0 8px rgba(200,50,50,0.5);
+    }
+
+    /* ── Indoor scene overlay ────────────────────────── */
     #scene-overlay {
       position: absolute;
       top: 0; left: 0;
@@ -74,7 +152,6 @@
       z-index: 5;
       display: none;
     }
-
     #scene-overlay.active { display: block; }
 
     #scene-canvas {
@@ -102,7 +179,8 @@
 </head>
 <body>
   <div id="game-container">
-    <!-- World map canvas -->
+
+    <!-- World map -->
     <canvas id="world-canvas" width="680" height="480"></canvas>
 
     <!-- Indoor scene overlay -->
@@ -115,14 +193,28 @@
     <div id="login-overlay">
       <button id="clear-login">清除登入狀態</button>
       <canvas id="login-canvas" width="680" height="480"></canvas>
+
+      <!-- HTML form layered over canvas -->
+      <div id="login-form">
+        <div id="login-title">HY · WORLD</div>
+        <input
+          type="password"
+          id="pw-input"
+          placeholder="輸入密碼"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <button id="login-btn">▶ 進入 HY World</button>
+      </div>
     </div>
+
   </div>
 
-  <!-- Core engine -->
-  <script src="data/world.json" type="application/json" id="world-data-src"></script>
+  <!-- Engine -->
   <script src="sprites/characters.js"></script>
   <script src="engine/api.js"></script>
   <script src="engine/character.js"></script>
+  <script src="engine/login.js"></script>
   <script src="engine/world.js"></script>
 
   <!-- Scenes -->
@@ -133,30 +225,29 @@
 
   <!-- Bootstrap -->
   <script>
-    const PASSWORD = 'hy2025';  // Change this to your password
+    const PASSWORD = 'hy2025';  // ← 請自行修改密碼
 
     window.addEventListener('DOMContentLoaded', () => {
-      const overlay = document.getElementById('login-overlay');
-      const clearBtn = document.getElementById('clear-login');
-      const backBtn = document.getElementById('back-btn');
+      const overlay    = document.getElementById('login-overlay');
+      const clearBtn   = document.getElementById('clear-login');
+      const backBtn    = document.getElementById('back-btn');
       const sceneOverlay = document.getElementById('scene-overlay');
 
       clearBtn.addEventListener('click', () => {
         localStorage.removeItem('hy_auth');
-        overlay.classList.remove('hidden');
-        if (window.LoginScreen) LoginScreen.init();
+        LoginScreen.init();
       });
 
       backBtn.addEventListener('click', () => {
         sceneOverlay.classList.remove('active');
-        if (window.World) World.resume();
+        World.resume();
       });
 
       if (localStorage.getItem('hy_auth') === 'ok') {
         overlay.classList.add('hidden');
-        if (window.World) World.init();
+        World.init();
       } else {
-        if (window.LoginScreen) LoginScreen.init();
+        LoginScreen.init();
       }
     });
   </script>

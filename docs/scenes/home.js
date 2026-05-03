@@ -293,13 +293,17 @@ const HomeScene = (() => {
 
   return {
     init: function(worldData) {
+      console.log('[HOME] init called, worldData=', !!worldData);
       var cfg = worldData && worldData.characters.find(function(c){ return c.id==='xiaoyin'; });
       var cx=150, cy=FLOOR_Y-6;
       xiaoyin = cfg ? new Character(cfg) : null;
       if (xiaoyin) { CharacterSprites.applyAll({xiaoyin:xiaoyin}); xiaoyin.setState('idle'); }
       bubbles=[];
       homeData=null; homeErr=false;
-      API.family().then(function(d){ homeData=d; }).catch(function(e){ homeErr=true; console.error('[HomeScene] family API failed', e); });
+      console.log('[HOME] calling API.family()');
+      API.family()
+        .then(function(d){ console.log('[HOME] family data received', d); homeData=d; })
+        .catch(function(e){ homeErr=true; console.error('[HOME] family API failed', e); });
       var canvas=BaseScene.canvas;
       if (clickHandler) canvas.removeEventListener('click',clickHandler);
       clickHandler = function(e){

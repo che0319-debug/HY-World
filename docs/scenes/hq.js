@@ -264,6 +264,7 @@ const HQScene = (() => {
 
   return {
     init: function(worldData){
+      console.log('[HQ] init called, worldData=', !!worldData);
       var cfg = worldData && worldData.characters.find(function(c){ return c.id==='hy'; });
       var ctX=96,ctY=FLOOR_Y-164,ctW=228;
       var cx=ctX+ctW/2, cy=ctY-4;
@@ -271,7 +272,10 @@ const HQScene = (() => {
       if (hy) { CharacterSprites.applyAll({hy:hy}); hy.setState('working'); }
       bubbles=[];
       overviewData=null; overviewErr=false;
-      API.overview().then(function(d){ overviewData=d; }).catch(function(e){ overviewErr=true; console.error('[HQScene] overview API failed', e); });
+      console.log('[HQ] calling API.overview()');
+      API.overview()
+        .then(function(d){ console.log('[HQ] overview data received', d); overviewData=d; })
+        .catch(function(e){ overviewErr=true; console.error('[HQ] overview API failed', e); });
       var canvas=BaseScene.canvas;
       if (clickHandler) canvas.removeEventListener('click',clickHandler);
       clickHandler=function(e){

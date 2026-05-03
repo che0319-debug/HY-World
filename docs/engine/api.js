@@ -1,4 +1,5 @@
 // Render API client
+console.log('[API] api.js loaded');
 const API_BASE   = 'https://telegram-bot-t82n.onrender.com';
 const API_SECRET = '950157secret';
 

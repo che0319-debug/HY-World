@@ -300,6 +300,7 @@ const ITRIScene = (() => {
 
   return {
     init: function(worldData){
+      console.log('[ITRI] init called, worldData=', !!worldData);
       var cfg=worldData&&worldData.characters.find(function(c){ return c.id==='itri950'; });
       var dX=108, dY=FLOOR_Y-66, dW=248;
       var cx=dX+dW/2, cy=dY-4;
@@ -307,7 +308,10 @@ const ITRIScene = (() => {
       if(itri){ CharacterSprites.applyAll({itri950:itri}); itri.setState('working'); }
       bubbles=[]; dashOpen=false; dashFrame=null;
       itriStats=null; itriErr=false;
-      API.overview().then(function(d){ itriStats=d&&d.bots&&d.bots.itri||{}; }).catch(function(e){ itriErr=true; console.error('[ITRIScene] overview API failed', e); });
+      console.log('[ITRI] calling API.overview()');
+      API.overview()
+        .then(function(d){ console.log('[ITRI] overview data received', d); itriStats=d&&d.bots&&d.bots.itri||{}; })
+        .catch(function(e){ itriErr=true; console.error('[ITRI] overview API failed', e); });
       var canvas=BaseScene.canvas;
       if(clickHandler) canvas.removeEventListener('click',clickHandler);
       clickHandler=function(e){

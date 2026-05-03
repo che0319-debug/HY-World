@@ -248,6 +248,17 @@ const HQScene = (() => {
       }
     }
 
+    // ── 個人編輯按鈕 ──
+    var btnX=px+8, btnY=366, btnW=pw-16, btnH=22;
+    ctx.fillStyle=personalOpen?'#162a1e':'#0e1420';
+    ctx.fillRect(btnX,btnY,btnW,btnH);
+    ctx.strokeStyle=personalOpen?'#2a6644':'#2a4488';
+    ctx.lineWidth=1; ctx.strokeRect(btnX+.5,btnY+.5,btnW-1,btnH-1);
+    ctx.fillStyle=personalOpen?'#55cc88':'#77aaee';
+    ctx.font='11px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
+    ctx.fillText(personalOpen?'✕ 關閉編輯':'📝 開啟個人編輯',px+pw/2,btnY+15);
+    ctx.textAlign='left';
+
     ctx.fillStyle='#0c1412'; ctx.fillRect(px,H-34,pw,34);
     ctx.fillStyle='#557766'; ctx.font='10px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
     ctx.fillText('點擊 HY 對話',px+pw/2,H-14);
@@ -257,6 +268,25 @@ const HQScene = (() => {
   var LINES=['一切都在計畫中！','需要跨域協調嗎？','今天的任務清單很長...','三個分身都在線！'];
   var hy=null, clickHandler=null;
   var overviewData=null, overviewErr=false;
+  var personalFrame=null, personalOpen=false;
+
+  function openPersonal(){
+    if (personalFrame) return;
+    var overlay=document.getElementById('scene-overlay');
+    var wrap=document.createElement('div');
+    wrap.id='personal-wrap';
+    wrap.style.cssText='position:absolute;top:0;left:0;right:29.41%;bottom:0;overflow-x:auto;overflow-y:auto;box-sizing:border-box;border:2px solid #3a88ee;z-index:7';
+    personalFrame=document.createElement('iframe');
+    personalFrame.src='personal-dashboard.html';
+    personalFrame.style.cssText='width:1600px;height:1600px;border:none;background:#07071a;zoom:0.55;display:block';
+    wrap.appendChild(personalFrame);
+    overlay.appendChild(wrap);
+    personalOpen=true;
+  }
+  function closePersonal(){
+    if (personalFrame){ var w=personalFrame.parentNode; w&&w.parentNode&&w.parentNode.removeChild(w); personalFrame=null; }
+    personalOpen=false;
+  }
 
   return {
     init: function(worldData){
@@ -277,6 +307,12 @@ const HQScene = (() => {
       clickHandler=function(e){
         var r=canvas.getBoundingClientRect();
         var mx=(e.clientX-r.left)*(680/r.width), my=(e.clientY-r.top)*(480/r.height);
+        // personal edit button (canvas coords match drawPanel btn)
+        var px2=PANEL_X+10, btnY=366, btnW=PANEL_W-20, btnH=22;
+        if (mx>=px2&&mx<=px2+btnW&&my>=btnY&&my<=btnY+btnH){
+          if (personalOpen) closePersonal(); else openPersonal();
+          return;
+        }
         if (mx>=cx-10&&mx<=cx+10&&my>=cy-30&&my<=cy)
           showBubble(LINES[Math.floor(Math.random()*LINES.length)],cx,cy-32,'#f0fff4','#55ee77');
       };
@@ -292,6 +328,7 @@ const HQScene = (() => {
     },
     cleanup: function(){
       if (clickHandler){ BaseScene.canvas.removeEventListener('click',clickHandler); clickHandler=null; }
+      closePersonal();
       bubbles=[];
     }
   };

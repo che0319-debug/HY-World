@@ -468,6 +468,49 @@ header {
     el.value = val;
   }
 
+  // ── State path helpers ──
+  function h_(){ if (!state.health)  state.health  = {}; return state.health; }
+  function f_(){ if (!state.finance) state.finance = {}; return state.finance; }
+  function lr_(){ if (!state.leisure) state.leisure={}; if (!state.leisure.restaurant) state.leisure.restaurant={}; return state.leisure.restaurant; }
+  function lt_(){ if (!state.leisure) state.leisure={}; if (!state.leisure.travel)     state.leisure.travel={};     return state.leisure.travel; }
+  function g_(){ if (!state.growth)  state.growth  = {}; return state.growth; }
+
+  // ── Bind a single input → state ──
+  function bindField(id, setter, parser) {
+    var el = document.getElementById(id);
+    if (!el) { console.warn('[PD] bindField: element not found:', id); return; }
+    el.addEventListener('input', function(e) {
+      var val = parser ? parser(e.target.value) : e.target.value;
+      setter(val);
+      console.log('[PD] state updated:', id, '=', val);
+    });
+  }
+
+  // ── Bind all scalar fields ──
+  function bindAllFields() {
+    bindField('exercise-count',        function(v){ h_().this_week_exercise_count=v; }, function(v){ return parseInt(v,10)||0; });
+    bindField('exercise-target',       function(v){ h_().weekly_exercise_target=v;   }, function(v){ return parseInt(v,10)||0; });
+    bindField('sleep-avg',             function(v){ h_().sleep_avg_this_week=v;      }, function(v){ return parseFloat(v)||0; });
+    bindField('last-checkup',          function(v){ h_().last_checkup=v;             });
+    bindField('investment-portfolio',  function(v){ f_().investment_portfolio=v;      });
+    bindField('monthly-saving-target', function(v){ f_().monthly_saving_target=v;    }, function(v){ return parseInt(v,10)||0; });
+    bindField('this-month-saved',      function(v){ f_().this_month_saved=v;         }, function(v){ return parseInt(v,10)||0; });
+    bindField('restaurant-target',     function(v){ lr_().quarterly_target=v;        }, function(v){ return parseInt(v,10)||0; });
+    bindField('travel-destination',    function(v){ lt_().this_quarter_destination=v; });
+    bindField('travel-target',         function(v){ lt_().quarterly_target=v;        }, function(v){ return parseInt(v,10)||0; });
+    bindField('current-focus',         function(v){ g_().current_focus=v;            });
+    console.log('[PD] all scalar fields bound');
+  }
+
+  // ── Sync list DOM → state (called before save and on list mutations) ──
+  function syncListsToState() {
+    lr_().this_quarter_visited = readRestaurantList();
+    g_().skills_in_progress    = readStringList('skills-list');
+    g_().books_this_quarter    = readStringList('books-list');
+    console.log('[PD] lists synced → restaurants:', lr_().this_quarter_visited.length,
+      'skills:', g_().skills_in_progress.length, 'books:', g_().books_this_quarter.length);
+  }
+
   // ── Restaurant list ──
   function renderRestaurantList(items) {
     var list = document.getElementById('restaurant-list');
@@ -487,6 +530,7 @@ header {
   }
   document.getElementById('add-restaurant').addEventListener('click', function() {
     document.getElementById('restaurant-list').appendChild(makeRestaurantRow('', ''));
+    syncListsToState();
   });
 
   // ── Generic string list ──
@@ -504,9 +548,11 @@ header {
   }
   document.getElementById('add-skill').addEventListener('click', function() {
     document.getElementById('skills-list').appendChild(makeStringRow(''));
+    syncListsToState();
   });
   document.getElementById('add-book').addEventListener('click', function() {
     document.getElementById('books-list').appendChild(makeStringRow(''));
+    syncListsToState();
   });
 
   // ── Helpers ──
@@ -519,9 +565,15 @@ header {
   function mkDel(row) {
     var b = document.createElement('button');
     b.className = 'del-btn'; b.textContent = '✕';
-    b.onclick = function() { row.remove(); };
+    b.onclick = function() { row.remove(); syncListsToState(); };
     return b;
   }
+
+  // ── Event delegation: list input edits → state ──
+  ['restaurant-list','skills-list','books-list'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', function() { syncListsToState(); });
+  });
 
   // ── Collect state ──
   function collectState() {
@@ -581,13 +633,12 @@ header {
   // ── Exercise +1 ──
   document.getElementById('exercise-add').addEventListener('click', function() {
     var el = document.getElementById('exercise-count');
-    el.value = (parseInt(el.value, 10) || 0) + 1;
-    if (!state.health) state.health = {};
-    if (!Array.isArray(state.health.exercise_history)) state.health.exercise_history = [];
-    state.health.exercise_history.push({
-      date: new Date().toISOString().slice(0, 10),
-      type: 'general'
-    });
+    var newVal = (parseInt(el.value, 10) || 0) + 1;
+    el.value = newVal;
+    h_().this_week_exercise_count = newVal;
+    if (!Array.isArray(h_().exercise_history)) h_().exercise_history = [];
+    h_().exercise_history.push({ date: new Date().toISOString().slice(0, 10), type: 'general' });
+    console.log('[PD] state updated: this_week_exercise_count =', newVal);
   });
 
   // ── Load ──
@@ -615,15 +666,18 @@ header {
   // ── Save ──
   console.log('[PD] binding saveBtn, element:', document.getElementById('saveBtn'));
   document.getElementById('saveBtn').addEventListener('click', function() {
-    console.log('[PD] SAVE clicked, state keys:', Object.keys(state));
-    console.log('[PD] body to POST:', JSON.stringify(state).slice(0, 200));
+    syncListsToState();                              // flush list DOM → state
+    var payload = JSON.parse(JSON.stringify(state)); // deep-clone state as payload
+    if (!payload.summary) payload.summary = {};
+    payload.summary.last_updated = new Date().toISOString();
+    console.log('[PD] SAVE clicked, payload.health:', payload.health);
+    console.log('[PD] body to POST (payload):', JSON.stringify(payload).slice(0, 300));
     var btn = document.getElementById('saveBtn');
     btn.disabled = true;
-    var payload = collectState();
     fetch(API + '/api/personal-data', {
       method: 'POST',
       headers: HEADERS,
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload)  // payload built from state, not DOM
     })
     .then(function(r) {
       console.log('[PD] POST response status:', r.status);
@@ -648,6 +702,7 @@ header {
   document.getElementById('refreshBtn').addEventListener('click', loadData);
 
   // ── Init ──
+  bindAllFields();  // bind scalar input → state listeners
   console.log('[PD] calling loadData() on init');
   loadData();
   console.log('[PD] script end');

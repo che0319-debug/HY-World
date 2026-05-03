@@ -639,8 +639,7 @@ header {
   document.getElementById('saveBtn').addEventListener('click', function() {
     syncListsToState();                              // flush list DOM → state
     var payload = JSON.parse(JSON.stringify(state)); // deep-clone state as payload
-    // exercise-count is read-only (auto-calculated) — do not overwrite on server
-    if (payload.health) delete payload.health.this_week_exercise_count;
+    // exercise-count: read-only on frontend, but carry GET value through unchanged
     if (!payload.summary) payload.summary = {};
     payload.summary.last_updated = new Date().toISOString();
     console.log('[PD] SAVE clicked, payload.health:', payload.health);

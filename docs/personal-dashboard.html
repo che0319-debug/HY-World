@@ -403,6 +403,7 @@ header {
 <div class="toast" id="toast"></div>
 
 <script>
+  console.log('[PD] script start — DOM ready:', document.readyState);
   var API    = 'https://telegram-bot-t82n.onrender.com';
   var SECRET = '950157secret';
   var HEADERS = { 'Content-Type': 'application/json', 'X-Secret': SECRET };
@@ -591,18 +592,31 @@ header {
 
   // ── Load ──
   function loadData() {
+    console.log('[PD] loadData() called');
     document.getElementById('lastUpdated').textContent = '載入中…';
     fetch(API + '/api/personal-data', { cache: 'no-store', headers: GET_HEADERS })
-      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function(d) { fillForm(d); })
+      .then(function(r) {
+        console.log('[PD] GET response status:', r.status);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(d) {
+        console.log('[PD] GET fetched data:', d);
+        fillForm(d);
+        console.log('[PD] exercise-count after fill:', document.getElementById('exercise-count').value);
+        console.log('[PD] current-focus after fill:', document.getElementById('current-focus').value);
+      })
       .catch(function(e) {
         document.getElementById('lastUpdated').textContent = '⚠ 載入失敗';
-        console.error('[personal-dashboard] load:', e);
+        console.error('[PD] load error:', e);
       });
   }
 
   // ── Save ──
+  console.log('[PD] binding saveBtn, element:', document.getElementById('saveBtn'));
   document.getElementById('saveBtn').addEventListener('click', function() {
+    console.log('[PD] SAVE clicked, state keys:', Object.keys(state));
+    console.log('[PD] body to POST:', JSON.stringify(state).slice(0, 200));
     var btn = document.getElementById('saveBtn');
     btn.disabled = true;
     var payload = collectState();
@@ -611,8 +625,13 @@ header {
       headers: HEADERS,
       body: JSON.stringify(payload)
     })
-    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(function() {
+    .then(function(r) {
+      console.log('[PD] POST response status:', r.status);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(resp) {
+      console.log('[PD] POST success response:', resp);
       state = payload;
       var lu = payload.summary.last_updated;
       document.getElementById('lastUpdated').textContent = '更新：' + lu.slice(0, 10);
@@ -620,7 +639,7 @@ header {
     })
     .catch(function(e) {
       showToast('❌ 儲存失敗', 'error');
-      console.error('[personal-dashboard] save:', e);
+      console.error('[PD] save error:', e);
     })
     .finally(function() { btn.disabled = false; });
   });
@@ -629,7 +648,9 @@ header {
   document.getElementById('refreshBtn').addEventListener('click', loadData);
 
   // ── Init ──
+  console.log('[PD] calling loadData() on init');
   loadData();
+  console.log('[PD] script end');
 </script>
 </body>
 </html>

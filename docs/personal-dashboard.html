@@ -218,25 +218,6 @@ header {
 }
 .add-list-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
 
-/* ── EXERCISE +1 ── */
-.exercise-btn {
-  background: var(--green);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 7px 14px;
-  cursor: pointer;
-  font-family: 'Noto Sans TC', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  margin-top: 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  transition: background 0.15s;
-}
-.exercise-btn:hover { background: #0b875b; }
-.exercise-btn:active { background: #004d30; }
 
 /* ── TOAST ── */
 .toast {
@@ -295,8 +276,8 @@ header {
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">本週運動次數</label>
-          <input class="form-input" type="number" id="exercise-count" min="0" max="21">
-          <button class="exercise-btn" id="exercise-add">＋1 今天運動了</button>
+          <input class="form-input" type="number" id="exercise-count" disabled style="background:#f4f5f7;color:#97a0af;cursor:not-allowed">
+          <div style="font-size:11px;color:#97a0af;margin-top:5px">（未來自動從行事曆計算，目前手動同步）</div>
         </div>
         <div class="form-group">
           <label class="form-label">週運動目標（次）</label>
@@ -488,7 +469,7 @@ header {
 
   // ── Bind all scalar fields ──
   function bindAllFields() {
-    bindField('exercise-count',        function(v){ h_().this_week_exercise_count=v; }, function(v){ return parseInt(v,10)||0; });
+    // exercise-count is readonly (auto-calculated from calendar) — no listener
     bindField('exercise-target',       function(v){ h_().weekly_exercise_target=v;   }, function(v){ return parseInt(v,10)||0; });
     bindField('sleep-avg',             function(v){ h_().sleep_avg_this_week=v;      }, function(v){ return parseFloat(v)||0; });
     bindField('last-checkup',          function(v){ h_().last_checkup=v;             });
@@ -630,16 +611,6 @@ header {
     return items;
   }
 
-  // ── Exercise +1 ──
-  document.getElementById('exercise-add').addEventListener('click', function() {
-    var el = document.getElementById('exercise-count');
-    var newVal = (parseInt(el.value, 10) || 0) + 1;
-    el.value = newVal;
-    h_().this_week_exercise_count = newVal;
-    if (!Array.isArray(h_().exercise_history)) h_().exercise_history = [];
-    h_().exercise_history.push({ date: new Date().toISOString().slice(0, 10), type: 'general' });
-    console.log('[PD] state updated: this_week_exercise_count =', newVal);
-  });
 
   // ── Load ──
   function loadData() {
@@ -668,6 +639,8 @@ header {
   document.getElementById('saveBtn').addEventListener('click', function() {
     syncListsToState();                              // flush list DOM → state
     var payload = JSON.parse(JSON.stringify(state)); // deep-clone state as payload
+    // exercise-count is read-only (auto-calculated) — do not overwrite on server
+    if (payload.health) delete payload.health.this_week_exercise_count;
     if (!payload.summary) payload.summary = {};
     payload.summary.last_updated = new Date().toISOString();
     console.log('[PD] SAVE clicked, payload.health:', payload.health);

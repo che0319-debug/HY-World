@@ -299,7 +299,7 @@ const HomeScene = (() => {
       if (xiaoyin) { CharacterSprites.applyAll({xiaoyin:xiaoyin}); xiaoyin.setState('idle'); }
       bubbles=[];
       homeData=null; homeErr=false;
-      API.family().then(function(d){ homeData=d; }).catch(function(){ homeErr=true; });
+      API.family().then(function(d){ homeData=d; }).catch(function(e){ homeErr=true; console.error('[HomeScene] family API failed', e); });
       var canvas=BaseScene.canvas;
       if (clickHandler) canvas.removeEventListener('click',clickHandler);
       clickHandler = function(e){

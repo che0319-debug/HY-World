@@ -307,7 +307,7 @@ const ITRIScene = (() => {
       if(itri){ CharacterSprites.applyAll({itri950:itri}); itri.setState('working'); }
       bubbles=[]; dashOpen=false; dashFrame=null;
       itriStats=null; itriErr=false;
-      API.overview().then(function(d){ itriStats=d&&d.bots&&d.bots.itri||{}; }).catch(function(){ itriErr=true; });
+      API.overview().then(function(d){ itriStats=d&&d.bots&&d.bots.itri||{}; }).catch(function(e){ itriErr=true; console.error('[ITRIScene] overview API failed', e); });
       var canvas=BaseScene.canvas;
       if(clickHandler) canvas.removeEventListener('click',clickHandler);
       clickHandler=function(e){

@@ -271,7 +271,7 @@ const HQScene = (() => {
       if (hy) { CharacterSprites.applyAll({hy:hy}); hy.setState('working'); }
       bubbles=[];
       overviewData=null; overviewErr=false;
-      API.overview().then(function(d){ overviewData=d; }).catch(function(){ overviewErr=true; });
+      API.overview().then(function(d){ overviewData=d; }).catch(function(e){ overviewErr=true; console.error('[HQScene] overview API failed', e); });
       var canvas=BaseScene.canvas;
       if (clickHandler) canvas.removeEventListener('click',clickHandler);
       clickHandler=function(e){

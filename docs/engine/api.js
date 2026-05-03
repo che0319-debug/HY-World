@@ -1,15 +1,32 @@
-// Render API client — expanded in Task 12
-const API_BASE = 'https://telegram-bot-t82n.onrender.com';
+// Render API client
+const API_BASE   = 'https://telegram-bot-t82n.onrender.com';
 const API_SECRET = '950157secret';
 
 const API = {
   _get(path) {
-    return fetch(API_BASE + path, {
-      headers: { 'X-Secret': API_SECRET }
-    }).then(r => r.json());
+    const url = API_BASE + path;
+    console.log('[API] fetch →', url);
+    return fetch(url, {
+      method: 'GET',
+      headers: { 'X-Secret': API_SECRET },
+    })
+    .then(function(r) {
+      console.log('[API] status', r.status, url);
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + url);
+      return r.json();
+    })
+    .then(function(data) {
+      console.log('[API] data ←', url, data);
+      return data;
+    })
+    .catch(function(err) {
+      console.error('[API] ERROR', url, err.message || err);
+      throw err;   // re-throw so scene .catch() can set error flag
+    });
   },
-  overview()    { return this._get('/api/overview'); },
-  personal()    { return this._get('/api/personal-data'); },
-  family()      { return this._get('/api/family-data'); },
-  progress()    { return this._get('/api/progress'); }
+
+  overview() { return this._get('/api/overview');      },
+  personal() { return this._get('/api/personal-data'); },
+  family()   { return this._get('/api/family-data');   },
+  progress() { return this._get('/api/progress');      },
 };

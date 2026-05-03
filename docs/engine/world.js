@@ -471,6 +471,10 @@ const World = (() => {
           data  = d;
           chars = d.characters.map(c => new Character(c));
           precompute(d.buildings);
+          // Inject character-specific sprites (Task 05)
+          const charMap = {};
+          chars.forEach(c => { charMap[c.id] = c; });
+          CharacterSprites.applyAll(charMap);
         });
 
       canvas.addEventListener('mousemove', onMouseMove);

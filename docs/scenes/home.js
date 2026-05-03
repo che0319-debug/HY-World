@@ -173,8 +173,14 @@ const HomeScene = (() => {
     ctx.fillStyle = '#06060f'; ctx.fillRect(PANEL_X,0,2,H);
   }
 
+  function trunc(ctx, text, maxW) {
+    if (ctx.measureText(text).width <= maxW) return text;
+    while (text.length > 1 && ctx.measureText(text + '…').width > maxW) text = text.slice(0,-1);
+    return text + '…';
+  }
+
   function drawPanel(ctx, frame) {
-    var px=PANEL_X+2, pw=PANEL_W-2;
+    var px=PANEL_X+2, pw=PANEL_W-2, mw=pw-20;
     ctx.fillStyle='#07071a'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
     ctx.fillStyle='#10102c'; ctx.fillRect(px,0,pw,44);
     ctx.fillStyle='#ff88bb'; ctx.font='bold 11px Courier New'; ctx.textAlign='center';
@@ -189,18 +195,92 @@ const HomeScene = (() => {
     ctx.fillStyle='#ff88bb'; ctx.beginPath(); ctx.arc(px+16,dy,4,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#ccaaaa'; ctx.font='9px Courier New'; ctx.fillText('小因 · 在線',px+28,dy+4);
 
-    [
-      {label:'近期行程',    col:'#ff88bb',y:88},
+    var sections=[
+      {label:'近期行程',col:'#ff88bb',y:88},
       {label:'孩子注意事項',col:'#ffcc88',y:182},
-      {label:'家庭備忘',   col:'#88bbff',y:276},
-    ].forEach(function(s){
-      ctx.fillStyle=s.col+'aa'; ctx.font='8px Courier New'; ctx.fillText(s.label,px+8,s.y);
-      ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
-      ctx.fillStyle='#5a5a7a'; ctx.font='9px Courier New'; ctx.fillText('[Task 12 串接 API]',px+10,s.y+22);
-      ctx.fillStyle='#3a3a55'; ctx.fillText('— 資料讀取中 —',px+14,s.y+40);
-      ctx.fillStyle='#1e1e40';
-      ctx.fillRect(px+10,s.y+54,pw-24,5); ctx.fillRect(px+10,s.y+64,pw-38,5); ctx.fillRect(px+10,s.y+74,pw-30,5);
-    });
+      {label:'家庭備忘',col:'#88bbff',y:276},
+    ];
+    var dots=[' ·',' ··',' ···'][Math.floor(frame*2)%3];
+    var d=homeData;
+
+    // ── Section 1: 近期行程 ──
+    var s=sections[0];
+    ctx.fillStyle=s.col+'aa'; ctx.font='8px Courier New'; ctx.fillText(s.label,px+8,s.y);
+    ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
+    ctx.font='9px Courier New';
+    if (homeErr) {
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
+      ctx.fillStyle='#554444'; ctx.fillText('Render 冷啟動?',px+10,s.y+36);
+    } else if (!d) {
+      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,s.y+22);
+    } else {
+      var sched=d.daily&&d.daily.recurring_schedule||[];
+      var events=d.daily&&d.daily.upcoming_events||[];
+      var row=0;
+      sched.slice(0,3).forEach(function(e){
+        ctx.fillStyle='#b0b0cc';
+        ctx.fillText(trunc(ctx,e.day+' '+e.what,mw),px+10,s.y+22+row*14); row++;
+      });
+      events.slice(0,3-row).forEach(function(e){
+        ctx.fillStyle='#ffcc88';
+        ctx.fillText(trunc(ctx,'▸ '+(e.what||e),mw),px+10,s.y+22+row*14); row++;
+      });
+      if (row===0){ctx.fillStyle='#555577'; ctx.fillText('目前無近期行程',px+10,s.y+22);}
+    }
+
+    // ── Section 2: 孩子注意事項 ──
+    s=sections[1];
+    ctx.fillStyle=s.col+'aa'; ctx.font='8px Courier New'; ctx.fillText(s.label,px+8,s.y);
+    ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
+    ctx.font='9px Courier New';
+    if (homeErr) {
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
+    } else if (!d) {
+      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,s.y+22);
+    } else {
+      var c1=d.members&&d.members.child_1||{};
+      var c2=d.members&&d.members.child_2||{};
+      var p1=d.planning&&d.planning.child_1_education||{};
+      var p2=d.planning&&d.planning.child_2_education||{};
+      ctx.fillStyle='#ffcc88'; ctx.fillText('孩一：'+(c1.grade||'—'),px+10,s.y+22);
+      if(p1.next_milestone){
+        ctx.fillStyle='#888899';
+        ctx.fillText(trunc(ctx,'  '+p1.next_milestone,mw),px+10,s.y+36);
+      }
+      ctx.fillStyle='#ffcc88'; ctx.fillText('孩二：'+(c2.grade||'—'),px+10,s.y+50);
+      if(p2.next_milestone){
+        ctx.fillStyle='#888899';
+        ctx.fillText(trunc(ctx,'  '+p2.next_milestone,mw),px+10,s.y+64);
+      }
+    }
+
+    // ── Section 3: 家庭備忘 ──
+    s=sections[2];
+    ctx.fillStyle=s.col+'aa'; ctx.font='8px Courier New'; ctx.fillText(s.label,px+8,s.y);
+    ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
+    ctx.font='9px Courier New';
+    if (homeErr) {
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
+    } else if (!d) {
+      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,s.y+22);
+    } else {
+      var row3=0;
+      var wd=d.daily&&d.daily.weekday_residence, we=d.daily&&d.daily.weekend_residence;
+      if(wd){ctx.fillStyle='#9090cc'; ctx.fillText(trunc(ctx,'平日：'+wd,mw),px+10,s.y+22+row3*14); row3++;}
+      if(we){ctx.fillStyle='#9090cc'; ctx.fillText(trunc(ctx,'假日：'+we,mw),px+10,s.y+22+row3*14); row3++;}
+      var urgent=d.summary&&d.summary.urgent_items||[];
+      urgent.slice(0,2).forEach(function(item){
+        ctx.fillStyle='#ff9966';
+        ctx.fillText(trunc(ctx,'⚠ '+item,mw),px+10,s.y+22+row3*14); row3++;
+      });
+      var tasks=d.daily&&d.daily.household_tasks||[];
+      tasks.slice(0,Math.max(0,3-row3)).forEach(function(t){
+        ctx.fillStyle='#8888aa';
+        ctx.fillText(trunc(ctx,'· '+(t.what||t),mw),px+10,s.y+22+row3*14); row3++;
+      });
+      if(row3===0){ctx.fillStyle='#555577'; ctx.fillText('無特別備忘',px+10,s.y+22);}
+    }
+
     ctx.fillStyle='#10102c'; ctx.fillRect(px,H-34,pw,34);
     ctx.fillStyle='#557788'; ctx.font='8px Courier New'; ctx.textAlign='center';
     ctx.fillText('點擊小因對話',px+pw/2,H-16);
@@ -209,6 +289,7 @@ const HomeScene = (() => {
 
   var LINES = ['家裡的事交給我！','有什麼需要安排的嗎？','孩子們今天很乖喔！','今天晚餐想吃什麼？'];
   var xiaoyin=null, clickHandler=null;
+  var homeData=null, homeErr=false;
 
   return {
     init: function(worldData) {
@@ -217,6 +298,8 @@ const HomeScene = (() => {
       xiaoyin = cfg ? new Character(cfg) : null;
       if (xiaoyin) { CharacterSprites.applyAll({xiaoyin:xiaoyin}); xiaoyin.setState('idle'); }
       bubbles=[];
+      homeData=null; homeErr=false;
+      API.family().then(function(d){ homeData=d; }).catch(function(){ homeErr=true; });
       var canvas=BaseScene.canvas;
       if (clickHandler) canvas.removeEventListener('click',clickHandler);
       clickHandler = function(e){

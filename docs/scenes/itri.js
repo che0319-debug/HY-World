@@ -187,8 +187,14 @@ const ITRIScene = (() => {
 
   var DASH_BTN={x:0,y:0,w:0,h:0};
 
+  function trunc(ctx,text,maxW){
+    if(ctx.measureText(text).width<=maxW)return text;
+    while(text.length>1&&ctx.measureText(text+'…').width>maxW)text=text.slice(0,-1);
+    return text+'…';
+  }
+
   function drawPanel(ctx,frame){
-    var px=PANEL_X+2, pw=PANEL_W-2;
+    var px=PANEL_X+2, pw=PANEL_W-2, mw=pw-20;
     ctx.fillStyle='#050514'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
     ctx.fillStyle='#09091c'; ctx.fillRect(px,0,pw,44);
     ctx.fillStyle='#5599ff'; ctx.font='bold 11px Courier New'; ctx.textAlign='center';
@@ -204,18 +210,57 @@ const ITRIScene = (() => {
     ctx.fillStyle='#5599ff'; ctx.beginPath(); ctx.arc(px+16,62,4,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#aaaacc'; ctx.font='9px Courier New'; ctx.fillText('950157 · 在線',px+28,66);
 
-    [
-      {label:'專案進度',col:'#5599ff',y:90},
-      {label:'待辦任務',col:'#ffdd44',y:183},
-      {label:'系統狀態',col:'#44ff88',y:276},
-    ].forEach(function(s){
-      ctx.fillStyle=s.col+'aa'; ctx.font='8px Courier New'; ctx.fillText(s.label,px+8,s.y);
-      ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
-      ctx.fillStyle='#5a5a7a'; ctx.font='9px Courier New'; ctx.fillText('[Task 12 串接 API]',px+10,s.y+22);
-      ctx.fillStyle='#3a3a55'; ctx.fillText('— 資料讀取中 —',px+14,s.y+40);
-      ctx.fillStyle='#14142e';
-      ctx.fillRect(px+10,s.y+54,pw-24,5); ctx.fillRect(px+10,s.y+64,pw-40,5); ctx.fillRect(px+10,s.y+74,pw-30,5);
-    });
+    var dots=[' ·',' ··',' ···'][Math.floor(frame*2)%3];
+    var bi=itriStats;
+
+    // ── Section 1: 專案進度 ──
+    ctx.fillStyle='#5599ffaa'; ctx.font='8px Courier New'; ctx.fillText('專案進度',px+8,90);
+    ctx.fillStyle='#5599ff33'; ctx.fillRect(px+8,95,pw-16,1);
+    ctx.font='9px Courier New';
+    if(itriErr){
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,112);
+      ctx.fillStyle='#554444'; ctx.fillText('Render 冷啟動?',px+10,126);
+    } else if(!bi){
+      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,112);
+    } else {
+      ctx.fillStyle='#aaccff';
+      ctx.fillText('進行中: '+(bi.active_projects||0)+' 個專案',px+10,112);
+      if(bi.last_updated){
+        ctx.fillStyle='#667788';
+        ctx.fillText(trunc(ctx,'更新: '+bi.last_updated,mw),px+10,126);
+      }
+    }
+
+    // ── Section 2: 待辦任務 ──
+    ctx.fillStyle='#ffdd44aa'; ctx.font='8px Courier New'; ctx.fillText('待辦任務',px+8,183);
+    ctx.fillStyle='#ffdd4433'; ctx.fillRect(px+8,188,pw-16,1);
+    ctx.font='9px Courier New';
+    if(itriErr){
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,205);
+    } else if(!bi){
+      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,205);
+    } else {
+      var pt=bi.pending_tasks||0;
+      ctx.fillStyle='#ffee88';
+      ctx.fillText('待辦: '+pt+' 項',px+10,205);
+      ctx.fillStyle=pt===0?'#44cc66':'#ff8844';
+      ctx.fillText(pt===0?'✓ 全部完成':'處理中...',px+10,219);
+    }
+
+    // ── Section 3: 系統狀態 ──
+    ctx.fillStyle='#44ff88aa'; ctx.font='8px Courier New'; ctx.fillText('系統狀態',px+8,276);
+    ctx.fillStyle='#44ff8833'; ctx.fillRect(px+8,281,pw-16,1);
+    ctx.font='9px Courier New';
+    if(itriErr){
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,298);
+    } else if(!bi){
+      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,298);
+    } else {
+      ctx.fillStyle='#44cc88'; ctx.fillText('950157 Bot · 在線',px+10,298);
+      ctx.fillStyle='#556677';
+      var lu=bi.last_updated||'尚未同步';
+      ctx.fillText(trunc(ctx,'同步: '+lu,mw),px+10,312);
+    }
 
     // dashboard button
     var btnX=px+8, btnY=H-58, btnW=pw-16, btnH=30;
@@ -251,6 +296,7 @@ const ITRIScene = (() => {
 
   var LINES=['進度一切正常。','正在處理研究任務。','系統運行穩定。','這個功能還在測試中...','研究資料已同步完畢。'];
   var itri=null, clickHandler=null;
+  var itriStats=null, itriErr=false;
 
   return {
     init: function(worldData){
@@ -260,6 +306,8 @@ const ITRIScene = (() => {
       itri=cfg?new Character(cfg):null;
       if(itri){ CharacterSprites.applyAll({itri950:itri}); itri.setState('working'); }
       bubbles=[]; dashOpen=false; dashFrame=null;
+      itriStats=null; itriErr=false;
+      API.overview().then(function(d){ itriStats=d&&d.bots&&d.bots.itri||{}; }).catch(function(){ itriErr=true; });
       var canvas=BaseScene.canvas;
       if(clickHandler) canvas.removeEventListener('click',clickHandler);
       clickHandler=function(e){

@@ -285,7 +285,7 @@ const ITRIScene = (() => {
     var overlay=document.getElementById('scene-overlay');
     dashFrame=document.createElement('iframe');
     dashFrame.src='https://telegram-bot-t82n.onrender.com/dashboard';
-    dashFrame.style.cssText='position:absolute;top:10px;left:10px;width:460px;height:420px;border:2px solid #5599ff;background:#050514;z-index:7';
+    dashFrame.style.cssText='position:absolute;top:8px;left:4px;width:640px;height:452px;border:2px solid #5599ff;background:#050514;z-index:7;overflow-x:auto';
     overlay.appendChild(dashFrame);
     dashOpen=true;
   }

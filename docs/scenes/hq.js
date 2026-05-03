@@ -90,8 +90,6 @@ const HQScene = (() => {
     ctx.beginPath(); ctx.moveTo(44,176); ctx.lineTo(74,176); ctx.stroke();
     // marker tray
     ctx.fillStyle='#242450'; ctx.fillRect(8,212,84,6);
-    ctx.fillStyle='#5a5a8a'; ctx.font='7px Courier New';
-    ctx.fillText('BOARD',22,224);
 
     // ── bookshelf (right — COLOURFUL SPINES) ──
     var bsX=430,bsY=76,bsW=46,bsH=204;
@@ -110,8 +108,6 @@ const HQScene = (() => {
         bkx+=bw2+1;
       }
     });
-    ctx.fillStyle='#5a4428'; ctx.font='7px Courier New';
-    ctx.fillText('REFS',bsX+8,bsY+bsH+11);
 
     // ── work desks (front — VISIBLE AMBER-BROWN) ──
     function desk(dx,dy,dw){

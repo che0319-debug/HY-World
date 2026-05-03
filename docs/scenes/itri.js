@@ -1,507 +1,282 @@
-// ITRI indoor scene — Task 11
-// 研究室 + 工作站，950157 坐鎮，右側資料面板 + Dashboard 入口
+// ITRI indoor scene — 研究室 + 工作站 + 950157
 
 const ITRIScene = (() => {
 
-  // ── layout ────────────────────────────────────────────────────────
-  const PANEL_X = 480;
-  const PANEL_W = 200;
-  const SCENE_W = 480;
-  const H = 480;
-  const FLOOR_Y = H - 60;
+  const PANEL_X=480, PANEL_W=200, SCENE_W=480, H=480, FLOOR_Y=420;
+  var dashOpen=false, dashFrame=null;
 
-  // Dashboard iframe state
-  let dashOpen = false;
-  let dashFrame = null; // the <iframe> element
-
-  // ── rrect helper ──────────────────────────────────────────────────
-  function rrect(ctx, x, y, w, h, r) {
+  function rrect(ctx,x,y,w,h,r){
     ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.arcTo(x + w, y,     x + w, y + r,     r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-    ctx.lineTo(x + r, y + h);
-    ctx.arcTo(x,     y + h, x,     y + h - r, r);
-    ctx.lineTo(x,     y + r);
-    ctx.arcTo(x,     y,     x + r, y,         r);
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+    ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+    ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+    ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
     ctx.closePath();
   }
 
-  // ── bubble system ─────────────────────────────────────────────────
-  let bubbles = [];
-
-  function showBubble(text, bx, by, color, borderColor, duration) {
-    duration = duration || 2.8;
-    bubbles = bubbles.filter(function(b) { return b.text !== text; });
-    bubbles.push({ text: text, bx: bx, by: by, timer: duration, color: color, borderColor: borderColor });
+  var bubbles=[];
+  function showBubble(text,bx,by,color,border){
+    bubbles=bubbles.filter(function(b){ return b.text!==text; });
+    bubbles.push({text:text,bx:bx,by:by,timer:3,color:color,border:border});
   }
-
-  function drawBubbles(ctx, dt) {
-    bubbles = bubbles.filter(function(b) { b.timer -= dt; return b.timer > 0; });
-    bubbles.forEach(function(b) {
-      var alpha = Math.min(1, b.timer / 0.4);
-      if (alpha <= 0) return;
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.font = '11px Courier New';
-      var tw = ctx.measureText(b.text).width;
-      var pad = 10, bh = 22, tailH = 8;
-      var bw  = tw + pad * 2;
-      var ty  = Math.round(b.by - bh - tailH);
-      var tx  = Math.max(4, Math.min(SCENE_W - bw - 4, Math.round(b.bx - bw / 2)));
-      var tailX = Math.max(tx + 8, Math.min(tx + bw - 8, Math.round(b.bx)));
-
-      ctx.fillStyle = b.color;
-      rrect(ctx, tx, ty, bw, bh, 4); ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(tailX - 5, ty + bh);
-      ctx.lineTo(tailX + 5, ty + bh);
-      ctx.lineTo(tailX,     ty + bh + tailH);
-      ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = b.borderColor;
-      ctx.lineWidth = 1;
-      rrect(ctx, tx, ty, bw, bh, 4); ctx.stroke();
-      ctx.fillStyle = '#1a1a2e';
-      ctx.fillText(b.text, tx + pad, ty + 15);
+  function drawBubbles(ctx,dt){
+    bubbles=bubbles.filter(function(b){ b.timer-=dt; return b.timer>0; });
+    bubbles.forEach(function(b){
+      var a=Math.min(1,b.timer/0.4); if(!a) return;
+      ctx.save(); ctx.globalAlpha=a;
+      ctx.font='11px Courier New';
+      var tw=ctx.measureText(b.text).width,pad=10,bh=22,th=8,bw=tw+pad*2;
+      var ty=Math.round(b.by-bh-th);
+      var tx=Math.max(4,Math.min(SCENE_W-bw-4,Math.round(b.bx-bw/2)));
+      var tX=Math.max(tx+8,Math.min(tx+bw-8,Math.round(b.bx)));
+      ctx.fillStyle=b.color; rrect(ctx,tx,ty,bw,bh,4); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(tX-5,ty+bh); ctx.lineTo(tX+5,ty+bh); ctx.lineTo(tX,ty+bh+th); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle=b.border; ctx.lineWidth=1; rrect(ctx,tx,ty,bw,bh,4); ctx.stroke();
+      ctx.fillStyle='#1a1a2e'; ctx.fillText(b.text,tx+pad,ty+15);
       ctx.restore();
     });
   }
 
-  // ── floor (scene area only) ───────────────────────────────────────
-  function drawFloor(ctx) {
-    ctx.fillStyle = '#0a0e1e';
-    ctx.fillRect(0, FLOOR_Y, SCENE_W, H - FLOOR_Y);
-    ctx.strokeStyle = '#07091a';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (var x = 0; x <= SCENE_W; x += 20) {
-      ctx.moveTo(x + 0.5, FLOOR_Y);
-      ctx.lineTo(x + 0.5, H);
-    }
-    for (var y = FLOOR_Y; y <= H; y += 20) {
-      ctx.moveTo(0, y + 0.5);
-      ctx.lineTo(SCENE_W, y + 0.5);
-    }
-    ctx.stroke();
-    // Industrial safety stripe (yellow line)
-    ctx.fillStyle = '#3a3000';
-    ctx.fillRect(0, FLOOR_Y + 2, SCENE_W, 3);
-    ctx.fillStyle = '#665500';
-    for (var sx = 0; sx < SCENE_W; sx += 20) {
-      ctx.fillRect(sx, FLOOR_Y + 2, 10, 3);
-    }
-  }
-
-  // ── LED blink state ───────────────────────────────────────────────
-  var _ledFrame = 0;
-
-  // ── scene drawing ─────────────────────────────────────────────────
   function drawScene(ctx, frame) {
-    _ledFrame = frame;
+    // ── full canvas base ──
+    ctx.fillStyle='#070710';
+    ctx.fillRect(0,0,680,H);
 
-    // 1. Wall background (industrial blue-grey)
-    ctx.fillStyle = '#0c0e1c';
-    ctx.fillRect(0, 0, SCENE_W, FLOOR_Y);
+    // ── wall (dark industrial blue) ──
+    ctx.fillStyle='#0b0d1a';
+    ctx.fillRect(0,0,SCENE_W,FLOOR_Y);
 
-    // 2. Floor
-    drawFloor(ctx);
+    // ── floor with industrial stripe ──
+    ctx.fillStyle='#090b18';
+    ctx.fillRect(0,FLOOR_Y,SCENE_W,H-FLOOR_Y);
+    ctx.strokeStyle='#06080f'; ctx.lineWidth=1; ctx.beginPath();
+    for(var x=0;x<=SCENE_W;x+=20){ ctx.moveTo(x+.5,FLOOR_Y); ctx.lineTo(x+.5,H); }
+    for(var y=FLOOR_Y;y<=H;y+=20){ ctx.moveTo(0,y+.5); ctx.lineTo(SCENE_W,y+.5); }
+    ctx.stroke();
+    // yellow safety stripe
+    ctx.fillStyle='#554400'; ctx.fillRect(0,FLOOR_Y+2,SCENE_W,4);
+    ctx.fillStyle='#887700';
+    for(var sx=0;sx<SCENE_W;sx+=20) ctx.fillRect(sx,FLOOR_Y+2,10,4);
 
-    // 3. Baseboard
-    ctx.fillStyle = '#141826';
-    ctx.fillRect(0, FLOOR_Y - 5, SCENE_W, 5);
+    // baseboard
+    ctx.fillStyle='#141826'; ctx.fillRect(0,FLOOR_Y-6,SCENE_W,6);
 
-    // 4. Back wall windows (large industrial-style, upper band)
-    var winY = 48;
-    ctx.fillStyle = '#101828';
-    ctx.fillRect(0, winY - 8, SCENE_W, 8); // window header rail
-    // Three wide windows with metal grille feel
-    [[30, winY], [170, winY], [310, winY]].forEach(function(pos) {
-      var wx = pos[0], wy = pos[1];
-      // Window surround
-      ctx.fillStyle = '#181e30';
-      ctx.fillRect(wx - 3, wy - 3, 110, 78);
-      // Glass (cool blue, slightly lit)
-      ctx.fillStyle = '#0a1428';
-      ctx.fillRect(wx, wy, 104, 72);
-      ctx.fillStyle = 'rgba(40,80,160,0.35)';
-      ctx.fillRect(wx + 1, wy + 1, 102, 70);
-      // Grille bars (horizontal)
-      ctx.fillStyle = '#181e30';
-      ctx.fillRect(wx, wy + 24, 104, 3);
-      ctx.fillRect(wx, wy + 48, 104, 3);
-      // Grille bars (vertical)
-      ctx.fillRect(wx + 34, wy, 3, 72);
-      ctx.fillRect(wx + 68, wy, 3, 72);
-      // Reflection glint
-      ctx.fillStyle = 'rgba(120,160,255,0.08)';
-      ctx.fillRect(wx + 2, wy + 2, 30, 22);
+    // ── back wall windows (large industrial, VISIBLE BLUE) ──
+    [26,164,302].forEach(function(wx){
+      ctx.fillStyle='#0e1428'; ctx.fillRect(wx-4,44,118,84); // surround
+      ctx.fillStyle='#0a1830'; ctx.fillRect(wx,48,110,76);   // glass (dark)
+      ctx.fillStyle='rgba(60,120,220,0.4)'; ctx.fillRect(wx+1,49,108,74); // blue tint
+      // grille bars
+      ctx.fillStyle='#141c30';
+      ctx.fillRect(wx,72,110,3); ctx.fillRect(wx,96,110,3);
+      ctx.fillRect(wx+36,48,3,76); ctx.fillRect(wx+73,48,3,76);
+      // reflection
+      ctx.fillStyle='rgba(100,160,255,0.1)'; ctx.fillRect(wx+2,50,32,20);
     });
+    // header rail
+    ctx.fillStyle='#111828'; ctx.fillRect(20,42,420,6);
 
-    // 5. Instrument rack (left wall, tall unit)
-    var rackX = 6, rackY = 130, rackW = 56, rackH = FLOOR_Y - 140;
-    ctx.fillStyle = '#0e0e1c';
-    ctx.fillRect(rackX, rackY, rackW, rackH);
-    ctx.strokeStyle = '#1e1e30';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(rackX + 0.5, rackY + 0.5, rackW - 1, rackH - 1);
-    // Rack units (1U panels)
-    for (var ru = 0; ru < 8; ru++) {
-      var ruY = rackY + 4 + ru * 38;
-      ctx.fillStyle = '#141420';
-      ctx.fillRect(rackX + 4, ruY, rackW - 8, 34);
-      ctx.strokeStyle = '#202030';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(rackX + 4 + 0.5, ruY + 0.5, rackW - 9, 33);
-      // Screws (rack ears)
-      ctx.fillStyle = '#2a2a40';
-      ctx.beginPath(); ctx.arc(rackX + 8, ruY + 5, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(rackX + 8, ruY + 29, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(rackX + rackW - 8, ruY + 5, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(rackX + rackW - 8, ruY + 29, 3, 0, Math.PI * 2); ctx.fill();
-      // Status LEDs
-      var ledColors = ['#44ff44', '#ffcc44', '#4488ff', '#ff4444', '#44ff44', '#44ff44', '#ffcc44', '#44ff44'];
-      var ledColor  = ledColors[ru % ledColors.length];
-      var ledBlink  = (ru === 2 || ru === 5) && Math.sin(frame * 6 + ru) > 0;
-      ctx.fillStyle = ledBlink ? ledColor : ledColor + '44';
-      ctx.beginPath(); ctx.arc(rackX + 20, ruY + 17, 3, 0, Math.PI * 2); ctx.fill();
-      if (!ledBlink) {
-        ctx.fillStyle = ledColor;
-        ctx.beginPath(); ctx.arc(rackX + 20, ruY + 17, 1.5, 0, Math.PI * 2); ctx.fill();
+    // ── instrument rack (LEFT, with VISIBLE coloured LEDs) ──
+    var rX=6,rY=134,rW=58,rH=FLOOR_Y-144;
+    ctx.fillStyle='#0d0d1e'; ctx.fillRect(rX,rY,rW,rH);
+    ctx.strokeStyle='#1c1c30'; ctx.lineWidth=1; ctx.strokeRect(rX+.5,rY+.5,rW-1,rH-1);
+    var ledCols=['#44ff44','#ffcc44','#4488ff','#ff4444','#44ff44','#44ffcc','#ffcc44','#44ff44'];
+    for(var ru=0;ru<7;ru++){
+      var ruY=rY+4+ru*40;
+      ctx.fillStyle='#141426'; ctx.fillRect(rX+4,ruY,rW-8,36);
+      ctx.strokeStyle='#1e1e32'; ctx.lineWidth=1; ctx.strokeRect(rX+4+.5,ruY+.5,rW-9,35);
+      // screws
+      ctx.fillStyle='#2a2a44';
+      ctx.beginPath(); ctx.arc(rX+9,ruY+6,3,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(rX+9,ruY+30,3,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(rX+rW-9,ruY+6,3,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(rX+rW-9,ruY+30,3,0,Math.PI*2); ctx.fill();
+      // LED (blinking for some units)
+      var blink=(ru===2||ru===5)&&Math.sin(frame*6+ru)>0;
+      var lcol=ledCols[ru%ledCols.length];
+      ctx.fillStyle=blink ? lcol : '#111118';
+      ctx.beginPath(); ctx.arc(rX+22,ruY+18,4,0,Math.PI*2); ctx.fill();
+      if(!blink){ ctx.fillStyle=lcol; ctx.beginPath(); ctx.arc(rX+22,ruY+18,1.5,0,Math.PI*2); ctx.fill(); }
+      // port row
+      ctx.fillStyle='#0a0a18';
+      for(var p=0;p<3;p++) ctx.fillRect(rX+32+p*7,ruY+14,5,8);
+    }
+    ctx.fillStyle='#222244'; ctx.font='7px Courier New'; ctx.textAlign='center';
+    ctx.fillText('RACK',rX+rW/2,rY-5); ctx.textAlign='left';
+
+    // ── server rack (RIGHT, VISIBLE with activity LEDs) ──
+    var sX=388,sY=112,sW=84,sH=FLOOR_Y-122;
+    ctx.fillStyle='#0a0a1a'; ctx.fillRect(sX,sY,sW,sH);
+    ctx.strokeStyle='#181828'; ctx.lineWidth=1; ctx.strokeRect(sX+.5,sY+.5,sW-1,sH-1);
+    for(var sb=0;sb<8;sb++){
+      var sbY=sY+5+sb*36;
+      ctx.fillStyle='#101020'; ctx.fillRect(sX+4,sbY,sW-8,32);
+      ctx.strokeStyle='#1a1a2c'; ctx.strokeRect(sX+4+.5,sbY+.5,sW-9,31);
+      // drive bays
+      for(var bd=0;bd<4;bd++){
+        ctx.fillStyle='#080818'; ctx.fillRect(sX+6+bd*17,sbY+6,14,20);
+        ctx.strokeStyle='#121220'; ctx.strokeRect(sX+6+bd*17,sbY+6,14,20);
       }
+      // activity LED
+      var actOn=Math.sin(frame*8+sb*1.7)>0.5;
+      ctx.fillStyle=actOn ? '#44ff88' : '#0a1a0a';
+      ctx.fillRect(sX+sW-11,sbY+6,5,5);
     }
-    // Rack label
-    ctx.fillStyle = '#28284a';
-    ctx.font = '7px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('RACK', rackX + rackW / 2, rackY - 4);
-    ctx.textAlign = 'left';
+    ctx.fillStyle='#222244'; ctx.font='7px Courier New'; ctx.textAlign='center';
+    ctx.fillText('SERVER',sX+sW/2,sY-5); ctx.textAlign='left';
 
-    // 6. Server unit (right side of scene)
-    var srvX = 390, srvY = 110, srvW = 82, srvH = FLOOR_Y - 120;
-    ctx.fillStyle = '#0a0a18';
-    ctx.fillRect(srvX, srvY, srvW, srvH);
-    ctx.strokeStyle = '#1a1a28';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(srvX + 0.5, srvY + 0.5, srvW - 1, srvH - 1);
-    // Server blades
-    for (var sb = 0; sb < 9; sb++) {
-      var sbY = srvY + 6 + sb * 34;
-      ctx.fillStyle = '#111122';
-      ctx.fillRect(srvX + 4, sbY, srvW - 8, 30);
-      ctx.strokeStyle = '#1c1c30';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(srvX + 4 + 0.5, sbY + 0.5, srvW - 9, 29);
-      // Drive bays (4 slots)
-      for (var bd = 0; bd < 4; bd++) {
-        ctx.fillStyle = '#0a0a14';
-        ctx.fillRect(srvX + 6 + bd * 16, sbY + 6, 13, 18);
-        ctx.strokeStyle = '#151520';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(srvX + 6 + bd * 16, sbY + 6, 13, 18);
-      }
-      // Activity LED
-      var actOn = Math.sin(frame * 8 + sb * 1.3) > 0.6;
-      ctx.fillStyle = actOn ? '#44ff88' : '#112211';
-      ctx.fillRect(srvX + srvW - 10, sbY + 6, 4, 4);
+    // ── main workstation desk (VISIBLE AMBER-BROWN) ──
+    var dX=106,dY=FLOOR_Y-64,dW=250;
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(dX+4,dY+22,dW,8); // shadow
+    ctx.fillStyle='#3a2c14'; ctx.fillRect(dX,dY,dW,22);
+    ctx.fillStyle='rgba(255,255,255,0.07)'; ctx.fillRect(dX,dY,dW,3);
+    ctx.strokeStyle='#1c1408'; ctx.lineWidth=1; ctx.strokeRect(dX+.5,dY+.5,dW-1,21);
+    ctx.fillStyle='#1c1408';
+    ctx.fillRect(dX+6,dY+22,6,18); ctx.fillRect(dX+dW-12,dY+22,6,18);
+
+    // dual monitors
+    function mon(mx,my){
+      ctx.fillStyle='#111122'; ctx.fillRect(mx,my,34,26);
+      ctx.fillStyle='#0a1428'; ctx.fillRect(mx+2,my+2,30,20);
+      ctx.fillStyle='rgba(40,100,220,0.5)'; ctx.fillRect(mx+3,my+3,28,18);
+      ctx.fillStyle='rgba(0,255,128,0.25)';
+      for(var i=0;i<5;i++) ctx.fillRect(mx+4,my+5+i*3,18,1);
+      ctx.fillStyle='#1a1a2c'; ctx.fillRect(mx+13,my+24,8,6); ctx.fillRect(mx+9,my+30,16,3);
     }
-    // Server label
-    ctx.fillStyle = '#28284a';
-    ctx.font = '7px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('SERVER', srvX + srvW / 2, srvY - 4);
-    ctx.textAlign = 'left';
+    mon(dX+14,dY-38); mon(dX+58,dY-38);
+    // large centre monitor
+    ctx.fillStyle='#0e0e22'; ctx.fillRect(dX+104,dY-44,54,40);
+    ctx.fillStyle='#0a1430'; ctx.fillRect(dX+106,dY-42,50,34);
+    ctx.fillStyle='rgba(30,100,200,0.55)'; ctx.fillRect(dX+107,dY-41,48,32);
+    ctx.fillStyle='rgba(0,255,100,0.3)';
+    for(var ml=0;ml<8;ml++) ctx.fillRect(dX+109,dY-39+ml*4,8+(ml*7)%22,1);
+    ctx.fillStyle='#1a1a2c'; ctx.fillRect(dX+126,dY-4,10,6); ctx.fillRect(dX+120,dY+2,22,3);
 
-    // 7. Main workstation desk (centre, 950157 sits here)
-    var deskX = 110, deskY = FLOOR_Y - 60, deskW = 240;
-    // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.fillRect(deskX + 4, deskY + 22, deskW, 8);
-    // Desk surface
-    ctx.fillStyle = '#161a28';
-    ctx.fillRect(deskX, deskY, deskW, 22);
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
-    ctx.fillRect(deskX, deskY, deskW, 3);
-    ctx.strokeStyle = '#0e1020';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(deskX + 0.5, deskY + 0.5, deskW - 1, 21);
-    // Desk legs
-    ctx.fillStyle = '#0e1020';
-    ctx.fillRect(deskX + 6,        deskY + 22, 6, 18);
-    ctx.fillRect(deskX + deskW - 12, deskY + 22, 6, 18);
-    // Cable tray under desk (industrial detail)
-    ctx.fillStyle = '#0c0e1a';
-    ctx.fillRect(deskX + 20, deskY + 22, deskW - 40, 6);
+    // keyboard
+    ctx.fillStyle='#0e1020'; ctx.fillRect(dX+102,dY+4,66,9);
+    ctx.fillStyle='#161828';
+    for(var ki=0;ki<9;ki++) ctx.fillRect(dX+104+ki*7,dY+5,5,7);
 
-    // Dual monitors on desk
-    BaseScene.drawMonitor(deskX + 18,  deskY - 32);
-    BaseScene.drawMonitor(deskX + 58,  deskY - 32);
-    // Main large monitor (centre)
-    ctx.fillStyle = '#111122';
-    ctx.fillRect(deskX + 100, deskY - 40, 50, 36);
-    ctx.fillStyle = '#0a1428';
-    ctx.fillRect(deskX + 102, deskY - 38, 46, 30);
-    ctx.fillStyle = 'rgba(30,100,200,0.5)';
-    ctx.fillRect(deskX + 103, deskY - 37, 44, 28);
-    // Code-like content on main monitor
-    ctx.fillStyle = 'rgba(0,255,128,0.35)';
-    for (var ml = 0; ml < 7; ml++) {
-      var lineW = 10 + Math.floor((ml * 7 + 3) % 30);
-      ctx.fillRect(deskX + 104, deskY - 35 + ml * 4, lineW, 1);
-    }
-    // Monitor stands
-    ctx.fillStyle = '#1a1a2c';
-    ctx.fillRect(deskX + 22, deskY - 4, 6, 6);
-    ctx.fillRect(deskX + 62, deskY - 4, 6, 6);
-    ctx.fillRect(deskX + 119, deskY - 4, 8, 6);
+    // papers
+    ctx.fillStyle='#c8ccb0'; ctx.fillRect(dX+180,dY+2,32,18);
+    ctx.fillStyle='#555577';
+    for(var li=0;li<3;li++) ctx.fillRect(dX+182,dY+6+li*5,22,1);
 
-    // Keyboard (950157's keyboard)
-    ctx.fillStyle = '#0e1020';
-    ctx.fillRect(deskX + 96, deskY + 4, 60, 8);
-    ctx.fillStyle = '#141828';
-    for (var ki = 0; ki < 8; ki++) ctx.fillRect(deskX + 98 + ki * 7, deskY + 5, 5, 6);
+    // coffee cup
+    ctx.fillStyle='#3c2810'; ctx.fillRect(dX+220,dY+3,14,16);
+    ctx.fillStyle='#1a0800'; ctx.fillRect(dX+222,dY+4,10,6);
+    ctx.fillStyle='#4a2c10'; ctx.fillRect(dX+234,dY+7,4,8);
 
-    // Reference papers / printouts on desk
-    ctx.fillStyle = '#c8ccb8';
-    ctx.fillRect(deskX + 168, deskY + 2, 30, 18);
-    ctx.fillStyle = '#a8b0a0';
-    ctx.fillRect(deskX + 170, deskY + 4, 26, 14);
-    ctx.fillStyle = '#445566';
-    ctx.font = '5px Courier New';
-    [6, 10, 14].forEach(function(py) {
-      ctx.fillRect(deskX + 171, deskY + py, 18, 1);
+    // ── side filing cabinet ──
+    ctx.fillStyle='#111122'; ctx.fillRect(70,FLOOR_Y-84,38,84);
+    ctx.strokeStyle='#1a1a30'; ctx.lineWidth=1; ctx.strokeRect(70,FLOOR_Y-84,38,84);
+    [0,28,56].forEach(function(dy){
+      ctx.fillStyle='#0e0e20'; ctx.fillRect(73,FLOOR_Y-82+dy,32,24);
+      ctx.fillStyle='#3a3a5a'; ctx.fillRect(83,FLOOR_Y-72+dy,12,4);
     });
 
-    // Coffee mug
-    ctx.fillStyle = '#3a2a1a';
-    ctx.fillRect(deskX + 204, deskY + 3, 14, 16);
-    ctx.fillStyle = '#1a0a00';
-    ctx.fillRect(deskX + 206, deskY + 4, 10, 5);
-    ctx.fillStyle = '#4a2a10';
-    ctx.fillRect(deskX + 218, deskY + 7, 4, 8);
-
-    // 8. Side cabinet / filing (left of main desk)
-    var cabX = 70, cabY = FLOOR_Y - 80;
-    ctx.fillStyle = '#0e1020';
-    ctx.fillRect(cabX, cabY, 36, 80);
-    ctx.strokeStyle = '#181828';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(cabX + 0.5, cabY + 0.5, 35, 79);
-    // Drawers
-    [0, 26, 52].forEach(function(dy) {
-      ctx.fillStyle = '#111122';
-      ctx.fillRect(cabX + 3, cabY + 2 + dy, 30, 22);
-      ctx.fillStyle = '#3a3a5a';
-      ctx.fillRect(cabX + 14, cabY + 11 + dy, 10, 4);
-    });
-
-    // 9. Panel divider
-    ctx.fillStyle = '#060614';
-    ctx.fillRect(PANEL_X, 0, 1, H);
-    ctx.fillStyle = '#14142a';
-    ctx.fillRect(PANEL_X + 1, 0, 1, H);
+    // ── panel divider ──
+    ctx.fillStyle='#050510'; ctx.fillRect(PANEL_X,0,2,H);
   }
 
-  // ── right data panel ──────────────────────────────────────────────
-  var DASH_BTN = { x: 0, y: 0, w: 0, h: 0 }; // set in drawPanel for click detection
+  var DASH_BTN={x:0,y:0,w:0,h:0};
 
-  function drawPanel(ctx, frame) {
-    var px = PANEL_X + 2;
-    var pw = PANEL_W - 2;
+  function drawPanel(ctx,frame){
+    var px=PANEL_X+2, pw=PANEL_W-2;
+    ctx.fillStyle='#050510'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
+    ctx.fillStyle='#090918'; ctx.fillRect(px,0,pw,44);
+    ctx.fillStyle='#4488ff'; ctx.font='bold 11px Courier New'; ctx.textAlign='center';
+    ctx.fillText('ITRI 研究室',px+pw/2,16);
+    ctx.fillStyle='#224466'; ctx.font='9px Courier New';
+    ctx.fillText('950157 工作站',px+pw/2,31);
+    ctx.textAlign='left';
+    ctx.fillStyle='rgba(68,136,255,0.2)'; ctx.fillRect(px+6,44,pw-12,1);
 
-    // Background
-    ctx.fillStyle = '#06060e';
-    ctx.fillRect(PANEL_X, 0, PANEL_W, H);
+    var pulse=0.5+0.5*Math.sin(frame*4);
+    ctx.fillStyle='rgba(68,136,255,'+(0.2+pulse*0.35)+')';
+    ctx.beginPath(); ctx.arc(px+16,62,8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#4488ff'; ctx.beginPath(); ctx.arc(px+16,62,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#aaaacc'; ctx.font='9px Courier New'; ctx.fillText('950157 · 在線',px+28,66);
 
-    // Header
-    ctx.fillStyle = '#0a0e1c';
-    ctx.fillRect(px, 0, pw, 44);
-    ctx.fillStyle = '#4488ff';
-    ctx.font = 'bold 11px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('ITRI 研究室', px + pw / 2, 15);
-    ctx.fillStyle = '#224466';
-    ctx.font = '9px Courier New';
-    ctx.fillText('950157 工作站', px + pw / 2, 30);
-    ctx.textAlign = 'left';
-
-    // Header separator
-    ctx.fillStyle = '#4488ff33';
-    ctx.fillRect(px + 6, 44, pw - 12, 1);
-
-    // Status dot (pulse)
-    var pulse = 0.5 + 0.5 * Math.sin(frame * 4);
-    ctx.fillStyle = 'rgba(68,136,255,' + (0.2 + pulse * 0.35) + ')';
-    ctx.beginPath(); ctx.arc(px + 16, 62, 8, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#4488ff';
-    ctx.beginPath(); ctx.arc(px + 16, 62, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#aaaacc';
-    ctx.font = '9px Courier New';
-    ctx.fillText('950157 · 在線', px + 28, 66);
-
-    // Data sections
-    var sections = [
-      { label: '專案進度',   col: '#4488ff', y: 88  },
-      { label: '待辦任務',   col: '#ffcc44', y: 183 },
-      { label: '系統狀態',   col: '#44ff88', y: 278 },
-    ];
-    sections.forEach(function(sec) {
-      ctx.fillStyle = sec.col + '99';
-      ctx.font = '8px Courier New';
-      ctx.fillText(sec.label, px + 8, sec.y);
-      ctx.fillStyle = sec.col + '22';
-      ctx.fillRect(px + 8, sec.y + 5, pw - 16, 1);
-      ctx.fillStyle = '#3a3a55';
-      ctx.font = '9px Courier New';
-      ctx.fillText('[Task 12 串接 API]', px + 10, sec.y + 22);
-      ctx.fillStyle = '#282840';
-      ctx.fillText('— 資料讀取中 —', px + 14, sec.y + 40);
-      // Skeleton bars
-      ctx.fillStyle = '#141430';
-      ctx.fillRect(px + 10, sec.y + 55, pw - 24, 6);
-      ctx.fillRect(px + 10, sec.y + 66, pw - 38, 6);
-      ctx.fillRect(px + 10, sec.y + 77, pw - 30, 6);
+    [
+      {label:'專案進度',col:'#4488ff',y:90},
+      {label:'待辦任務',col:'#ffcc44',y:183},
+      {label:'系統狀態',col:'#44ff88',y:276},
+    ].forEach(function(s){
+      ctx.fillStyle=s.col+'88'; ctx.font='8px Courier New'; ctx.fillText(s.label,px+8,s.y);
+      ctx.fillStyle=s.col+'22'; ctx.fillRect(px+8,s.y+5,pw-16,1);
+      ctx.fillStyle='#3a3a55'; ctx.font='9px Courier New'; ctx.fillText('[Task 12 串接 API]',px+10,s.y+22);
+      ctx.fillStyle='#252540'; ctx.fillText('— 資料讀取中 —',px+14,s.y+40);
+      ctx.fillStyle='#141430';
+      ctx.fillRect(px+10,s.y+54,pw-24,5); ctx.fillRect(px+10,s.y+64,pw-40,5); ctx.fillRect(px+10,s.y+74,pw-30,5);
     });
 
-    // Dashboard button
-    var btnX = px + 10, btnY = H - 56, btnW = pw - 20, btnH = 28;
-    DASH_BTN.x = PANEL_X + 12;
-    DASH_BTN.y = btnY;
-    DASH_BTN.w = btnW;
-    DASH_BTN.h = btnH;
-    ctx.fillStyle = dashOpen ? '#1a2a44' : '#0e1a2e';
-    ctx.fillRect(btnX, btnY, btnW, btnH);
-    ctx.strokeStyle = dashOpen ? '#4488ff' : '#224466';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(btnX + 0.5, btnY + 0.5, btnW - 1, btnH - 1);
-    ctx.fillStyle = dashOpen ? '#88aaff' : '#4488ff';
-    ctx.font = 'bold 9px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText(dashOpen ? '✕ 關閉 Dashboard' : '▶ 展開 Dashboard', px + pw / 2, btnY + 17);
-    ctx.textAlign = 'left';
+    // dashboard button
+    var btnX=px+8, btnY=H-58, btnW=pw-16, btnH=30;
+    DASH_BTN.x=PANEL_X+10; DASH_BTN.y=btnY; DASH_BTN.w=btnW; DASH_BTN.h=btnH;
+    ctx.fillStyle=dashOpen?'#1a2a44':'#0d1a2e';
+    ctx.fillRect(btnX,btnY,btnW,btnH);
+    ctx.strokeStyle=dashOpen?'#4488ff':'#22446a'; ctx.lineWidth=1;
+    ctx.strokeRect(btnX+.5,btnY+.5,btnW-1,btnH-1);
+    ctx.fillStyle=dashOpen?'#88aaff':'#5599ff';
+    ctx.font='bold 9px Courier New'; ctx.textAlign='center';
+    ctx.fillText(dashOpen?'✕ 關閉 Dashboard':'▶ 展開 Dashboard',px+pw/2,btnY+18);
+    ctx.textAlign='left';
 
-    // Footer hint
-    ctx.fillStyle = '#0a0a1a';
-    ctx.fillRect(px, H - 22, pw, 22);
-    ctx.fillStyle = '#334455';
-    ctx.font = '8px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('點擊 950157 對話', px + pw / 2, H - 8);
-    ctx.textAlign = 'left';
+    ctx.fillStyle='#08081a'; ctx.fillRect(px,H-22,pw,22);
+    ctx.fillStyle='#334455'; ctx.font='8px Courier New'; ctx.textAlign='center';
+    ctx.fillText('點擊 950157 對話',px+pw/2,H-8);
+    ctx.textAlign='left';
   }
 
-  // ── Dashboard iframe ──────────────────────────────────────────────
-  function openDash() {
+  function openDash(){
     if (dashFrame) return;
-    var overlay = document.getElementById('scene-overlay');
-    dashFrame = document.createElement('iframe');
-    dashFrame.src = 'https://telegram-bot-t82n.onrender.com/dashboard';
-    dashFrame.style.cssText = [
-      'position:absolute',
-      'top:10px',
-      'left:10px',
-      'width:' + (PANEL_X - 20) + 'px',
-      'height:' + (H - 60) + 'px',
-      'border:2px solid #4488ff',
-      'background:#060614',
-      'z-index:7',
-    ].join(';');
+    var overlay=document.getElementById('scene-overlay');
+    dashFrame=document.createElement('iframe');
+    dashFrame.src='https://telegram-bot-t82n.onrender.com/dashboard';
+    dashFrame.style.cssText='position:absolute;top:10px;left:10px;width:460px;height:420px;border:2px solid #4488ff;background:#050510;z-index:7';
     overlay.appendChild(dashFrame);
-    dashOpen = true;
+    dashOpen=true;
+  }
+  function closeDash(){
+    if (dashFrame){ dashFrame.parentNode&&dashFrame.parentNode.removeChild(dashFrame); dashFrame=null; }
+    dashOpen=false;
   }
 
-  function closeDash() {
-    if (dashFrame) {
-      dashFrame.parentNode && dashFrame.parentNode.removeChild(dashFrame);
-      dashFrame = null;
-    }
-    dashOpen = false;
-  }
+  var LINES=['進度一切正常。','正在處理研究任務。','系統運行穩定。','這個功能還在測試中...','研究資料已同步完畢。'];
+  var itri=null, clickHandler=null;
 
-  // ── character + click handling ────────────────────────────────────
-  var DIALOGUES = [
-    '進度一切正常。',
-    '正在處理研究任務。',
-    '系統運行穩定。',
-    '這個功能還在測試中...',
-    '研究資料已同步完畢。',
-  ];
-
-  var itri = null;
-  var charX = 0, charY = 0;
-  var clickHandler = null;
-
-  function setupClick(canvas, cx, cy) {
-    charX = cx; charY = cy;
-    var hw = 8, hh = 28;
-    clickHandler = function(e) {
-      var rect = canvas.getBoundingClientRect();
-      var mx = (e.clientX - rect.left) * (680 / rect.width);
-      var my = (e.clientY - rect.top)  * (480 / rect.height);
-
-      // Dashboard button hit
-      if (mx >= DASH_BTN.x && mx <= DASH_BTN.x + DASH_BTN.w &&
-          my >= DASH_BTN.y && my <= DASH_BTN.y + DASH_BTN.h) {
-        dashOpen ? closeDash() : openDash();
-        return;
-      }
-
-      // Character hit
-      if (mx >= charX - hw && mx <= charX + hw && my >= charY - hh && my <= charY) {
-        var text = DIALOGUES[Math.floor(Math.random() * DIALOGUES.length)];
-        showBubble(text, charX, charY - 32, '#f0f4ff', '#4488ff');
-      }
-    };
-    canvas.addEventListener('click', clickHandler);
-  }
-
-  // ── public ────────────────────────────────────────────────────────
   return {
-    init: function(worldData) {
-      var charCfg = worldData
-        ? worldData.characters.find(function(c) { return c.id === 'itri950'; })
-        : null;
-
-      // Character sits behind main desk, centre
-      var deskX = 110, deskY = FLOOR_Y - 60, deskW = 240;
-      var sceneCharX = deskX + deskW / 2;
-      var sceneCharY = deskY - 2;
-
-      itri = charCfg ? new Character(charCfg) : null;
-      if (itri) {
-        CharacterSprites.applyAll({ itri950: itri });
-        itri.setState('working');
-      }
-
-      bubbles  = [];
-      dashOpen = false;
-      dashFrame = null;
-
-      var canvas = BaseScene.canvas;
-      if (clickHandler) canvas.removeEventListener('click', clickHandler);
-      setupClick(canvas, sceneCharX, sceneCharY);
-
-      BaseScene.startLoop(function(ctx, dt) {
-        drawScene(ctx, itri ? itri.frame : 0);
-        drawPanel(ctx, itri ? itri.frame : 0);
-
-        if (itri) {
-          itri.frame += dt;
-          itri.drawAt(ctx, sceneCharX, sceneCharY, 'working');
+    init: function(worldData){
+      var cfg=worldData&&worldData.characters.find(function(c){ return c.id==='itri950'; });
+      var dX=106, dY=FLOOR_Y-64, dW=250;
+      var cx=dX+dW/2, cy=dY-2;
+      itri=cfg?new Character(cfg):null;
+      if(itri){ CharacterSprites.applyAll({itri950:itri}); itri.setState('working'); }
+      bubbles=[]; dashOpen=false; dashFrame=null;
+      var canvas=BaseScene.canvas;
+      if(clickHandler) canvas.removeEventListener('click',clickHandler);
+      clickHandler=function(e){
+        var r=canvas.getBoundingClientRect();
+        var mx=(e.clientX-r.left)*(680/r.width), my=(e.clientY-r.top)*(480/r.height);
+        if(mx>=DASH_BTN.x&&mx<=DASH_BTN.x+DASH_BTN.w&&my>=DASH_BTN.y&&my<=DASH_BTN.y+DASH_BTN.h){
+          dashOpen?closeDash():openDash(); return;
         }
-
-        drawBubbles(ctx, dt);
+        if(mx>=cx-8&&mx<=cx+8&&my>=cy-28&&my<=cy)
+          showBubble(LINES[Math.floor(Math.random()*LINES.length)],cx,cy-32,'#f0f4ff','#4488ff');
+      };
+      canvas.addEventListener('click',clickHandler);
+      BaseScene.startLoop(function(ctx,dt){
+        drawScene(ctx, itri?itri.frame:0);
+        drawPanel(ctx, itri?itri.frame:0);
+        if(itri){ itri.frame+=dt; itri.drawAt(ctx,cx,cy,'working'); }
+        drawBubbles(ctx,dt);
       });
     },
-
-    cleanup: function() {
+    cleanup: function(){
       closeDash();
-      if (clickHandler) {
-        BaseScene.canvas.removeEventListener('click', clickHandler);
-        clickHandler = null;
-      }
-      bubbles = [];
+      if(clickHandler){ BaseScene.canvas.removeEventListener('click',clickHandler); clickHandler=null; }
+      bubbles=[];
     }
   };
 })();

@@ -114,31 +114,85 @@ const World = (() => {
 
   // ── floor tiles ───────────────────────────────────────────────────
   function drawFloor() {
-    // Base ground — bright grass
-    ctx.fillStyle = '#68b050';
+    // ── 草地基底 ──
+    ctx.fillStyle = '#5aa040';
     ctx.fillRect(0, 0, W, H);
 
-    // Sidewalk strip between upper buildings and road (y 180-210)
-    ctx.fillStyle = '#ccc0a0';
-    ctx.fillRect(40, 180, 600, 30);
-    // Sidewalk kerb lines
-    ctx.fillStyle = '#aaa080';
-    ctx.fillRect(40, 180, 600, 2);
-    ctx.fillRect(40, 208, 600, 2);
+    // 草地深淺色塊（棋盤交錯，增加層次感）
+    const GTS = 40;
+    for (let gx = 0; gx < W; gx += GTS) {
+      for (let gy = 0; gy < H; gy += GTS) {
+        const col = Math.floor(gx / GTS), row = Math.floor(gy / GTS);
+        if ((col + row) % 2 === 0) {
+          ctx.fillStyle = '#62ac48';
+          ctx.fillRect(gx, gy, GTS, GTS);
+        }
+      }
+    }
 
-    // Tile grid on sidewalk only (grass doesn't need gridlines)
-    ctx.strokeStyle = '#bbae8e';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let x = 40; x <= 640; x += TS) {
-      ctx.moveTo(x + 0.5, 180);
-      ctx.lineTo(x + 0.5, 210);
+    // 草地暗紋（直條，模擬草坪修剪方向）
+    ctx.fillStyle = 'rgba(0,0,0,0.04)';
+    for (let gx = 0; gx < W; gx += 20) {
+      ctx.fillRect(gx, 0, 10, H);
     }
-    for (let y = 180; y <= 210; y += TS) {
-      ctx.moveTo(40, y + 0.5);
-      ctx.lineTo(640, y + 0.5);
+
+    // 路邊草叢裝飾（上排）
+    [[30,8],[80,14],[200,10],[400,6],[500,12],[620,8],[650,16]].forEach(([bx, by]) => {
+      const br = 8 + (bx % 3) * 4;
+      ctx.fillStyle = '#3a8828';
+      ctx.beginPath(); ctx.arc(bx, by + br, br, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#4aaa38';
+      ctx.beginPath(); ctx.arc(bx - 4, by + br - 3, br * 0.65, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#5acc48';
+      ctx.beginPath(); ctx.arc(bx + 3, by + br - 5, br * 0.45, 0, Math.PI * 2); ctx.fill();
+    });
+
+    // 路邊草叢裝飾（下排）
+    [[20,H-28],[160,H-32],[300,H-26],[440,H-30],[580,H-28],[660,H-24]].forEach(([bx, by], i) => {
+      const br = 9 + (i % 3) * 4;
+      ctx.fillStyle = '#3a8828';
+      ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#52bb3a';
+      ctx.beginPath(); ctx.arc(bx - 5, by - 4, br * 0.6, 0, Math.PI * 2); ctx.fill();
+    });
+
+    // ── 人行道（y 180–210）──
+    // 磚塊底色
+    ctx.fillStyle = '#c8bc9c';
+    ctx.fillRect(40, 180, 600, 30);
+    // 交錯磚塊
+    const TW = 20, TH = 15;
+    for (let tx = 40; tx < 640; tx += TW) {
+      for (let ty = 180; ty < 210; ty += TH) {
+        const col = Math.floor((tx - 40) / TW), row = Math.floor((ty - 180) / TH);
+        ctx.fillStyle = (col + row) % 2 === 0 ? '#cec29e' : '#beb28e';
+        ctx.fillRect(tx, ty, TW - 1, TH - 1);
+      }
     }
-    ctx.stroke();
+    // 上緣石（亮面）
+    ctx.fillStyle = '#d4c8a8';
+    ctx.fillRect(40, 176, 600, 2);
+    ctx.fillStyle = '#a09878';
+    ctx.fillRect(40, 178, 600, 3);
+    // 下緣石（暗面）
+    ctx.fillStyle = '#8a8268';
+    ctx.fillRect(40, 207, 600, 3);
+
+    // 路燈（人行道上，三支）
+    [[140, 180], [340, 180], [540, 180]].forEach(([lx, ly]) => {
+      ctx.fillStyle = '#706860';
+      ctx.fillRect(lx - 3, ly - 2, 6, 12);
+      ctx.fillStyle = '#504840';
+      ctx.fillRect(lx - 4, ly + 8, 8, 4);
+      ctx.fillStyle = '#888078';
+      ctx.fillRect(lx - 1, ly - 30, 2, 30);
+      ctx.fillStyle = '#6a6058';
+      ctx.fillRect(lx - 7, ly - 36, 14, 6);
+      ctx.fillStyle = 'rgba(255,230,140,0.18)';
+      ctx.beginPath(); ctx.ellipse(lx, ly - 20, 20, 14, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffee88';
+      ctx.fillRect(lx - 4, ly - 34, 8, 3);
+    });
   }
 
   // ── roads ─────────────────────────────────────────────────────────
@@ -150,30 +204,65 @@ const World = (() => {
       const rw = isV ? r.width            : r.x2 - r.x1;
       const rh = isV ? r.y2 - r.y1       : r.width;
 
-      // Asphalt
-      ctx.fillStyle = '#8899aa';
+      // 路面底色（深灰瀝青）
+      ctx.fillStyle = '#6a7a88';
       ctx.fillRect(rx, ry, rw, rh);
 
-      // Shoulder lines
-      ctx.fillStyle = '#a0b0bc';
-      if (isV) {
-        ctx.fillRect(rx,       ry, 2, rh);
-        ctx.fillRect(rx+rw-2,  ry, 2, rh);
-      } else {
-        ctx.fillRect(rx, ry,      rw, 2);
-        ctx.fillRect(rx, ry+rh-2, rw, 2);
+      // 瀝青粒紋（模擬路面材質）
+      ctx.fillStyle = 'rgba(0,0,0,0.06)';
+      for (let tx = rx; tx < rx + rw; tx += 6) {
+        for (let ty = ry; ty < ry + rh; ty += 6) {
+          if ((Math.floor(tx / 6) + Math.floor(ty / 6)) % 2 === 0) ctx.fillRect(tx, ty, 3, 3);
+        }
       }
 
-      // Centre-line dashes (bright yellow)
-      ctx.fillStyle = '#f0d060';
-      const cx = Math.round(rx + rw / 2);
-      const cy = Math.round(ry + rh / 2);
+      // 路面中間輕微高光
+      if (!isV) {
+        ctx.fillStyle = 'rgba(255,255,255,0.04)';
+        ctx.fillRect(rx, ry + 2, rw, Math.floor(rh / 2));
+      }
+
+      // 路緣石亮面
+      ctx.fillStyle = '#8a9aaa';
       if (isV) {
-        for (let y = ry + 4; y < ry + rh - 2; y += 16)
-          ctx.fillRect(cx - 1, y, 2, 10);
+        ctx.fillRect(rx, ry, 3, rh);
+        ctx.fillRect(rx + rw - 3, ry, 3, rh);
       } else {
-        for (let x = rx + 4; x < rx + rw - 2; x += 16)
-          ctx.fillRect(x, cy - 1, 10, 2);
+        ctx.fillRect(rx, ry, rw, 3);
+        ctx.fillRect(rx, ry + rh - 3, rw, 3);
+      }
+      // 路緣石暗面
+      ctx.fillStyle = '#505e6a';
+      if (isV) {
+        ctx.fillRect(rx + 1, ry, 1, rh);
+        ctx.fillRect(rx + rw - 2, ry, 1, rh);
+      } else {
+        ctx.fillRect(rx, ry + 1, rw, 1);
+        ctx.fillRect(rx, ry + rh - 2, rw, 1);
+      }
+
+      // 中央虛線（黃色）
+      ctx.fillStyle = '#f0d040';
+      const mcx = Math.round(rx + rw / 2);
+      const mcy = Math.round(ry + rh / 2);
+      if (isV) {
+        for (let dy = ry + 8; dy < ry + rh - 4; dy += 18)
+          ctx.fillRect(mcx - 1, dy, 2, 11);
+      } else {
+        for (let dx = rx + 8; dx < rx + rw - 4; dx += 18)
+          ctx.fillRect(dx, mcy - 1, 11, 2);
+      }
+
+      // 斑馬線（水平道路，建築入口前）
+      if (!isV) {
+        [140, 340, 540].forEach(zbx => {
+          if (zbx < rx || zbx > rx + rw) return;
+          const stripeH = Math.floor((rh - 6) / 5);
+          ctx.fillStyle = 'rgba(255,255,255,0.55)';
+          for (let zi = 0; zi < 5; zi++) {
+            ctx.fillRect(zbx - 14, ry + 3 + zi * stripeH, 28, stripeH - 1);
+          }
+        });
       }
     });
   }
@@ -182,126 +271,190 @@ const World = (() => {
   function drawActive(b, hovered) {
     const { x, y, width: bw, height: bh } = b;
     const vis = bVis[b.id] || {};
-    const ROOF = 12;
+    const ROOF = 14;
 
-    // Per-building colour palette (Gather Town style)
     const _P = ({
-      home: { wall:'#e07848', roof:'#b85428', roofHi:'#f0a870', ac:'#904020',
-              door:'#5a3010', doorIn:'#8a5030', doorStroke:'#c07040', step:'#9a7050', handle:'#e8c050',
-              signBg:'#4a1808', signStroke:'#c07040', label:'#fff8f4', sub:'#5a4020' },
-      hq:   { wall:'#3aaa70', roof:'#228850', roofHi:'#5acc90', ac:'#126040',
-              door:'#124030', doorIn:'#226050', doorStroke:'#3aaa70', step:'#307060', handle:'#d4e840',
-              signBg:'#082a18', signStroke:'#3aaa70', label:'#e0fff0', sub:'#2a5a30' },
-      itri: { wall:'#4070c8', roof:'#2050a8', roofHi:'#6090e8', ac:'#103080',
-              door:'#0c2040', doorIn:'#1c4060', doorStroke:'#4070c8', step:'#2a4870', handle:'#80c0e0',
-              signBg:'#06162a', signStroke:'#4070c8', label:'#e0f0ff', sub:'#2a4060' },
-    })[b.id] || { wall:'#8899aa', roof:'#667788', roofHi:'#aabbcc', ac:'#445566',
-              door:'#334455', doorIn:'#445566', doorStroke:'#8899aa', step:'#5a6e7e', handle:'#99aabb',
-              signBg:'#223344', signStroke:'#8899aa', label:'#ffffff', sub:'#445566' };
+      home: { wall:'#d86c3c', wallLo:'#c05c2c', wallHi:'#f08858', brickLine:'rgba(0,0,0,0.07)',
+              roof:'#a84420', roofHi:'#e07848', roofShadow:'#803010', ac:'#7a3018',
+              door:'#5a2c10', doorIn:'#7a4428', doorStroke:'#d07040', step:'#8a6040', handle:'#f0c040',
+              signBg:'#42100a', signStroke:'#c06030', label:'#fff8f0', sub:'#7a4828',
+              winGlow:'rgba(255,200,80,0.25)' },
+      hq:   { wall:'#2e9a60', wallLo:'#228050', wallHi:'#48bc78', brickLine:'rgba(0,0,0,0.07)',
+              roof:'#1a7840', roofHi:'#3aaa60', roofShadow:'#0e5028', ac:'#105e30',
+              door:'#0e3820', doorIn:'#1e5838', doorStroke:'#38aa60', step:'#286848', handle:'#cce030',
+              signBg:'#062214', signStroke:'#38aa60', label:'#e0fff0', sub:'#287848',
+              winGlow:'rgba(100,220,160,0.2)' },
+      itri: { wall:'#3060b8', wallLo:'#2050a0', wallHi:'#5080d8', brickLine:'rgba(0,0,0,0.07)',
+              roof:'#1848a0', roofHi:'#3868c8', roofShadow:'#0c2e70', ac:'#0c2878',
+              door:'#0a1e3c', doorIn:'#1a3a5c', doorStroke:'#3868c8', step:'#22406a', handle:'#70b8dc',
+              signBg:'#04102a', signStroke:'#3868c8', label:'#e0f0ff', sub:'#2a4878',
+              winGlow:'rgba(80,160,255,0.22)' },
+    })[b.id] || { wall:'#7888a0', wallLo:'#687890', wallHi:'#9aaabb', brickLine:'rgba(0,0,0,0.07)',
+              roof:'#566878', roofHi:'#8899aa', roofShadow:'#3a4a58', ac:'#445566',
+              door:'#2e4050', doorIn:'#3e5060', doorStroke:'#7888a0', step:'#4a6070', handle:'#88aacc',
+              signBg:'#1e2e3a', signStroke:'#7888a0', label:'#ffffff', sub:'#4a5a68',
+              winGlow:'rgba(140,170,220,0.2)' };
 
-    // Drop shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.22)';
-    ctx.fillRect(x + 4, y + bh, bw, 6);
+    // 地面投影
+    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+    ctx.fillRect(x + 6, y + bh, bw - 4, 8);
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.fillRect(x + 10, y + bh + 8, bw - 10, 4);
 
-    // Wall body
+    // 建築主體
     ctx.fillStyle = _P.wall;
-    ctx.fillRect(x, y, bw, bh);
+    ctx.fillRect(x, y + ROOF, bw, bh - ROOF);
 
-    // Side shading
-    ctx.fillStyle = 'rgba(0,0,0,0.14)';
-    ctx.fillRect(x,         y, 5, bh);
-    ctx.fillRect(x + bw - 5, y, 5, bh);
+    // 下半牆稍暗
+    ctx.fillStyle = _P.wallLo;
+    ctx.fillRect(x, y + ROOF + Math.floor((bh - ROOF) * 0.55), bw, Math.ceil((bh - ROOF) * 0.45));
 
-    // Roof strip
+    // 磚紋橫線
+    ctx.fillStyle = _P.brickLine;
+    for (let by2 = y + ROOF + 8; by2 < y + bh; by2 += 8)
+      ctx.fillRect(x, by2, bw, 1);
+
+    // 磚縫縱線（交錯）
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    let rowOff = 0;
+    for (let by2 = y + ROOF + 8; by2 < y + bh; by2 += 8) {
+      rowOff = rowOff === 0 ? 12 : 0;
+      for (let bx2 = x + rowOff; bx2 < x + bw; bx2 += 24)
+        ctx.fillRect(bx2, by2 - 7, 1, 7);
+    }
+
+    // 側面陰影（漸層）
+    const shadeGrad = ctx.createLinearGradient(x, 0, x + bw, 0);
+    shadeGrad.addColorStop(0,    'rgba(0,0,0,0.20)');
+    shadeGrad.addColorStop(0.08, 'rgba(0,0,0,0.00)');
+    shadeGrad.addColorStop(0.92, 'rgba(0,0,0,0.00)');
+    shadeGrad.addColorStop(1,    'rgba(0,0,0,0.22)');
+    ctx.fillStyle = shadeGrad;
+    ctx.fillRect(x, y + ROOF, bw, bh - ROOF);
+
+    // 牆面頂部高光
+    ctx.fillStyle = _P.wallHi;
+    ctx.fillRect(x, y + ROOF, bw, 2);
+
+    // 屋頂
     ctx.fillStyle = _P.roof;
     ctx.fillRect(x, y, bw, ROOF);
     ctx.fillStyle = _P.roofHi;
-    ctx.fillRect(x, y, bw, 2);
+    ctx.fillRect(x, y, bw, 3);
+    ctx.fillStyle = _P.roofShadow;
+    ctx.fillRect(x, y + ROOF - 3, bw, 3);
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fillRect(x, y, 3, ROOF);
+    ctx.fillRect(x + bw - 3, y, 3, ROOF);
 
-    // Roof details: two small AC units
-    ctx.fillStyle = _P.ac;
-    ctx.fillRect(x + 10,      y + 3, 14, 8);
-    ctx.fillRect(x + bw - 24, y + 3, 14, 8);
-    ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    ctx.fillRect(x + 10,      y + 3, 14, 2);
-    ctx.fillRect(x + bw - 24, y + 3, 14, 2);
+    // 屋頂 AC 機組
+    [[x + 10, y + 3], [x + bw - 26, y + 3]].forEach(([ax, ay]) => {
+      ctx.fillStyle = _P.ac;
+      ctx.fillRect(ax, ay, 16, 9);
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fillRect(ax, ay, 16, 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.fillRect(ax + 1, ay + 3, 14, 1);
+      ctx.fillRect(ax + 1, ay + 5, 14, 1);
+    });
 
-    // Windows
+    // 窗戶
     (vis.windows || []).forEach(win => {
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillRect(win.x - 3, win.y - 3, win.w + 6, win.h + 6);
       if (win.lit) {
-        ctx.fillStyle = win.warm
-          ? 'rgba(255,200,80,0.18)' : 'rgba(100,140,255,0.18)';
-        ctx.fillRect(win.x - 3, win.y - 3, win.w + 6, win.h + 6);
-        ctx.fillStyle = win.warm ? '#ffcc66' : '#88aaff';
+        ctx.fillStyle = _P.winGlow;
+        ctx.fillRect(win.x - 5, win.y - 5, win.w + 10, win.h + 10);
+        ctx.fillStyle = win.warm ? '#ffcc55' : '#88aaff';
         ctx.fillRect(win.x, win.y, win.w, win.h);
-        ctx.fillStyle = win.warm
-          ? 'rgba(255,240,190,0.65)' : 'rgba(200,220,255,0.65)';
-        ctx.fillRect(win.x + 1, win.y + 1, win.w / 2 - 1, 3);
-        ctx.fillStyle = 'rgba(0,0,0,0.18)';
-        ctx.fillRect(win.x + win.w / 2 - 1, win.y,            2, win.h);
-        ctx.fillRect(win.x,                  win.y + win.h / 2, win.w, 2);
+        ctx.fillStyle = win.warm ? 'rgba(255,245,180,0.75)' : 'rgba(200,220,255,0.75)';
+        ctx.fillRect(win.x + 1, win.y + 1, Math.floor(win.w / 2) - 1, 3);
+        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.fillRect(win.x + Math.floor(win.w / 2) - 1, win.y, 2, win.h);
+        ctx.fillRect(win.x, win.y + Math.floor(win.h / 2), win.w, 2);
       } else {
-        ctx.fillStyle = 'rgba(0,0,0,0.30)';
+        ctx.fillStyle = '#0a0a1a';
         ctx.fillRect(win.x, win.y, win.w, win.h);
+        ctx.fillStyle = 'rgba(100,120,160,0.15)';
+        ctx.fillRect(win.x + 1, win.y + 1, Math.floor(win.w / 2), 2);
       }
-      ctx.strokeStyle = 'rgba(0,0,0,0.28)';
+      ctx.strokeStyle = 'rgba(0,0,0,0.32)';
       ctx.lineWidth = 1;
       ctx.strokeRect(win.x - 0.5, win.y - 0.5, win.w + 1, win.h + 1);
     });
 
-    // Door
-    const dW = 28, dH = 36;
+    // 門
+    const dW = 28, dH = 38;
     const dX = Math.round(x + (bw - dW) / 2);
     const dY = y + bh - dH;
+    ctx.fillStyle = 'rgba(0,0,0,0.30)';
+    ctx.fillRect(dX - 4, dY - 2, dW + 8, dH + 2);
     ctx.fillStyle = _P.door;
     ctx.fillRect(dX, dY, dW, dH);
     ctx.fillStyle = _P.doorIn;
     ctx.fillRect(dX + 3, dY + 3, dW - 6, dH - 3);
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fillRect(dX + Math.floor(dW / 2) - 1, dY + 3, 2, dH - 3);
     ctx.strokeStyle = _P.doorStroke;
     ctx.lineWidth = 2;
     ctx.strokeRect(dX - 1, dY - 1, dW + 2, dH + 1);
     ctx.fillStyle = _P.handle;
-    ctx.fillRect(dX + dW - 9, dY + Math.round(dH / 2) - 2, 4, 5);
-    ctx.fillStyle = _P.step;
-    ctx.fillRect(dX - 5, y + bh - 4, dW + 10, 4);
+    ctx.fillRect(dX + dW - 9, dY + Math.round(dH / 2) - 2, 4, 6);
 
-    // Name sign board on wall (just below roof)
+    // 門階
+    ctx.fillStyle = _P.step;
+    ctx.fillRect(dX - 6, y + bh - 5, dW + 12, 5);
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillRect(dX - 6, y + bh - 5, dW + 12, 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.fillRect(dX - 6, y + bh - 1, dW + 12, 1);
+
+    // 名牌看板
     ctx.font = 'bold 10px Courier New';
     ctx.textAlign = 'center';
     const lw = ctx.measureText(b.label).width;
-    const sgnX = Math.round(x + bw / 2 - lw / 2) - 5;
-    const sgnY = y + ROOF + 2;
-    const sgnW = lw + 10, sgnH = 13;
+    const sgnX = Math.round(x + bw / 2 - lw / 2) - 6;
+    const sgnY = y + ROOF + 3;
+    const sgnW = lw + 12, sgnH = 14;
     ctx.fillStyle = _P.signBg;
     ctx.fillRect(sgnX, sgnY, sgnW, sgnH);
     ctx.strokeStyle = _P.signStroke;
     ctx.lineWidth = 1;
     ctx.strokeRect(sgnX + 0.5, sgnY + 0.5, sgnW - 1, sgnH - 1);
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillRect(sgnX + 1, sgnY + 1, sgnW - 2, 2);
     ctx.fillStyle = _P.label;
     ctx.fillText(b.label, x + bw / 2, sgnY + 10);
 
-    // Sublabel below building
+    // 副標題
     ctx.font = '9px Courier New';
     ctx.fillStyle = _P.sub;
-    ctx.fillText(b.sublabel, x + bw / 2, y + bh + 13);
+    ctx.fillText(b.sublabel, x + bw / 2, y + bh + 14);
     ctx.textAlign = 'left';
 
-    // Status light
-    const lx = x + bw - 9, ly = y + 7;
-    ctx.fillStyle = b.statusColor + '50';
-    ctx.beginPath(); ctx.arc(lx, ly, 8, 0, Math.PI * 2); ctx.fill();
+    // 狀態燈
+    const lx = x + bw - 9, ly = y + 8;
+    ctx.fillStyle = b.statusColor + '40';
+    ctx.beginPath(); ctx.arc(lx, ly, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = b.statusColor + 'aa';
+    ctx.beginPath(); ctx.arc(lx, ly, 5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = b.statusColor;
-    ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.arc(lx - 1, ly - 1, 1.5, 0, Math.PI * 2); ctx.fill();
 
-    // Hover outline glow
+    // Hover 高光框
     if (hovered) {
       ctx.save();
       ctx.shadowColor = '#ffffff';
-      ctx.shadowBlur  = 14;
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth   = 2;
-      ctx.strokeRect(x - 1, y - 1, bw + 2, bh + 2);
+      ctx.shadowBlur  = 18;
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.lineWidth   = 2.5;
+      ctx.strokeRect(x - 1.5, y - 1.5, bw + 3, bh + 3);
       ctx.restore();
+      ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(x - 3, y - 3, bw + 6, bh + 6);
     }
   }
 
@@ -309,62 +462,75 @@ const World = (() => {
   function drawConstruction(b, hovered) {
     const { x, y, width: bw, height: bh } = b;
 
-    // Drop shadow
+    // 地面投影
     ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    ctx.fillRect(x + 4, y + bh, bw, 6);
+    ctx.fillRect(x + 4, y + bh, bw, 8);
 
-    // Base (sandy unfinished walls)
+    // 未完成牆體（沙黃色，粗糙感）
     ctx.fillStyle = '#c0a870';
     ctx.fillRect(x, y, bw, bh);
+
+    // 磚塊外露紋（建設中的感覺）
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    for (let by2 = y + 8; by2 < y + bh; by2 += 8)
+      ctx.fillRect(x, by2, bw, 1);
+    ctx.fillStyle = 'rgba(180,150,90,0.4)';
+    let rOff = 0;
+    for (let by2 = y + 8; by2 < y + bh; by2 += 8) {
+      rOff = rOff === 0 ? 10 : 0;
+      for (let bx2 = x + rOff; bx2 < x + bw; bx2 += 20)
+        ctx.fillRect(bx2, by2 - 7, 1, 7);
+    }
+
+    // 外框輪廓
     ctx.strokeStyle = '#a08850';
     ctx.lineWidth = 1;
-    ctx.strokeRect(x + 4, y + 4, bw - 8, bh - 8);
+    ctx.strokeRect(x + 0.5, y + 0.5, bw - 1, bh - 1);
 
-    // Vertical scaffold poles (every 40px)
-    const poleXs = [0, 40, 80, 120, 160];
-    ctx.fillStyle = '#888880';
-    poleXs.forEach(px => {
-      ctx.fillRect(x + px - 2, y - 10, 4, bh + 20);
+    // 鷹架縱桿
+    ctx.fillStyle = '#808078';
+    [0, 40, 80, 120, 160].forEach(px => {
+      ctx.fillRect(x + px - 2, y - 12, 4, bh + 22);
     });
-
-    // Horizontal scaffold beams (every 32px)
+    // 鷹架橫樑
     ctx.fillStyle = '#aaaaaa';
     [0, 32, 64, 96].forEach(dy => {
-      ctx.fillRect(x - 2, y + dy, bw + 4, 5);
+      ctx.fillRect(x - 3, y + dy, bw + 6, 5);
+    });
+    // 橫樑高光
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    [0, 32, 64, 96].forEach(dy => {
+      ctx.fillRect(x - 3, y + dy, bw + 6, 1);
     });
 
-    // Wooden planks on beam 2 and 3
+    // 踏板（第 2、3 橫樑上）
     ctx.fillStyle = '#8a6838';
     [32, 64].forEach(dy => {
       for (let col = 0; col < 4; col++) {
         ctx.fillRect(x + col * 40 + 2, y + dy + 1, 36, 3);
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.fillRect(x + col * 40 + 2, y + dy + 3, 36, 1);
+        ctx.fillStyle = '#8a6838';
       }
     });
 
-    // Diagonal braces (X pattern in each bay)
-    ctx.strokeStyle = '#888888';
+    // X 型斜撐
+    ctx.strokeStyle = '#909090';
     ctx.lineWidth = 1.5;
-    for (let i = 0; i < poleXs.length - 1; i++) {
-      const px1 = x + poleXs[i];
-      const px2 = x + poleXs[i + 1];
+    for (let i = 0; i < 4; i++) {
+      const px1 = x + i * 40;
+      const px2 = x + (i + 1) * 40;
       [0, 32, 64].forEach(dy => {
-        ctx.beginPath();
-        ctx.moveTo(px1, y + dy + 5);
-        ctx.lineTo(px2, y + dy + 32);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(px2, y + dy + 5);
-        ctx.lineTo(px1, y + dy + 32);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px1, y + dy + 5); ctx.lineTo(px2, y + dy + 32); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px2, y + dy + 5); ctx.lineTo(px1, y + dy + 32); ctx.stroke();
       });
     }
 
-    // Construction sign board (centred on building)
+    // 工程告示牌（中央）
     const sbW = 100, sbH = 30;
     const sbX = Math.round(x + (bw - sbW) / 2);
     const sbY = Math.round(y + bh / 2 - sbH / 2);
-
-    // Warning-stripe border
+    // 警戒斜紋邊框
     const stripes = Math.ceil(sbW / 10);
     for (let si = 0; si < stripes; si++) {
       ctx.fillStyle = si % 2 === 0 ? '#ee8800' : '#ffffff';
@@ -372,30 +538,33 @@ const World = (() => {
       ctx.fillRect(sbX + si * 10, sbY,           sw, 5);
       ctx.fillRect(sbX + si * 10, sbY + sbH - 5, sw, 5);
     }
-    // Sign body
+    // 牌身
     ctx.fillStyle = '#f0e8c0';
     ctx.fillRect(sbX, sbY + 5, sbW, sbH - 10);
-    // Sign text
+    // 牌身高光
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillRect(sbX, sbY + 5, sbW, 2);
+    // 文字
     ctx.font = 'bold 12px Courier New';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#c06000';
     ctx.fillText('建設中', x + bw / 2, sbY + 5 + (sbH - 10) / 2 + 4);
 
-    // Building name above
+    // 建築名稱
     ctx.font = '9px Courier New';
     ctx.fillStyle = '#665533';
-    ctx.fillText(b.label, x + bw / 2, y - 4);
+    ctx.fillText(b.label, x + bw / 2, y - 6);
     ctx.textAlign = 'left';
 
-    // Status light (dim)
+    // 狀態燈（暗）
     ctx.fillStyle = '#c8c0b0';
     ctx.beginPath(); ctx.arc(x + bw - 9, y + 7, 4, 0, Math.PI * 2); ctx.fill();
 
-    // Hover outline
+    // Hover 框
     if (hovered) {
       ctx.save();
       ctx.shadowColor = '#f0c060';
-      ctx.shadowBlur  = 8;
+      ctx.shadowBlur  = 10;
       ctx.strokeStyle = '#f0c060';
       ctx.lineWidth   = 2;
       ctx.strokeRect(x - 2, y - 2, bw + 4, bh + 4);

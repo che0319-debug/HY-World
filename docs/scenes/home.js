@@ -592,20 +592,22 @@ const HomeScene = (() => {
     return curY;
   }
 
-  function getXiaoyinSuggestion(d) {
-    if (!d) return '資料讀取中，稍後再來看看';
-    var ms     = (d.planning && d.planning.child_1_education && d.planning.child_1_education.next_milestone) || '';
-    var msDate = (d.planning && d.planning.child_1_education && d.planning.child_1_education.next_milestone_date) || '';
-    if (ms.indexOf('會考') >= 0 && msDate) {
-      var days = Math.ceil((new Date(msDate.replace(/\//g,'-')) - new Date()) / 86400000);
-      if (days > 0 && days < 30) return '會考前建議確認考場交通與備考計畫';
-    }
-    if (ms.indexOf('會考') >= 0) return '大寶會考備考中，多關心一下壓力';
-    var sched = (d.daily && d.daily.recurring_schedule) || [];
-    if (sched.length > 0) return '記得本週 '+sched[0].day+' '+sched[0].what+'，提前 '+(sched[0].buffer_min||30)+' 分出發';
-    var events = (d.daily && d.daily.upcoming_events) || [];
-    if (events.length > 0) return '近期有「'+((events[0].what)||events[0])+'」要安排，記得提前確認';
-    return '家庭一切平穩，繼續保持！';
+  function drawTextBlock(ctx, text, x, y, maxW, lineH) {
+    var lines = text.split('\n');
+    var curY = y;
+    lines.forEach(function(line) {
+      if (!line) { curY += lineH * 0.5; return; }
+      var buf = '';
+      line.split('').forEach(function(ch) {
+        var test = buf + ch;
+        if (ctx.measureText(test).width > maxW && buf !== '') {
+          ctx.fillText(buf, x, curY); buf = ch; curY += lineH;
+        } else { buf = test; }
+      });
+      if (buf) ctx.fillText(buf, x, curY);
+      curY += lineH;
+    });
+    return curY;
   }
 
   function drawPanel(ctx, frame) {
@@ -625,16 +627,11 @@ const HomeScene = (() => {
     ctx.fillStyle='#ccaaaa'; ctx.font='11px "Segoe UI", Arial, sans-serif'; ctx.fillText('小因 · 在線',px+28,dy+4);
 
     var sections=[
-      {label:'🔴 需要關注',       col:'#ff6b6b', y:80 },
+      {label:'🔴 家庭需要關注',    col:'#ff6b6b', y:80 },
       {label:'📅 近期行程（7天）', col:'#88ccff', y:200},
-      {label:'💡 小因建議',       col:'#88ffcc', y:320},
+      {label:'💛 家庭今日建議',    col:'#88ffcc', y:320},
     ];
     var dots=[' ·',' ··',' ···'][Math.floor(frame*2)%3];
-    var d=homeData;
-
-    var DAY_MAP={'週日':0,'週一':1,'週二':2,'週三':3,'週四':4,'週五':5,'週六':6};
-    var todayIdx=new Date().getDay();
-    var nowTs=Date.now(), sevenDaysMs=7*86400000;
 
     function secHdr(s) {
       ctx.fillStyle=s.col+'aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.textAlign='left';
@@ -643,99 +640,84 @@ const HomeScene = (() => {
       ctx.font='11px "Segoe UI", Arial, sans-serif';
     }
 
-    // ── Section 1: 需要關注 ──
+    // ── S1: 家庭需要關注 ──
     var s=sections[0];
     secHdr(s);
     if (homeErr) {
-      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
-      ctx.fillStyle='#554444'; ctx.fillText('Render 冷啟動?',px+10,s.y+36);
-    } else if (!d) {
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 資料載入失敗',px+10,s.y+22);
+    } else if (!homeData) {
       ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,s.y+22);
     } else {
-      var row1=0;
-      var ms=(d.planning&&d.planning.child_1_education&&d.planning.child_1_education.next_milestone)||'';
-      var msDate=(d.planning&&d.planning.child_1_education&&d.planning.child_1_education.next_milestone_date)||'';
-      // 1. 會考
-      if (ms.indexOf('會考')>=0 && row1<4) {
-        ctx.fillStyle='#ff9966';
-        if (msDate) {
-          var dl=Math.ceil((new Date(msDate.replace(/\//g,'-'))-new Date())/86400000);
-          ctx.fillText(trunc(ctx, dl>0?'國三會考：距 '+msDate+' 還有 '+dl+' 天':'國三會考備考中', mw), px+10, s.y+22+row1*14);
-        } else { ctx.fillText('國三會考備考中',px+10,s.y+22+row1*14); }
-        row1++;
-      }
-      // 2. 接送（±3天內）
-      var sched1=(d.daily&&d.daily.recurring_schedule)||[];
-      sched1.forEach(function(item){
+      var d=homeData, row1=0;
+      var nowMs=Date.now(), threeDays=3*86400000, fiveDays=5*86400000;
+      // kanban: pending_execute && stale > 3 days
+      var kanban=d._kanban||[];
+      kanban.forEach(function(item){
         if (row1>=4) return;
-        var si=DAY_MAP[item.day];
-        var near=(si===undefined)?true:(Math.min(Math.abs(si-todayIdx),7-Math.abs(si-todayIdx))<=3);
-        if (!near) return;
-        ctx.fillStyle='#ffcc88';
-        var txt=item.day+' '+item.what+(item.buffer_min?'（預留'+item.buffer_min+'分）':'');
-        ctx.fillText(trunc(ctx,txt,mw),px+10,s.y+22+row1*14); row1++;
-      });
-      // 3. upcoming_events 7天內
-      var evs1=(d.daily&&d.daily.upcoming_events)||[];
-      evs1.forEach(function(ev){
-        if (row1>=4) return;
-        if (!ev.date) return;
-        var evTs=new Date(ev.date.replace(/\//g,'-')).getTime();
-        if (evTs-nowTs>=0 && evTs-nowTs<=sevenDaysMs){
-          ctx.fillStyle='#bb99cc';
-          ctx.fillText(trunc(ctx,'▸ '+(ev.what||ev),mw),px+10,s.y+22+row1*14); row1++;
+        if (item.execute_status==='pending_execute') {
+          var updMs=item.updated_at?new Date(item.updated_at).getTime():0;
+          if (!updMs || (nowMs-updMs)>threeDays) {
+            ctx.fillStyle='#ff9966';
+            ctx.fillText(trunc(ctx,'⏰ '+(item.title||item.task||'待辦'),mw),px+10,s.y+22+row1*14); row1++;
+          }
         }
       });
-      // 4. urgent_items
-      var urgent=(d.summary&&d.summary.urgent_items)||[];
-      urgent.forEach(function(item){
+      // planning: milestones not done
+      var planning=d.planning||{};
+      Object.keys(planning).forEach(function(key){
         if (row1>=4) return;
-        ctx.fillStyle='#bb99cc';
-        ctx.fillText(trunc(ctx,'⚠ '+item,mw),px+10,s.y+22+row1*14); row1++;
+        var plan=planning[key];
+        if (typeof plan!=='object'||!plan) return;
+        var ms=plan.next_milestone||'', msDate=plan.next_milestone_date||'';
+        if (!ms || plan.status==='done') return;
+        ctx.fillStyle='#ffcc88';
+        if (msDate) {
+          var dl=Math.ceil((new Date(msDate.replace(/\//g,'-'))-new Date())/86400000);
+          var label=dl>0?ms+'（'+dl+'天後）':ms+'（已到期）';
+          ctx.fillText(trunc(ctx,'▸ '+label,mw),px+10,s.y+22+row1*14);
+        } else {
+          ctx.fillText(trunc(ctx,'▸ '+ms,mw),px+10,s.y+22+row1*14);
+        }
+        row1++;
       });
-      if (row1===0){ctx.fillStyle='#555577'; ctx.fillText('目前無待關注事項',px+10,s.y+22);}
+      if (row1===0) { ctx.fillStyle='#55aa77'; ctx.fillText('✅ 目前一切正常',px+10,s.y+22); }
     }
 
-    // ── Section 2: 近期行程 ──
+    // ── S2: 近期家庭行程（7天）──
     s=sections[1];
     secHdr(s);
-    if (homeErr) {
-      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
-    } else if (!d) {
-      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,s.y+22);
+    if (familyScheduleErr) {
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 資料載入失敗',px+10,s.y+22);
+    } else if (!familyScheduleData) {
+      ctx.fillStyle='#557799'; ctx.fillText('讀取行程中'+dots,px+10,s.y+22);
     } else {
-      var row2=0;
-      var sched2=(d.daily&&d.daily.recurring_schedule)||[];
-      var evs2=(d.daily&&d.daily.upcoming_events)||[];
-      sched2.forEach(function(item){
-        if (row2>=4) return;
-        ctx.fillStyle='#b0b0cc';
-        ctx.fillText(trunc(ctx,item.day+' '+item.what,mw),px+10,s.y+22+row2*14); row2++;
-      });
-      evs2.forEach(function(ev){
-        if (row2>=4) return;
-        var what=ev.what||ev, dateStr='';
-        if (ev.date){var p=ev.date.split('/'); dateStr=(p.length>=3?p[1]+'/'+p[2]:ev.date)+' ';}
-        ctx.fillStyle='#ffcc88';
-        ctx.fillText(trunc(ctx,dateStr+what,mw),px+10,s.y+22+row2*14); row2++;
-      });
-      if (row2===0){ctx.fillStyle='#555577'; ctx.fillText('本週無特別行程',px+10,s.y+22);}
+      var evs=familyScheduleData.events||[];
+      if (evs.length===0) {
+        ctx.fillStyle='#555577'; ctx.fillText('近期無家庭行程',px+10,s.y+22);
+      } else {
+        evs.slice(0,5).forEach(function(ev,i){
+          ctx.fillStyle=ev.calendar==='google'?'#aaccff':'#ffcc88';
+          var label=ev.date+' '+ev.weekday+'｜'+ev.time+' '+ev.title;
+          ctx.fillText(trunc(ctx,label,mw),px+10,s.y+22+i*14);
+        });
+        if (evs.length>5) { ctx.fillStyle='#666677'; ctx.fillText('還有 '+(evs.length-5)+' 項...',px+10,s.y+22+5*14); }
+      }
     }
 
-    // ── Section 3: 小因建議 ──
+    // ── S3: 家庭今日建議 ──
     s=sections[2];
     secHdr(s);
-    if (homeErr) {
-      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,s.y+22);
-    } else if (!d) {
-      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,s.y+22);
+    if (suggestionHomeErr) {
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ AI 建議暫時無法生成',px+10,s.y+22);
+    } else if (!suggestionHome) {
+      ctx.fillStyle='#557799'; ctx.fillText('💛 分析中'+dots,px+10,s.y+22);
     } else {
-      ctx.fillStyle='#aaccaa';
-      wrapText(ctx, getXiaoyinSuggestion(d), px+10, s.y+22, mw, 14);
+      ctx.fillStyle='#aaffcc';
+      drawTextBlock(ctx,suggestionHome,px+10,s.y+22,mw,13);
     }
 
     // ── 家庭編輯按鈕 ──
-    var btnX=px+8, btnY=410, btnW=pw-16, btnH=22;
+    var btnX=px+8, btnY=413, btnW=pw-16, btnH=22;
     ctx.fillStyle=familyOpen?'#2e0a16':'#1a0a14';
     ctx.fillRect(btnX,btnY,btnW,btnH);
     ctx.strokeStyle=familyOpen?'#883344':'#662233';
@@ -754,6 +736,8 @@ const HomeScene = (() => {
   var LINES = ['家裡的事交給我！','有什麼需要安排的嗎？','孩子們今天很乖喔！','今天晚餐想吃什麼？'];
   var xiaoyin=null, clickHandler=null;
   var homeData=null, homeErr=false;
+  var familyScheduleData=null, familyScheduleErr=false;
+  var suggestionHome=null, suggestionHomeErr=false;
   var familyFrame=null, familyOpen=false;
 
   function openFamily(){
@@ -783,10 +767,18 @@ const HomeScene = (() => {
       if (xiaoyin) { CharacterSprites.applyAll({xiaoyin:xiaoyin}); xiaoyin.setState('idle'); }
       bubbles=[];
       homeData=null; homeErr=false;
-      console.log('[HOME] calling API.family()');
+      familyScheduleData=null; familyScheduleErr=false;
+      suggestionHome=null; suggestionHomeErr=false;
+      console.log('[HOME] fetching panel data');
       API.family()
-        .then(function(d){ console.log('[HOME] family data received', d); homeData=d; })
-        .catch(function(e){ homeErr=true; console.error('[HOME] family API failed', e); });
+        .then(function(d){ homeData=d; })
+        .catch(function(){ homeErr=true; });
+      API.familySchedule()
+        .then(function(d){ familyScheduleData=d; })
+        .catch(function(){ familyScheduleErr=true; });
+      API.suggestHome()
+        .then(function(d){ suggestionHome=d.suggestion; })
+        .catch(function(){ suggestionHomeErr=true; });
       var canvas=BaseScene.canvas;
       if (clickHandler) canvas.removeEventListener('click',clickHandler);
       clickHandler = function(e){

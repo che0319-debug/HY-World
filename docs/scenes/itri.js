@@ -485,6 +485,22 @@ const ITRIScene = (() => {
     return text+'…';
   }
 
+  function drawTextBlock(ctx,text,x,y,maxW,lineH){
+    var lines=text.split('\n'), curY=y;
+    lines.forEach(function(line){
+      if(!line){curY+=lineH*0.5;return;}
+      var buf='';
+      line.split('').forEach(function(ch){
+        var test=buf+ch;
+        if(ctx.measureText(test).width>maxW&&buf!==''){ctx.fillText(buf,x,curY);buf=ch;curY+=lineH;}
+        else{buf=test;}
+      });
+      if(buf)ctx.fillText(buf,x,curY);
+      curY+=lineH;
+    });
+    return curY;
+  }
+
   function drawPanel(ctx,frame){
     var px=PANEL_X+2, pw=PANEL_W-2, mw=pw-20;
     ctx.fillStyle='#050514'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
@@ -503,59 +519,80 @@ const ITRIScene = (() => {
     ctx.fillStyle='#aaaacc'; ctx.font='11px "Segoe UI", Arial, sans-serif'; ctx.fillText('950157 · 在線',px+28,66);
 
     var dots=[' ·',' ··',' ···'][Math.floor(frame*2)%3];
-    var bi=itriStats;
+    var pd=itriProgress;
 
-    // ── Section 1: 專案進度 ──
-    ctx.fillStyle='#5599ffaa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('專案進度',px+8,90);
-    ctx.fillStyle='#5599ff33'; ctx.fillRect(px+8,95,pw-16,1);
+    // ── S1: 專案健康度 ──
+    ctx.fillStyle='#5599ffaa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('🔬 專案健康度',px+8,80);
+    ctx.fillStyle='#5599ff33'; ctx.fillRect(px+8,85,pw-16,1);
     ctx.font='11px "Segoe UI", Arial, sans-serif';
     if(itriErr){
-      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,112);
-      ctx.fillStyle='#554444'; ctx.fillText('Render 冷啟動?',px+10,126);
-    } else if(!bi){
-      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,112);
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 資料載入失敗',px+10,102);
+    } else if(!pd){
+      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,102);
     } else {
-      ctx.fillStyle='#aaccff';
-      ctx.fillText('進行中: '+(bi.active_projects||0)+' 個專案',px+10,112);
-      if(bi.last_updated){
-        ctx.fillStyle='#667788';
-        ctx.fillText(trunc(ctx,'更新: '+bi.last_updated,mw),px+10,126);
+      var projects=(pd.projects||[]).filter(function(p){return p.status!=='完成';});
+      var nowMs=Date.now(), sevenDays=7*86400000, fiveDays=5*86400000;
+      if(projects.length===0){ctx.fillStyle='#44cc88';ctx.fillText('✓ 無進行中專案',px+10,102);}
+      else {
+        projects.slice(0,5).forEach(function(p,i){
+          var ms=p.milestones||[];
+          var hasPending=ms.some(function(m){return m.execute_status==='pending_execute';});
+          var lastUp=p.last_updated?new Date(p.last_updated).getTime():0;
+          var stale=lastUp&&(nowMs-lastUp)>sevenDays;
+          var icon= hasPending&&lastUp&&(nowMs-lastUp)>fiveDays ? '🔴'
+                  : hasPending ? '🟡'
+                  : stale ? '🟡'
+                  : ms.length===0 ? '⚪'
+                  : '🟢';
+          ctx.fillStyle='#aaccff';
+          ctx.fillText(trunc(ctx,icon+' '+(p.name||'專案'),mw),px+10,102+i*14);
+        });
       }
     }
 
-    // ── Section 2: 待辦任務 ──
-    ctx.fillStyle='#ffdd44aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('待辦任務',px+8,183);
-    ctx.fillStyle='#ffdd4433'; ctx.fillRect(px+8,188,pw-16,1);
+    // ── S2: 待辦任務 ──
+    ctx.fillStyle='#ffdd44aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('📋 待辦任務',px+8,200);
+    ctx.fillStyle='#ffdd4433'; ctx.fillRect(px+8,205,pw-16,1);
     ctx.font='11px "Segoe UI", Arial, sans-serif';
     if(itriErr){
-      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,205);
-    } else if(!bi){
-      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,205);
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 資料載入失敗',px+10,222);
+    } else if(!pd){
+      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,222);
     } else {
-      var pt=bi.pending_tasks||0;
-      ctx.fillStyle='#ffee88';
-      ctx.fillText('待辦: '+pt+' 項',px+10,205);
-      ctx.fillStyle=pt===0?'#44cc66':'#ff8844';
-      ctx.fillText(pt===0?'✓ 全部完成':'處理中...',px+10,219);
+      var pending=[];
+      (pd.projects||[]).forEach(function(p){
+        (p.milestones||[]).forEach(function(m){
+          if(m.execute_status==='pending_execute'||m.status==='pending'){
+            pending.push({proj:p.name||'',title:m.title||m.id||'任務'});
+          }
+        });
+      });
+      if(pending.length===0){
+        ctx.fillStyle='#44cc88'; ctx.fillText('✓ 無待辦任務',px+10,222);
+      } else {
+        pending.slice(0,5).forEach(function(t,i){
+          ctx.fillStyle='#ffee88';
+          ctx.fillText(trunc(ctx,'[ ] '+t.title,mw),px+10,222+i*14);
+        });
+        if(pending.length>5){ctx.fillStyle='#666677';ctx.fillText('還有 '+(pending.length-5)+' 項待辦',px+10,222+5*14);}
+      }
     }
 
-    // ── Section 3: 系統狀態 ──
-    ctx.fillStyle='#44ff88aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('系統狀態',px+8,276);
-    ctx.fillStyle='#44ff8833'; ctx.fillRect(px+8,281,pw-16,1);
+    // ── S3: 工作今日建議 ──
+    ctx.fillStyle='#44ff88aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('🔧 工作今日建議',px+8,320);
+    ctx.fillStyle='#44ff8833'; ctx.fillRect(px+8,325,pw-16,1);
     ctx.font='11px "Segoe UI", Arial, sans-serif';
-    if(itriErr){
-      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,298);
-    } else if(!bi){
-      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,298);
+    if(itriSugErr){
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ AI 建議暫時無法生成',px+10,342);
+    } else if(!itriSug){
+      ctx.fillStyle='#557799'; ctx.fillText('🔧 分析中'+dots,px+10,342);
     } else {
-      ctx.fillStyle='#44cc88'; ctx.fillText('950157 Bot · 在線',px+10,298);
-      ctx.fillStyle='#556677';
-      var lu=bi.last_updated||'尚未同步';
-      ctx.fillText(trunc(ctx,'同步: '+lu,mw),px+10,312);
+      ctx.fillStyle='#aaffcc';
+      drawTextBlock(ctx,itriSug,px+10,342,mw,13);
     }
 
     // dashboard button
-    var btnX=px+8, btnY=H-58, btnW=pw-16, btnH=30;
+    var btnX=px+8, btnY=413, btnW=pw-16, btnH=22;
     DASH_BTN.x=PANEL_X+10; DASH_BTN.y=btnY; DASH_BTN.w=btnW; DASH_BTN.h=btnH;
     ctx.fillStyle=dashOpen?'#1a2a44':'#0e1a30';
     ctx.fillRect(btnX,btnY,btnW,btnH);
@@ -563,7 +600,7 @@ const ITRIScene = (() => {
     ctx.strokeRect(btnX+.5,btnY+.5,btnW-1,btnH-1);
     ctx.fillStyle=dashOpen?'#99bbff':'#5599ff';
     ctx.font='bold 9px Courier New'; ctx.textAlign='center';
-    ctx.fillText(dashOpen?'✕ 關閉 Dashboard':'▶ 展開 Dashboard',px+pw/2,btnY+18);
+    ctx.fillText(dashOpen?'✕ 關閉 Dashboard':'▶ 展開 Dashboard',px+pw/2,btnY+15);
     ctx.textAlign='left';
 
     ctx.fillStyle='#08081c'; ctx.fillRect(px,H-22,pw,22);
@@ -594,7 +631,8 @@ const ITRIScene = (() => {
 
   var LINES=['進度一切正常。','正在處理研究任務。','系統運行穩定。','這個功能還在測試中...','研究資料已同步完畢。'];
   var itri=null, clickHandler=null;
-  var itriStats=null, itriErr=false;
+  var itriProgress=null, itriErr=false;
+  var itriSug=null, itriSugErr=false;
 
   return {
     init: function(worldData){
@@ -605,11 +643,15 @@ const ITRIScene = (() => {
       itri=cfg?new Character(cfg):null;
       if(itri){ CharacterSprites.applyAll({itri950:itri}); itri.setState('working'); }
       bubbles=[]; dashOpen=false; dashFrame=null;
-      itriStats=null; itriErr=false;
-      console.log('[ITRI] calling API.overview()');
-      API.overview()
-        .then(function(d){ console.log('[ITRI] overview data received', d); itriStats=d&&d.bots&&d.bots.itri||{}; })
-        .catch(function(e){ itriErr=true; console.error('[ITRI] overview API failed', e); });
+      itriProgress=null; itriErr=false;
+      itriSug=null; itriSugErr=false;
+      console.log('[ITRI] fetching panel data');
+      API.progress()
+        .then(function(d){ itriProgress=d; })
+        .catch(function(){ itriErr=true; });
+      API.suggestItri()
+        .then(function(d){ itriSug=d.suggestion; })
+        .catch(function(){ itriSugErr=true; });
       var canvas=BaseScene.canvas;
       if(clickHandler) canvas.removeEventListener('click',clickHandler);
       clickHandler=function(e){

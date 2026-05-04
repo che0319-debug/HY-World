@@ -26,8 +26,13 @@ const API = {
     });
   },
 
-  overview() { return this._get('/api/overview');      },
-  personal() { return this._get('/api/personal-data'); },
-  family()   { return this._get('/api/family-data');   },
-  progress() { return this._get('/api/progress');      },
+  overview()       { return this._get('/api/overview');        },
+  personal()       { return this._get('/api/personal-data');   },
+  family()         { return this._get('/api/family-data');     },
+  progress()       { return this._get('/api/progress');        },
+  todaySchedule()  { return this._get('/api/today-schedule');  },
+  familySchedule() { return this._get('/api/family-schedule'); },
+  suggestHq()      { return this._get('/api/suggest-hy');      },
+  suggestHome()    { return this._get('/api/suggest-home');    },
+  suggestItri()    { return this._get('/api/suggest-itri');    },
 };

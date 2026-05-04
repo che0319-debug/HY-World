@@ -341,6 +341,24 @@ const HQScene = (() => {
     return text + '…';
   }
 
+  function drawTextBlock(ctx, text, x, y, maxW, lineH) {
+    var lines = text.split('\n');
+    var curY = y;
+    lines.forEach(function(line) {
+      if (!line) { curY += lineH * 0.5; return; }
+      var buf = '';
+      line.split('').forEach(function(ch) {
+        var test = buf + ch;
+        if (ctx.measureText(test).width > maxW && buf !== '') {
+          ctx.fillText(buf, x, curY); buf = ch; curY += lineH;
+        } else { buf = test; }
+      });
+      if (buf) ctx.fillText(buf, x, curY);
+      curY += lineH;
+    });
+    return curY;
+  }
+
   function drawPanel(ctx,frame){
     var px=PANEL_X+2, pw=PANEL_W-2, mw=pw-20;
     ctx.fillStyle='#060614'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
@@ -359,70 +377,73 @@ const HQScene = (() => {
     ctx.fillStyle='#aaaacc'; ctx.font='11px "Segoe UI", Arial, sans-serif'; ctx.fillText('HY · 在線',px+28,66);
 
     var dots=[' ·',' ··',' ···'][Math.floor(frame*2)%3];
-    var d=overviewData;
 
-    // ── Section 1: Claude 跨域建議 ──
-    ctx.fillStyle='#5599ffaa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('Claude 跨域建議',px+8,90);
-    ctx.fillStyle='#5599ff33'; ctx.fillRect(px+8,95,pw-16,1);
+    // ── S1: 人生儀表板 ──
+    ctx.fillStyle='#55ee77aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('🏃 人生儀表板',px+8,80);
+    ctx.fillStyle='#55ee7733'; ctx.fillRect(px+8,85,pw-16,1);
     ctx.font='11px "Segoe UI", Arial, sans-serif';
-    if (overviewErr) {
-      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,112);
-      ctx.fillStyle='#554444'; ctx.fillText('Render 冷啟動?',px+10,126);
-    } else if (!d) {
-      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,112);
+    if (personalErr) {
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 資料載入失敗',px+10,102);
+    } else if (!personalData) {
+      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,102);
     } else {
-      var sug=d.suggestion||'（無建議）';
-      // word-wrap suggestion into up to 3 lines (~28 chars each at 9px Courier)
-      var words=sug.split(''), line='', rows=[];
-      words.forEach(function(ch){
-        var test=line+ch;
-        if(ctx.measureText(test).width>mw){rows.push(line);line=ch;}else{line=test;}
-      });
-      if(line)rows.push(line);
-      ctx.fillStyle='#aaccff';
-      rows.slice(0,4).forEach(function(r,i){ ctx.fillText(r,px+10,112+i*13); });
-    }
-
-    // ── Section 2: 三 Bot 狀態摘要 ──
-    ctx.fillStyle='#55ee77aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('三 Bot 狀態摘要',px+8,180);
-    ctx.fillStyle='#55ee7733'; ctx.fillRect(px+8,185,pw-16,1);
-    ctx.font='11px "Segoe UI", Arial, sans-serif';
-    if (overviewErr) {
-      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,202);
-    } else if (!d) {
-      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,202);
-    } else {
-      var bi=d.bots&&d.bots.itri||{}, bp=d.bots&&d.bots.personal||{}, bf=d.bots&&d.bots.family||{};
-      ctx.fillStyle='#4488ff';
-      ctx.fillText(trunc(ctx,'ITRI: '+bi.active_projects+'專案/'+bi.pending_tasks+'待辦',mw),px+10,202);
+      var hd=personalData.health||{}, fi=personalData.finance||{};
+      var gr=personalData.growth||{}, le=personalData.leisure||{};
+      var rest=le.restaurant||{};
+      var visited=Array.isArray(rest.this_quarter_visited)?rest.this_quarter_visited.length:(rest.this_quarter_visited||0);
       ctx.fillStyle='#88ff88';
-      ctx.fillText(trunc(ctx,'Personal: 運動'+bp.exercise,mw),px+10,216);
-      ctx.fillStyle='#ffbb88';
-      var fl=bf.last_updated;
-      ctx.fillText(trunc(ctx,'Family: '+(fl||'待同步'),mw),px+10,230);
+      ctx.fillText(trunc(ctx,'💪 本週運動 '+hd.this_week_exercise_count+'/'+hd.weekly_exercise_target+' 次',mw),px+10,102);
+      ctx.fillStyle='#ffdd88';
+      var saved=fi.this_month_saved!=null&&fi.this_month_saved!==0?'$'+fi.this_month_saved:'待設定';
+      ctx.fillText(trunc(ctx,'💰 本月儲蓄 '+saved,mw),px+10,116);
+      ctx.fillStyle='#88ccff';
+      ctx.fillText(trunc(ctx,'📚 '+( gr.current_focus||'未設定'),mw),px+10,130);
+      ctx.fillStyle='#ffaa88';
+      ctx.fillText(trunc(ctx,'🎉 本季餐廳 '+visited+'/'+(rest.quarterly_target||3)+' 家',mw),px+10,144);
     }
 
-    // ── Section 3: 今日任務清單 ──
-    ctx.fillStyle='#ffdd44aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('今日任務清單',px+8,285);
-    ctx.fillStyle='#ffdd4433'; ctx.fillRect(px+8,290,pw-16,1);
+    // ── S2: 今日行程 ──
+    ctx.fillStyle='#88ccffaa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('📅 今日行程',px+8,200);
+    ctx.fillStyle='#88ccff33'; ctx.fillRect(px+8,205,pw-16,1);
     ctx.font='11px "Segoe UI", Arial, sans-serif';
-    if (overviewErr) {
-      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 連線失敗',px+10,307);
-    } else if (!d) {
-      ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,307);
+    if (scheduleErr) {
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 資料載入失敗',px+10,222);
+    } else if (!scheduleData) {
+      ctx.fillStyle='#557799'; ctx.fillText('讀取行程中'+dots,px+10,222);
     } else {
-      var bi2=d.bots&&d.bots.itri||{}, bp2=d.bots&&d.bots.personal||{};
-      ctx.fillStyle='#aaaacc';
-      ctx.fillText(trunc(ctx,'ITRI 待辦: '+(bi2.pending_tasks||0)+' 項',mw),px+10,307);
-      ctx.fillText(trunc(ctx,'運動進度: '+(bp2.exercise||'—'),mw),px+10,321);
-      if(bi2.last_updated){
-        ctx.fillStyle='#666677';
-        ctx.fillText(trunc(ctx,'更新: '+bi2.last_updated,mw),px+10,335);
+      var evs=scheduleData.events||[];
+      if (evs.length===0) {
+        ctx.fillStyle='#555577'; ctx.fillText('今日無排程',px+10,222);
+      } else {
+        evs.slice(0,5).forEach(function(ev,i){
+          ctx.fillStyle=ev.calendar==='google'?'#aaccff':'#ffcc88';
+          ctx.fillText(trunc(ctx,ev.time+' '+ev.title,mw),px+10,222+i*14);
+        });
+        if (evs.length>5) { ctx.fillStyle='#666677'; ctx.fillText('還有 '+(evs.length-5)+' 項...',px+10,222+5*14); }
       }
     }
 
+    // ── S3: 今日戰略 ──
+    ctx.fillStyle='#ffaa44aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('⚡ 今日戰略',px+8,320);
+    ctx.fillStyle='#ffaa4433'; ctx.fillRect(px+8,325,pw-16,1);
+    ctx.font='11px "Segoe UI", Arial, sans-serif';
+    if (suggestionHqErr) {
+      ctx.fillStyle='#cc6666'; ctx.fillText('⚠ AI 建議暫時無法生成',px+10,342);
+    } else if (!suggestionHq) {
+      ctx.fillStyle='#557799'; ctx.fillText('⚡ 分析中'+dots,px+10,342);
+    } else {
+      ctx.fillStyle='#ffcc88';
+      var endY=drawTextBlock(ctx,suggestionHq,px+10,342,mw,13);
+      ctx.fillStyle='#555544'; ctx.font='9px "Segoe UI", Arial, sans-serif'; ctx.textAlign='right';
+      ctx.fillText('由 AI 即時生成',px+pw-6,Math.min(endY+2,406));
+      ctx.textAlign='left'; ctx.font='11px "Segoe UI", Arial, sans-serif';
+    }
+
     // ── 個人編輯按鈕 ──
-    var btnX=px+8, btnY=366, btnW=pw-16, btnH=22;
+    var btnX=px+8, btnY=413, btnW=pw-16, btnH=22;
     ctx.fillStyle=personalOpen?'#162a1e':'#0e1420';
     ctx.fillRect(btnX,btnY,btnW,btnH);
     ctx.strokeStyle=personalOpen?'#2a6644':'#2a4488';
@@ -440,7 +461,9 @@ const HQScene = (() => {
 
   var LINES=['一切都在計畫中！','需要跨域協調嗎？','今天的任務清單很長...','三個分身都在線！'];
   var hy=null, clickHandler=null;
-  var overviewData=null, overviewErr=false;
+  var personalData=null, personalErr=false;
+  var scheduleData=null, scheduleErr=false;
+  var suggestionHq=null, suggestionHqErr=false;
   var personalFrame=null, personalOpen=false;
 
   function openPersonal(){
@@ -470,11 +493,19 @@ const HQScene = (() => {
       hy = cfg ? new Character(cfg) : null;
       if (hy) { CharacterSprites.applyAll({hy:hy}); hy.setState('working'); }
       bubbles=[];
-      overviewData=null; overviewErr=false;
-      console.log('[HQ] calling API.overview()');
-      API.overview()
-        .then(function(d){ console.log('[HQ] overview data received', d); overviewData=d; })
-        .catch(function(e){ overviewErr=true; console.error('[HQ] overview API failed', e); });
+      personalData=null; personalErr=false;
+      scheduleData=null; scheduleErr=false;
+      suggestionHq=null; suggestionHqErr=false;
+      console.log('[HQ] fetching panel data');
+      API.personal()
+        .then(function(d){ personalData=d; })
+        .catch(function(){ personalErr=true; });
+      API.todaySchedule()
+        .then(function(d){ scheduleData=d; })
+        .catch(function(){ scheduleErr=true; });
+      API.suggestHq()
+        .then(function(d){ suggestionHq=d.suggestion; })
+        .catch(function(){ suggestionHqErr=true; });
       var canvas=BaseScene.canvas;
       if (clickHandler) canvas.removeEventListener('click',clickHandler);
       clickHandler=function(e){

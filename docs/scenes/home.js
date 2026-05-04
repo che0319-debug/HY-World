@@ -655,10 +655,11 @@ const HomeScene = (() => {
     } else if (!homeData) {
       ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,s.y+22);
     } else {
+      console.log('[HOME] rendering with data:', homeData);
       var d=homeData, row1=0;
       var nowMs=Date.now(), threeDays=3*86400000, fiveDays=5*86400000;
       // kanban: pending_execute && stale > 3 days
-      var kanban=d._kanban||[];
+      var kanban=Array.isArray(d._kanban)?d._kanban:[];
       kanban.forEach(function(item){
         if (row1>=4) return;
         if (item.execute_status==='pending_execute') {
@@ -698,6 +699,7 @@ const HomeScene = (() => {
     } else if (!familyScheduleData) {
       ctx.fillStyle='#557799'; ctx.fillText('讀取行程中'+dots,px+10,s.y+22);
     } else {
+      console.log('[HOME] rendering with data:', familyScheduleData);
       var evs=familyScheduleData.events||[];
       if (evs.length===0) {
         ctx.fillStyle='#555577'; ctx.fillText('近期無家庭行程',px+10,s.y+22);
@@ -719,6 +721,7 @@ const HomeScene = (() => {
     } else if (!suggestionHome) {
       ctx.fillStyle='#557799'; ctx.fillText('💛 分析中'+dots,px+10,s.y+22);
     } else {
+      console.log('[HOME] rendering with data:', suggestionHome);
       ctx.fillStyle='#aaffcc';
       drawTextBlock(ctx,suggestionHome,px+10,s.y+22,mw,12,4);
     }
@@ -777,15 +780,18 @@ const HomeScene = (() => {
       familyScheduleData=null; familyScheduleErr=false;
       suggestionHome=null; suggestionHomeErr=false;
       console.log('[HOME] fetching panel data');
+      console.log('[HOME] fetch starting', 'API.family');
       API.family()
-        .then(function(d){ if(d&&!d.error&&typeof d==='object'){homeData=d;}else{homeErr=true;} })
-        .catch(function(){ homeErr=true; });
+        .then(function(d){ console.log('[HOME] fetch response (family):', d); if(d&&!d.error&&typeof d==='object'){homeData=d;}else{homeErr=true;} })
+        .catch(function(e){ console.log('[HOME] error:', e); homeErr=true; });
+      console.log('[HOME] fetch starting', 'API.familySchedule');
       API.familySchedule()
-        .then(function(d){ if(d&&!d.error&&typeof d==='object'){familyScheduleData=d;}else{familyScheduleErr=true;} })
-        .catch(function(){ familyScheduleErr=true; });
+        .then(function(d){ console.log('[HOME] fetch response (familySchedule):', d); if(d&&!d.error&&typeof d==='object'){familyScheduleData=d;}else{familyScheduleErr=true;} })
+        .catch(function(e){ console.log('[HOME] error:', e); familyScheduleErr=true; });
+      console.log('[HOME] fetch starting', 'API.suggestHome');
       API.suggestHome()
-        .then(function(d){ if(d&&d.suggestion){suggestionHome=d.suggestion;}else{suggestionHomeErr=true;} })
-        .catch(function(){ suggestionHomeErr=true; });
+        .then(function(d){ console.log('[HOME] fetch response (suggestHome):', d); if(d&&d.suggestion){suggestionHome=d.suggestion;}else{suggestionHomeErr=true;} })
+        .catch(function(e){ console.log('[HOME] error:', e); suggestionHomeErr=true; });
       var canvas=BaseScene.canvas;
       if (clickHandler) canvas.removeEventListener('click',clickHandler);
       clickHandler = function(e){

@@ -659,7 +659,9 @@ const HomeScene = (() => {
       var d=homeData, row1=0;
       var nowMs=Date.now(), threeDays=3*86400000, fiveDays=5*86400000;
       // kanban: pending_execute && stale > 3 days
-      var kanban=Array.isArray(d._kanban)?d._kanban:[];
+      var kanbanObj=(d._kanban&&d._kanban.projects)?d._kanban.projects:[];
+      var kanban=[];
+      kanbanObj.forEach(function(proj){ (proj.milestones||[]).forEach(function(m){ kanban.push(m); }); });
       kanban.forEach(function(item){
         if (row1>=4) return;
         if (item.execute_status==='pending_execute') {
@@ -705,7 +707,7 @@ const HomeScene = (() => {
         ctx.fillStyle='#555577'; ctx.fillText('近期無家庭行程',px+10,s.y+22);
       } else {
         evs.slice(0,5).forEach(function(ev,i){
-          ctx.fillStyle=ev.calendar==='google'?'#aaccff':'#ffcc88';
+          ctx.fillStyle='#ffcc88';
           var label=ev.date+' '+ev.weekday+'｜'+ev.time+' '+ev.title;
           ctx.fillText(trunc(ctx,label,mw),px+10,s.y+22+i*14);
         });

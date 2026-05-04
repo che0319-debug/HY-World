@@ -10,6 +10,7 @@ const API = {
     return fetch(url, {
       method: 'GET',
       headers: { 'X-Secret': API_SECRET },
+      cache: 'no-store',
     })
     .then(function(r) {
       console.log('[API] status', r.status, url);

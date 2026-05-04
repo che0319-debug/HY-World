@@ -592,21 +592,28 @@ const HomeScene = (() => {
     return curY;
   }
 
-  function drawTextBlock(ctx, text, x, y, maxW, lineH) {
+  function drawTextBlock(ctx, text, x, y, maxW, lineH, maxLines) {
     var lines = text.split('\n');
-    var curY = y;
-    lines.forEach(function(line) {
-      if (!line) { curY += lineH * 0.5; return; }
+    var curY = y, totalLines = 0;
+    for (var li = 0; li < lines.length; li++) {
+      var line = lines[li];
+      if (!line) { curY += lineH * 0.5; continue; }
       var buf = '';
-      line.split('').forEach(function(ch) {
-        var test = buf + ch;
+      for (var ci = 0; ci < line.length; ci++) {
+        var test = buf + line[ci];
         if (ctx.measureText(test).width > maxW && buf !== '') {
-          ctx.fillText(buf, x, curY); buf = ch; curY += lineH;
+          totalLines++;
+          if (maxLines && totalLines > maxLines) return curY;
+          ctx.fillText(buf, x, curY); buf = line[ci]; curY += lineH;
         } else { buf = test; }
-      });
-      if (buf) ctx.fillText(buf, x, curY);
+      }
+      if (buf) {
+        totalLines++;
+        if (maxLines && totalLines > maxLines) return curY;
+        ctx.fillText(buf, x, curY);
+      }
       curY += lineH;
-    });
+    }
     return curY;
   }
 
@@ -614,9 +621,9 @@ const HomeScene = (() => {
     var px=PANEL_X+2, pw=PANEL_W-2, mw=pw-20;
     ctx.fillStyle='#07071a'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
     ctx.fillStyle='#10102c'; ctx.fillRect(px,0,pw,44);
-    ctx.fillStyle='#ff88bb'; ctx.font='bold 13px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='#ff88bb'; ctx.font='bold 11px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
     ctx.fillText('🏠 Home', px+pw/2, 18);
-    ctx.fillStyle='#886677'; ctx.font='11px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle='#886677'; ctx.font='10px "Segoe UI", Arial, sans-serif';
     ctx.fillText('小因的空間', px+pw/2, 33);
     ctx.textAlign='left';
     ctx.fillStyle='rgba(255,136,187,0.3)'; ctx.fillRect(px+6,44,pw-12,1);
@@ -624,7 +631,7 @@ const HomeScene = (() => {
     var dy=62+Math.round(Math.sin(frame*3)*2);
     ctx.fillStyle='rgba(255,136,187,0.3)'; ctx.beginPath(); ctx.arc(px+16,dy,8,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#ff88bb'; ctx.beginPath(); ctx.arc(px+16,dy,4,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#ccaaaa'; ctx.font='11px "Segoe UI", Arial, sans-serif'; ctx.fillText('小因 · 在線',px+28,dy+4);
+    ctx.fillStyle='#ccaaaa'; ctx.font='10px "Segoe UI", Arial, sans-serif'; ctx.fillText('小因 · 在線',px+28,dy+4);
 
     var sections=[
       {label:'🔴 家庭需要關注',    col:'#ff6b6b', y:80 },
@@ -637,7 +644,7 @@ const HomeScene = (() => {
       ctx.fillStyle=s.col+'aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.textAlign='left';
       ctx.fillText(s.label,px+8,s.y);
       ctx.fillStyle=s.col+'33'; ctx.fillRect(px+8,s.y+5,pw-16,1);
-      ctx.font='11px "Segoe UI", Arial, sans-serif';
+      ctx.font='10px "Segoe UI", Arial, sans-serif';
     }
 
     // ── S1: 家庭需要關注 ──
@@ -713,7 +720,7 @@ const HomeScene = (() => {
       ctx.fillStyle='#557799'; ctx.fillText('💛 分析中'+dots,px+10,s.y+22);
     } else {
       ctx.fillStyle='#aaffcc';
-      drawTextBlock(ctx,suggestionHome,px+10,s.y+22,mw,13);
+      drawTextBlock(ctx,suggestionHome,px+10,s.y+22,mw,12,4);
     }
 
     // ── 家庭編輯按鈕 ──
@@ -771,13 +778,13 @@ const HomeScene = (() => {
       suggestionHome=null; suggestionHomeErr=false;
       console.log('[HOME] fetching panel data');
       API.family()
-        .then(function(d){ homeData=d; })
+        .then(function(d){ if(d&&!d.error&&typeof d==='object'){homeData=d;}else{homeErr=true;} })
         .catch(function(){ homeErr=true; });
       API.familySchedule()
-        .then(function(d){ familyScheduleData=d; })
+        .then(function(d){ if(d&&!d.error&&typeof d==='object'){familyScheduleData=d;}else{familyScheduleErr=true;} })
         .catch(function(){ familyScheduleErr=true; });
       API.suggestHome()
-        .then(function(d){ suggestionHome=d.suggestion; })
+        .then(function(d){ if(d&&d.suggestion){suggestionHome=d.suggestion;}else{suggestionHomeErr=true;} })
         .catch(function(){ suggestionHomeErr=true; });
       var canvas=BaseScene.canvas;
       if (clickHandler) canvas.removeEventListener('click',clickHandler);

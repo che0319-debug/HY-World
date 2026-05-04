@@ -485,19 +485,23 @@ const ITRIScene = (() => {
     return text+'…';
   }
 
-  function drawTextBlock(ctx,text,x,y,maxW,lineH){
-    var lines=text.split('\n'), curY=y;
-    lines.forEach(function(line){
-      if(!line){curY+=lineH*0.5;return;}
+  function drawTextBlock(ctx,text,x,y,maxW,lineH,maxLines){
+    var lines=text.split('\n'), curY=y, totalLines=0;
+    for(var li=0;li<lines.length;li++){
+      var line=lines[li];
+      if(!line){curY+=lineH*0.5;continue;}
       var buf='';
-      line.split('').forEach(function(ch){
-        var test=buf+ch;
-        if(ctx.measureText(test).width>maxW&&buf!==''){ctx.fillText(buf,x,curY);buf=ch;curY+=lineH;}
-        else{buf=test;}
-      });
-      if(buf)ctx.fillText(buf,x,curY);
+      for(var ci=0;ci<line.length;ci++){
+        var test=buf+line[ci];
+        if(ctx.measureText(test).width>maxW&&buf!==''){
+          totalLines++;
+          if(maxLines&&totalLines>maxLines)return curY;
+          ctx.fillText(buf,x,curY);buf=line[ci];curY+=lineH;
+        }else{buf=test;}
+      }
+      if(buf){totalLines++;if(maxLines&&totalLines>maxLines)return curY;ctx.fillText(buf,x,curY);}
       curY+=lineH;
-    });
+    }
     return curY;
   }
 
@@ -505,9 +509,9 @@ const ITRIScene = (() => {
     var px=PANEL_X+2, pw=PANEL_W-2, mw=pw-20;
     ctx.fillStyle='#050514'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
     ctx.fillStyle='#09091c'; ctx.fillRect(px,0,pw,44);
-    ctx.fillStyle='#5599ff'; ctx.font='bold 13px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='#5599ff'; ctx.font='bold 11px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
     ctx.fillText('ITRI 研究室',px+pw/2,18);
-    ctx.fillStyle='#335577'; ctx.font='11px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle='#335577'; ctx.font='10px "Segoe UI", Arial, sans-serif';
     ctx.fillText('950157 工作站',px+pw/2,33);
     ctx.textAlign='left';
     ctx.fillStyle='rgba(68,136,255,0.3)'; ctx.fillRect(px+6,44,pw-12,1);
@@ -516,7 +520,7 @@ const ITRIScene = (() => {
     ctx.fillStyle='rgba(68,136,255,'+(0.25+pulse*0.4)+')';
     ctx.beginPath(); ctx.arc(px+16,62,8,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#5599ff'; ctx.beginPath(); ctx.arc(px+16,62,4,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#aaaacc'; ctx.font='11px "Segoe UI", Arial, sans-serif'; ctx.fillText('950157 · 在線',px+28,66);
+    ctx.fillStyle='#aaaacc'; ctx.font='10px "Segoe UI", Arial, sans-serif'; ctx.fillText('950157 · 在線',px+28,66);
 
     var dots=[' ·',' ··',' ···'][Math.floor(frame*2)%3];
     var pd=itriProgress;
@@ -524,26 +528,25 @@ const ITRIScene = (() => {
     // ── S1: 專案健康度 ──
     ctx.fillStyle='#5599ffaa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('🔬 專案健康度',px+8,80);
     ctx.fillStyle='#5599ff33'; ctx.fillRect(px+8,85,pw-16,1);
-    ctx.font='11px "Segoe UI", Arial, sans-serif';
+    ctx.font='10px "Segoe UI", Arial, sans-serif';
     if(itriErr){
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 資料載入失敗',px+10,102);
     } else if(!pd){
       ctx.fillStyle='#557799'; ctx.fillText('讀取中'+dots,px+10,102);
     } else {
-      var projects=(pd.projects||[]).filter(function(p){return p.status!=='完成';});
-      var nowMs=Date.now(), sevenDays=7*86400000, fiveDays=5*86400000;
+      var projects=pd.projects||[];
+      var nowMs=Date.now();
       if(projects.length===0){ctx.fillStyle='#44cc88';ctx.fillText('✓ 無進行中專案',px+10,102);}
       else {
-        projects.slice(0,5).forEach(function(p,i){
+        projects.slice(0,4).forEach(function(p,i){
           var ms=p.milestones||[];
-          var hasPending=ms.some(function(m){return m.execute_status==='pending_execute';});
-          var lastUp=p.last_updated?new Date(p.last_updated).getTime():0;
-          var stale=lastUp&&(nowMs-lastUp)>sevenDays;
-          var icon= hasPending&&lastUp&&(nowMs-lastUp)>fiveDays ? '🔴'
-                  : hasPending ? '🟡'
-                  : stale ? '🟡'
-                  : ms.length===0 ? '⚪'
-                  : '🟢';
+          var hasOverdue=ms.some(function(m){
+            if(m.status==='完成')return false;
+            if(!m.due)return false;
+            return new Date(m.due.replace(/\//g,'-')).getTime()<nowMs;
+          });
+          var hasActive=ms.some(function(m){return m.status==='進行中';});
+          var icon=ms.length===0?'⚪':hasOverdue?'🔴':hasActive?'🟢':'🟡';
           ctx.fillStyle='#aaccff';
           ctx.fillText(trunc(ctx,icon+' '+(p.name||'專案'),mw),px+10,102+i*14);
         });
@@ -553,7 +556,7 @@ const ITRIScene = (() => {
     // ── S2: 待辦任務 ──
     ctx.fillStyle='#ffdd44aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('📋 待辦任務',px+8,200);
     ctx.fillStyle='#ffdd4433'; ctx.fillRect(px+8,205,pw-16,1);
-    ctx.font='11px "Segoe UI", Arial, sans-serif';
+    ctx.font='10px "Segoe UI", Arial, sans-serif';
     if(itriErr){
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 資料載入失敗',px+10,222);
     } else if(!pd){
@@ -562,7 +565,7 @@ const ITRIScene = (() => {
       var pending=[];
       (pd.projects||[]).forEach(function(p){
         (p.milestones||[]).forEach(function(m){
-          if(m.execute_status==='pending_execute'||m.status==='pending'){
+          if(m.status==='進行中'||m.status==='未開始'){
             pending.push({proj:p.name||'',title:m.title||m.id||'任務'});
           }
         });
@@ -581,14 +584,14 @@ const ITRIScene = (() => {
     // ── S3: 工作今日建議 ──
     ctx.fillStyle='#44ff88aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif'; ctx.fillText('🔧 工作今日建議',px+8,320);
     ctx.fillStyle='#44ff8833'; ctx.fillRect(px+8,325,pw-16,1);
-    ctx.font='11px "Segoe UI", Arial, sans-serif';
+    ctx.font='10px "Segoe UI", Arial, sans-serif';
     if(itriSugErr){
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ AI 建議暫時無法生成',px+10,342);
     } else if(!itriSug){
       ctx.fillStyle='#557799'; ctx.fillText('🔧 分析中'+dots,px+10,342);
     } else {
       ctx.fillStyle='#aaffcc';
-      drawTextBlock(ctx,itriSug,px+10,342,mw,13);
+      drawTextBlock(ctx,itriSug,px+10,342,mw,12,4);
     }
 
     // dashboard button

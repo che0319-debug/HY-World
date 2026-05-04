@@ -341,21 +341,28 @@ const HQScene = (() => {
     return text + '…';
   }
 
-  function drawTextBlock(ctx, text, x, y, maxW, lineH) {
+  function drawTextBlock(ctx, text, x, y, maxW, lineH, maxLines) {
     var lines = text.split('\n');
-    var curY = y;
-    lines.forEach(function(line) {
-      if (!line) { curY += lineH * 0.5; return; }
+    var curY = y, totalLines = 0;
+    for (var li = 0; li < lines.length; li++) {
+      var line = lines[li];
+      if (!line) { curY += lineH * 0.5; continue; }
       var buf = '';
-      line.split('').forEach(function(ch) {
-        var test = buf + ch;
+      for (var ci = 0; ci < line.length; ci++) {
+        var test = buf + line[ci];
         if (ctx.measureText(test).width > maxW && buf !== '') {
-          ctx.fillText(buf, x, curY); buf = ch; curY += lineH;
+          totalLines++;
+          if (maxLines && totalLines > maxLines) return curY;
+          ctx.fillText(buf, x, curY); buf = line[ci]; curY += lineH;
         } else { buf = test; }
-      });
-      if (buf) ctx.fillText(buf, x, curY);
+      }
+      if (buf) {
+        totalLines++;
+        if (maxLines && totalLines > maxLines) return curY;
+        ctx.fillText(buf, x, curY);
+      }
       curY += lineH;
-    });
+    }
     return curY;
   }
 
@@ -363,9 +370,9 @@ const HQScene = (() => {
     var px=PANEL_X+2, pw=PANEL_W-2, mw=pw-20;
     ctx.fillStyle='#060614'; ctx.fillRect(PANEL_X,0,PANEL_W,H);
     ctx.fillStyle='#0c1a12'; ctx.fillRect(px,0,pw,44);
-    ctx.fillStyle='#55ee77'; ctx.font='bold 13px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='#55ee77'; ctx.font='bold 11px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
     ctx.fillText('🏢 總部 HQ',px+pw/2,18);
-    ctx.fillStyle='#337744'; ctx.font='11px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle='#337744'; ctx.font='10px "Segoe UI", Arial, sans-serif';
     ctx.fillText('HY 的指揮中心',px+pw/2,33);
     ctx.textAlign='left';
     ctx.fillStyle='rgba(68,204,102,0.3)'; ctx.fillRect(px+6,44,pw-12,1);
@@ -374,7 +381,7 @@ const HQScene = (() => {
     ctx.fillStyle='rgba(68,204,102,'+(0.3+pulse*0.4)+')';
     ctx.beginPath(); ctx.arc(px+16,62,8,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#55ee77'; ctx.beginPath(); ctx.arc(px+16,62,4,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#aaaacc'; ctx.font='11px "Segoe UI", Arial, sans-serif'; ctx.fillText('HY · 在線',px+28,66);
+    ctx.fillStyle='#aaaacc'; ctx.font='10px "Segoe UI", Arial, sans-serif'; ctx.fillText('HY · 在線',px+28,66);
 
     var dots=[' ·',' ··',' ···'][Math.floor(frame*2)%3];
 
@@ -382,7 +389,7 @@ const HQScene = (() => {
     ctx.fillStyle='#55ee77aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif';
     ctx.fillText('🏃 人生儀表板',px+8,80);
     ctx.fillStyle='#55ee7733'; ctx.fillRect(px+8,85,pw-16,1);
-    ctx.font='11px "Segoe UI", Arial, sans-serif';
+    ctx.font='10px "Segoe UI", Arial, sans-serif';
     if (personalErr) {
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 資料載入失敗',px+10,102);
     } else if (!personalData) {
@@ -392,8 +399,10 @@ const HQScene = (() => {
       var gr=personalData.growth||{}, le=personalData.leisure||{};
       var rest=le.restaurant||{};
       var visited=Array.isArray(rest.this_quarter_visited)?rest.this_quarter_visited.length:(rest.this_quarter_visited||0);
+      var exCount=Number(hd.this_week_exercise_count)||0;
+      var exTarget=Number(hd.weekly_exercise_target)||3; if(exTarget>30)exTarget=3;
       ctx.fillStyle='#88ff88';
-      ctx.fillText(trunc(ctx,'💪 本週運動 '+hd.this_week_exercise_count+'/'+hd.weekly_exercise_target+' 次',mw),px+10,102);
+      ctx.fillText(trunc(ctx,'💪 本週運動 '+exCount+'/'+exTarget+' 次',mw),px+10,102);
       ctx.fillStyle='#ffdd88';
       var saved=fi.this_month_saved!=null&&fi.this_month_saved!==0?'$'+fi.this_month_saved:'待設定';
       ctx.fillText(trunc(ctx,'💰 本月儲蓄 '+saved,mw),px+10,116);
@@ -407,7 +416,7 @@ const HQScene = (() => {
     ctx.fillStyle='#88ccffaa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif';
     ctx.fillText('📅 今日行程',px+8,200);
     ctx.fillStyle='#88ccff33'; ctx.fillRect(px+8,205,pw-16,1);
-    ctx.font='11px "Segoe UI", Arial, sans-serif';
+    ctx.font='10px "Segoe UI", Arial, sans-serif';
     if (scheduleErr) {
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ 資料載入失敗',px+10,222);
     } else if (!scheduleData) {
@@ -429,14 +438,14 @@ const HQScene = (() => {
     ctx.fillStyle='#ffaa44aa'; ctx.font='bold 10px "Segoe UI", Arial, sans-serif';
     ctx.fillText('⚡ 今日戰略',px+8,320);
     ctx.fillStyle='#ffaa4433'; ctx.fillRect(px+8,325,pw-16,1);
-    ctx.font='11px "Segoe UI", Arial, sans-serif';
+    ctx.font='10px "Segoe UI", Arial, sans-serif';
     if (suggestionHqErr) {
       ctx.fillStyle='#cc6666'; ctx.fillText('⚠ AI 建議暫時無法生成',px+10,342);
     } else if (!suggestionHq) {
       ctx.fillStyle='#557799'; ctx.fillText('⚡ 分析中'+dots,px+10,342);
     } else {
       ctx.fillStyle='#ffcc88';
-      var endY=drawTextBlock(ctx,suggestionHq,px+10,342,mw,13);
+      var endY=drawTextBlock(ctx,suggestionHq,px+10,342,mw,12,4);
       ctx.fillStyle='#555544'; ctx.font='9px "Segoe UI", Arial, sans-serif'; ctx.textAlign='right';
       ctx.fillText('由 AI 即時生成',px+pw-6,Math.min(endY+2,406));
       ctx.textAlign='left'; ctx.font='11px "Segoe UI", Arial, sans-serif';
@@ -454,7 +463,7 @@ const HQScene = (() => {
     ctx.textAlign='left';
 
     ctx.fillStyle='#0c1412'; ctx.fillRect(px,H-34,pw,34);
-    ctx.fillStyle='#557766'; ctx.font='10px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='#557766'; ctx.font='9px "Segoe UI", Arial, sans-serif'; ctx.textAlign='center';
     ctx.fillText('點擊 HY 對話',px+pw/2,H-14);
     ctx.textAlign='left';
   }

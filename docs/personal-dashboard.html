@@ -140,6 +140,8 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
 .weekly-select { background:#fff; border:1.5px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; padding:6px 10px; font-family:'Noto Sans TC',sans-serif; cursor:pointer; }
 .weekly-select:focus { outline:none; border-color:var(--blue); }
 .weekly-actions { margin-left:auto; display:flex; gap:8px; }
+#weeklyDownloadBtn { background:#fff; color:#1a1a1a; border:1.5px solid #6b778c; }
+#weeklyDownloadBtn:hover { background:#f4f5f7; color:#172b4d; border-color:#172b4d; }
 .stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
 .stat-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow-sm); text-align:center; }
 .stat-num { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; color:var(--blue); line-height:1.1; }
@@ -557,7 +559,7 @@ function renderWeekly(data) {
   weeklyData = data;
   var s = data.summary || {};
   var g = data.goals || {};
-  var domains = data.domains || {};
+  var tw = data.this_week || {};
   var next = data.next_week || {};
   var cross = data.cross_domain || {};
 
@@ -572,13 +574,14 @@ function renderWeekly(data) {
 
   // ── 摘要卡片 ──
   html += '<div class="stat-grid">';
+  var cdNext = cross.next_week_due || {};
   var stats = [
-    { num: s.work_done_this_week   || 0, label: '工作 milestone 本週完成' },
-    { num: s.personal_done         || 0, label: '個人本週完成' },
-    { num: s.family_done           || 0, label: '家庭本週完成' },
-    { num: s.work_due_next_week    || 0, label: '下週工作 due' },
-    { num: s.work_in_progress      || 0, label: '工作進行中' },
-    { num: s.family_in_progress    || 0, label: '家庭進行中' },
+    { num: s.work_completed || 0, label: '工作 milestone 本週完成' },
+    { num: s.personal_done  || 0, label: '個人本週完成' },
+    { num: s.family_done    || 0, label: '家庭本週完成' },
+    { num: cdNext.work      || 0, label: '下週工作 due' },
+    { num: s.work_wip       || 0, label: '工作進行中' },
+    { num: s.family_wip     || 0, label: '家庭進行中' },
   ];
   stats.forEach(function(st) {
     html += '<div class="stat-card"><div class="stat-num">'+st.num+'</div><div class="stat-label">'+esc(st.label)+'</div></div>';
@@ -587,56 +590,85 @@ function renderWeekly(data) {
 
   // ── 四大目標達成 ──
   html += '<div class="section-card"><div class="section-title">🎯 四大目標達成狀況</div><div class="goal-progress-list">';
-  var goalDefs = [
-    { key:'health',  icon:'💪', label:'健康' },
-    { key:'finance', icon:'💰', label:'財務' },
-    { key:'growth',  icon:'📚', label:'成長' },
-    { key:'leisure', icon:'🎉', label:'休閒' },
+  var gh = g.health  || {};
+  var gf = g.finance || {};
+  var gg = g.growth  || {};
+  var gl = g.leisure || {};
+  var goalRows = [
+    { icon:'💪', label:'健康',  done: gh.exercise_count || 0, total: gh.exercise_target || 0 },
+    { icon:'💰', label:'財務',  done: gf.saved || 0, total: gf.target || 0 },
+    { icon:'📚', label:'成長',  done: (gg.skills||[]).length, noBar: true, extra: gg.current_focus ? '目前專注：'+gg.current_focus : null },
+    { icon:'🎉', label:'休閒',  done: (gl.restaurant_visited||[]).length, total: gl.restaurant_target || 0 },
   ];
-  goalDefs.forEach(function(gd) {
-    var gv = g[gd.key] || {};
-    var done  = gv.done  || 0;
-    var total = gv.total || 0;
-    var pct   = weeklyPct(done, total);
-    var cls   = weeklyBarClass(pct);
+  goalRows.forEach(function(gr) {
     html += '<div class="goal-prog-row">';
-    html += '<div class="goal-prog-header"><span class="goal-prog-name">'+gd.icon+' '+gd.label+'</span><span class="goal-prog-pct">'+done+'/'+total+' ('+pct+'%)</span></div>';
-    html += '<div class="prog-bar-bg"><div class="prog-bar-fill '+cls+'" style="width:'+pct+'%"></div></div>';
+    if (gr.noBar) {
+      html += '<div class="goal-prog-header"><span class="goal-prog-name">'+gr.icon+' '+gr.label+'</span><span class="goal-prog-pct">進行中 '+gr.done+' 項</span></div>';
+      if (gr.extra) html += '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">'+esc(gr.extra)+'</div>';
+    } else {
+      var pct = weeklyPct(gr.done, gr.total);
+      var cls = weeklyBarClass(pct);
+      html += '<div class="goal-prog-header"><span class="goal-prog-name">'+gr.icon+' '+gr.label+'</span><span class="goal-prog-pct">'+gr.done+'/'+gr.total+' ('+pct+'%)</span></div>';
+      html += '<div class="prog-bar-bg"><div class="prog-bar-fill '+cls+'" style="width:'+pct+'%"></div></div>';
+    }
     html += '</div>';
   });
   html += '</div></div>';
 
   // ── 本週進展（個人 / 工作 / 家庭）──
   html += '<div class="domain-grid">';
-  var domainDefs = [
-    { key:'personal', label:'👤 個人' },
-    { key:'work',     label:'💼 工作' },
-    { key:'family',   label:'🏠 家庭' },
+  var pk = tw.personal_kanban || {};
+  var fk = tw.family_kanban   || {};
+  var domainData = [
+    { label:'👤 個人', done: pk.this_week_done || 0, wip: pk.in_progress || 0, added: pk.this_week_new || 0 },
+    { label:'💼 工作', done: s.work_completed  || 0, wip: s.work_wip     || 0, added: 0 },
+    { label:'🏠 家庭', done: fk.this_week_done || 0, wip: fk.in_progress || 0, added: fk.this_week_new || 0 },
   ];
-  domainDefs.forEach(function(dd) {
-    var dv = domains[dd.key] || {};
+  domainData.forEach(function(dd) {
     html += '<div class="domain-card"><div class="domain-title">'+dd.label+'</div>';
-    html += '<div class="domain-row"><span class="domain-row-label">本週完成</span><span class="domain-row-val">'+( dv.done    ||0)+'</span></div>';
-    html += '<div class="domain-row"><span class="domain-row-label">進行中</span><span class="domain-row-val">'  +( dv.in_progress||0)+'</span></div>';
-    html += '<div class="domain-row"><span class="domain-row-label">本週新增</span><span class="domain-row-val">'+( dv.added   ||0)+'</span></div>';
+    html += '<div class="domain-row"><span class="domain-row-label">本週完成</span><span class="domain-row-val">'+dd.done+'</span></div>';
+    html += '<div class="domain-row"><span class="domain-row-label">進行中</span><span class="domain-row-val">'+dd.wip+'</span></div>';
+    html += '<div class="domain-row"><span class="domain-row-label">本週新增</span><span class="domain-row-val">'+dd.added+'</span></div>';
     html += '</div>';
   });
   html += '</div>';
 
   // ── 下週關鍵事項 ──
   html += '<div class="section-card"><div class="section-title">📅 下週關鍵事項</div>';
-  domainDefs.forEach(function(dd) {
-    var items = (next[dd.key] || []);
-    if (!items.length) return;
-    html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">'+dd.label+'</div>';
-    html += '<ul class="due-list">';
-    items.forEach(function(it) {
+  var personalDue = next.personal_due  || [];
+  var workUpcoming = next.work_upcoming || [];
+  var familyDue   = next.family_due    || [];
+  var anyNext = personalDue.length || workUpcoming.length || familyDue.length;
+
+  if (personalDue.length) {
+    html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">👤 個人</div><ul class="due-list">';
+    personalDue.forEach(function(it) {
       html += '<li class="due-item"><span class="due-title">'+esc(it.title||it)+'</span>';
       if (it.due) html += '<span class="due-date">'+esc(it.due)+'</span>';
       html += '</li>';
     });
     html += '</ul></div>';
-  });
+  }
+  if (workUpcoming.length) {
+    html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">💼 工作</div><ul class="due-list">';
+    workUpcoming.forEach(function(it) {
+      var titleText = it.project ? '['+it.project+'] '+it.title : (it.title||it);
+      html += '<li class="due-item"><span class="due-title">'+esc(titleText)+'</span>';
+      if (it.due) html += '<span class="due-date">'+esc(it.due)+'</span>';
+      html += '</li>';
+    });
+    html += '</ul></div>';
+  }
+  if (familyDue.length) {
+    html += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">🏠 家庭</div><ul class="due-list">';
+    familyDue.forEach(function(it) {
+      html += '<li class="due-item"><span class="due-title">'+esc(it.title||it)+'</span>';
+      if (it.due) html += '<span class="due-date">'+esc(it.due)+'</span>';
+      html += '</li>';
+    });
+    html += '</ul></div>';
+  }
+  if (!anyNext) html += '<div style="color:var(--text-dim);font-size:13px;">無待辦事項</div>';
   html += '</div>';
 
   // ── 跨域數字概況 ──
@@ -644,14 +676,19 @@ function renderWeekly(data) {
   html += '<div class="cross-stat-grid">';
   var crossDefs = [
     { key:'in_progress',    label:'進行中' },
-    { key:'done_this_week', label:'本週完成' },
-    { key:'due_next_week',  label:'下週 due' },
+    { key:'this_week_done', label:'本週完成' },
+    { key:'next_week_due',  label:'下週 due' },
+  ];
+  var domainKeys = [
+    { key:'personal', label:'個人' },
+    { key:'work',     label:'工作' },
+    { key:'family',   label:'家庭' },
   ];
   crossDefs.forEach(function(cd) {
     var cv = cross[cd.key] || {};
     html += '<div class="cross-stat-card"><div class="cross-stat-title">'+esc(cd.label)+'</div><div class="cross-stat-nums">';
-    domainDefs.forEach(function(dd) {
-      html += '<div class="cross-stat-item"><div class="cross-stat-num">'+(cv[dd.key]||0)+'</div><div class="cross-stat-sub">'+dd.label.replace(/^.+\s/,'')+'</div></div>';
+    domainKeys.forEach(function(dk) {
+      html += '<div class="cross-stat-item"><div class="cross-stat-num">'+(cv[dk.key]||0)+'</div><div class="cross-stat-sub">'+dk.label+'</div></div>';
     });
     html += '</div></div>';
   });

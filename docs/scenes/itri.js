@@ -3,7 +3,7 @@
 const ITRIScene = (() => {
 
   const PANEL_X=480, PANEL_W=200, SCENE_W=480, H=480, FLOOR_Y=420;
-  var dashOpen=false, dashFrame=null;
+  var dashOpen=false;
 
   function rrect(ctx,x,y,w,h,r){
     ctx.beginPath();
@@ -613,22 +613,12 @@ const ITRIScene = (() => {
   }
 
   function openDash(){
-    if (dashFrame) return;
-    var overlay=document.getElementById('scene-overlay');
-    // right:29.41% = 200/680×100%, aligns right edge with PANEL_X at any canvas scale
-    // top:0 left:0 bottom:0 → fills scene height, flush with scene boundary
-    var wrap=document.createElement('div');
-    wrap.style.cssText='position:absolute;top:0;left:0;right:29.41%;bottom:0;overflow-x:auto;overflow-y:auto;box-sizing:border-box;border:2px solid #5599ff;z-index:7';
-    dashFrame=document.createElement('iframe');
-    dashFrame.src='https://telegram-bot-t82n.onrender.com/dashboard';
-    // 1600×1600 internal; zoom:0.55 → 880×880 layout (covers 2× scene at 960×960)
-    dashFrame.style.cssText='width:1600px;height:1600px;border:none;background:#050514;zoom:0.55;display:block';
-    wrap.appendChild(dashFrame);
-    overlay.appendChild(wrap);
+    if (dashOpen) return;
+    openDashboardModal('https://telegram-bot-t82n.onrender.com/dashboard', function(){ dashOpen=false; });
     dashOpen=true;
   }
   function closeDash(){
-    if (dashFrame){ var w=dashFrame.parentNode; w&&w.parentNode&&w.parentNode.removeChild(w); dashFrame=null; }
+    closeDashboardModal();
     dashOpen=false;
   }
 
@@ -645,7 +635,7 @@ const ITRIScene = (() => {
       var cx=dX+dW/2, cy=dY-4;
       itri=cfg?new Character(cfg):null;
       if(itri){ CharacterSprites.applyAll({itri950:itri}); itri.setState('working'); }
-      bubbles=[]; dashOpen=false; dashFrame=null;
+      bubbles=[]; dashOpen=false;
       itriProgress=null; itriErr=false;
       itriSug=null; itriSugErr=false;
       console.log('[ITRI] fetching panel data');

@@ -473,23 +473,15 @@ const HQScene = (() => {
   var personalData=null, personalErr=false;
   var scheduleData=null, scheduleErr=false;
   var suggestionHq=null, suggestionHqErr=false;
-  var personalFrame=null, personalOpen=false;
+  var personalOpen=false;
 
   function openPersonal(){
-    if (personalFrame) return;
-    var overlay=document.getElementById('scene-overlay');
-    var wrap=document.createElement('div');
-    wrap.id='personal-wrap';
-    wrap.style.cssText='position:absolute;top:0;left:0;right:29.41%;bottom:0;overflow-x:auto;overflow-y:auto;box-sizing:border-box;border:2px solid #3a88ee;z-index:7';
-    personalFrame=document.createElement('iframe');
-    personalFrame.src='personal-dashboard.html?t='+Date.now();
-    personalFrame.style.cssText='width:1600px;height:1600px;border:none;background:#07071a;zoom:0.55;display:block';
-    wrap.appendChild(personalFrame);
-    overlay.appendChild(wrap);
+    if (personalOpen) return;
+    openDashboardModal('personal-dashboard.html?t='+Date.now(), function(){ personalOpen=false; });
     personalOpen=true;
   }
   function closePersonal(){
-    if (personalFrame){ var w=personalFrame.parentNode; w&&w.parentNode&&w.parentNode.removeChild(w); personalFrame=null; }
+    closeDashboardModal();
     personalOpen=false;
   }
 
@@ -521,7 +513,7 @@ const HQScene = (() => {
         var r=canvas.getBoundingClientRect();
         var mx=(e.clientX-r.left)*(680/r.width), my=(e.clientY-r.top)*(480/r.height);
         // personal edit button (canvas coords match drawPanel btn)
-        var px2=PANEL_X+10, btnY=366, btnW=PANEL_W-20, btnH=22;
+        var px2=PANEL_X+10, btnY=413, btnW=PANEL_W-20, btnH=22;
         if (mx>=px2&&mx<=px2+btnW&&my>=btnY&&my<=btnY+btnH){
           if (personalOpen) closePersonal(); else openPersonal();
           return;

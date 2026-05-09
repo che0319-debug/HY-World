@@ -657,20 +657,19 @@ const HomeScene = (() => {
     } else {
       console.log('[HOME] rendering with data:', homeData);
       var d=homeData, row1=0;
-      var nowMs=Date.now(), threeDays=3*86400000, fiveDays=5*86400000;
-      // kanban: pending_execute && stale > 3 days
-      var kanbanObj=(d._kanban&&d._kanban.projects)?d._kanban.projects:[];
-      var kanban=[];
-      kanbanObj.forEach(function(proj){ (proj.milestones||[]).forEach(function(m){ kanban.push(m); }); });
-      kanban.forEach(function(item){
-        if (row1>=4) return;
-        if (item.execute_status==='pending_execute') {
-          var updMs=item.updated_at?new Date(item.updated_at).getTime():0;
-          if (!updMs || (nowMs-updMs)>threeDays) {
+      var nowMs=Date.now(), threeDaysMs=3*86400000;
+      // projects: milestones due within 3 days and not done
+      var projectsList=d.projects||[];
+      projectsList.forEach(function(proj){
+        (proj.milestones||[]).forEach(function(m){
+          if (row1>=4) return;
+          if (m.status==='完成'||!m.due) return;
+          var dueMs=new Date(m.due.replace(/\//g,'-')).getTime();
+          if (dueMs-nowMs<=threeDaysMs){
             ctx.fillStyle='#ff9966';
-            ctx.fillText(trunc(ctx,'⏰ '+(item.title||item.task||'待辦'),mw),px+10,s.y+22+row1*14); row1++;
+            ctx.fillText(trunc(ctx,'['+proj.name+'] '+m.title+'（due: '+m.due+'）',mw),px+10,s.y+22+row1*14); row1++;
           }
-        }
+        });
       });
       // planning: milestones not done
       var planning=d.planning||{};
@@ -750,23 +749,15 @@ const HomeScene = (() => {
   var homeData=null, homeErr=false;
   var familyScheduleData=null, familyScheduleErr=false;
   var suggestionHome=null, suggestionHomeErr=false;
-  var familyFrame=null, familyOpen=false;
+  var familyOpen=false;
 
   function openFamily(){
-    if (familyFrame) return;
-    var overlay=document.getElementById('scene-overlay');
-    var wrap=document.createElement('div');
-    wrap.id='family-wrap';
-    wrap.style.cssText='position:absolute;top:0;left:0;right:29.41%;bottom:0;overflow-x:auto;overflow-y:auto;box-sizing:border-box;border:2px solid #c35;z-index:7';
-    familyFrame=document.createElement('iframe');
-    familyFrame.src='family-dashboard.html?t='+Date.now();
-    familyFrame.style.cssText='width:1600px;height:1600px;border:none;background:#f0f2f5;zoom:0.55;display:block';
-    wrap.appendChild(familyFrame);
-    overlay.appendChild(wrap);
+    if (familyOpen) return;
+    openDashboardModal('family-dashboard.html?t='+Date.now(), function(){ familyOpen=false; });
     familyOpen=true;
   }
   function closeFamily(){
-    if (familyFrame){ var w=familyFrame.parentNode; w&&w.parentNode&&w.parentNode.removeChild(w); familyFrame=null; }
+    closeDashboardModal();
     familyOpen=false;
   }
 

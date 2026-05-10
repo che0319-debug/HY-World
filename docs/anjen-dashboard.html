@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anjen Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f0eb;
+  --card-bg: #ffffff;
+  --border: #e0d6cc;
+  --text: #2d1f0e;
+  --text-muted: #7a6250;
+  --text-dim: #b09e8c;
+  --primary: #c2601a;
+  --primary-light: #fdecd8;
+  --green: #3d7a4a;
+  --green-light: #e3f5e8;
+  --red: #c0392b;
+  --red-light: #fde8e6;
+  --yellow-light: #fff8e1;
+  --header-bg: #1a0e05;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+  --radius: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+body { background:var(--bg); color:var(--text); font-family:'Noto Sans TC',sans-serif; display:flex; flex-direction:column; }
+
+header { background:var(--header-bg); padding:0 24px; display:flex; align-items:center; gap:16px; height:56px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.06); }
+.logo-wrap { display:flex; align-items:center; gap:10px; }
+.logo-badge { background:var(--primary); color:#fff; font-family:'Syne',sans-serif; font-weight:800; font-size:14px; padding:3px 10px; border-radius:4px; letter-spacing:.5px; }
+.logo-sub { font-size:12px; color:rgba(255,255,255,.4); font-weight:500; }
+.header-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+.last-updated { font-size:12px; color:rgba(255,255,255,.4); background:rgba(255,255,255,.06); padding:4px 10px; border-radius:20px; border:1px solid rgba(255,255,255,.08); }
+.btn { padding:7px 14px; border-radius:6px; font-size:13px; font-weight:500; cursor:pointer; border:none; transition:all .15s; font-family:'Noto Sans TC',sans-serif; display:inline-flex; align-items:center; gap:5px; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:#a84e14; }
+.btn-primary:disabled { opacity:.6; cursor:not-allowed; }
+.btn-ghost { background:rgba(255,255,255,.08); color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.12); }
+.btn-ghost:hover { background:rgba(255,255,255,.14); color:#fff; }
+
+.tabs { background:#fff; border-bottom:1px solid var(--border); padding:0 24px; display:flex; box-shadow:var(--shadow-sm); flex-shrink:0; }
+.tab { padding:14px 18px; font-size:13px; font-weight:500; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; user-select:none; white-space:nowrap; }
+.tab:hover { color:var(--text); }
+.tab.active { color:var(--primary); border-bottom-color:var(--primary); font-weight:700; }
+
+.tab-content { display:none; flex:1; overflow-y:auto; }
+.tab-content.active { display:block; }
+
+/* Banner */
+.banner { background:linear-gradient(135deg, #2d1f0e 0%, #5a3520 100%); color:#fff; padding:20px 24px; display:flex; gap:24px; align-items:center; flex-wrap:wrap; }
+.banner-stat { display:flex; flex-direction:column; gap:2px; }
+.banner-val { font-family:'Syne',sans-serif; font-weight:800; font-size:28px; color:#f4c97a; }
+.banner-label { font-size:12px; color:rgba(255,255,255,.55); }
+.banner-divider { width:1px; height:40px; background:rgba(255,255,255,.15); }
+.banner-next { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:10px 16px; font-size:13px; color:rgba(255,255,255,.85); flex:1; min-width:180px; }
+.banner-next strong { color:#f4c97a; }
+
+/* Projects area */
+.projects-area { padding:20px 24px; display:flex; flex-wrap:wrap; gap:16px; align-content:flex-start; }
+.proj-card { background:var(--card-bg); border:1px solid var(--border); border-radius:10px; width:360px; box-shadow:var(--shadow-sm); flex-shrink:0; overflow:hidden; }
+.proj-header { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+.proj-icon { font-size:18px; }
+.proj-name { font-size:14px; font-weight:700; color:var(--text); flex:1; }
+.proj-toggle { color:var(--text-dim); font-size:12px; transition:transform .2s; }
+.proj-header.open .proj-toggle { transform:rotate(180deg); }
+.proj-body { display:none; }
+.proj-body.open { display:block; }
+.ms-list { padding:6px 12px 8px; }
+.ms-row { padding:8px 6px; border-bottom:1px solid #f0ebe4; }
+.ms-row:last-child { border-bottom:none; }
+.ms-top { display:flex; align-items:center; gap:8px; }
+.ms-name { flex:1; font-size:13px; color:var(--text); font-weight:500; }
+.ms-due { font-size:11px; padding:2px 7px; border-radius:10px; background:#f4ede5; color:var(--text-muted); font-weight:500; white-space:nowrap; }
+.ms-due.soon { background:#fff3cd; color:#856404; font-weight:700; }
+.ms-due.overdue { background:var(--red-light); color:var(--red); font-weight:700; }
+.ms-status-select { font-size:11px; border:1px solid var(--border); border-radius:5px; padding:2px 6px; background:#fff; color:var(--text); font-family:'Noto Sans TC',sans-serif; cursor:pointer; }
+.ms-criteria { margin:6px 0 0 0; padding:6px 10px; background:#faf6f2; border-radius:5px; font-size:12px; color:var(--text-muted); }
+.ms-criteria ul { margin:4px 0 0 14px; }
+.ms-criteria li { margin-bottom:2px; }
+.ms-stop-loss { margin:4px 0 0 0; font-size:11px; color:var(--red); background:var(--red-light); padding:4px 8px; border-radius:4px; }
+.ms-note { margin:4px 0 0 0; font-size:11px; color:var(--text-muted); font-style:italic; }
+
+/* Status badge */
+.status-badge { font-size:11px; font-weight:600; padding:2px 7px; border-radius:10px; white-space:nowrap; flex-shrink:0; }
+.s-pending { background:#f4ede5; color:var(--text-muted); }
+.s-in_progress { background:var(--primary-light); color:var(--primary); }
+.s-done { background:var(--green-light); color:var(--green); }
+.s-blocked { background:var(--red-light); color:var(--red); }
+
+/* Save bar */
+.save-bar { padding:12px 24px; border-top:1px solid var(--border); background:#fff; display:flex; align-items:center; gap:10px; flex-shrink:0; position:sticky; bottom:0; }
+.save-msg { font-size:13px; color:var(--text-muted); }
+
+/* Weekly reviews tab */
+.reviews-area { padding:20px 24px; }
+.review-card { background:var(--card-bg); border:1px solid var(--border); border-radius:10px; margin-bottom:12px; overflow:hidden; box-shadow:var(--shadow-sm); }
+.review-header { padding:12px 16px; display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; }
+.review-week { font-family:'Syne',sans-serif; font-weight:800; font-size:16px; color:var(--primary); }
+.review-date { font-size:12px; color:var(--text-dim); }
+.review-body { display:none; padding:12px 16px; border-top:1px solid var(--border); font-size:13px; line-height:1.7; color:var(--text); }
+.review-body.open { display:block; }
+.review-section { margin-bottom:10px; }
+.review-section h4 { font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+.review-link { display:inline-flex; align-items:center; gap:4px; color:var(--primary); font-size:12px; text-decoration:none; margin-top:6px; }
+.review-link:hover { text-decoration:underline; }
+.empty-state { text-align:center; padding:48px 24px; color:var(--text-muted); font-size:14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <span class="logo-badge">🛍️ Anjen</span>
+    <span class="logo-sub">核心資料庫在 hy-data/anjen_files/，這裡只是進度勾選</span>
+  </div>
+  <div class="header-right">
+    <span class="last-updated" id="last-updated">載入中…</span>
+    <button class="btn btn-ghost" onclick="loadData()">↺ 重整</button>
+    <button class="btn btn-primary" id="save-btn" onclick="saveData()" disabled>儲存變更</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('progress')">📊 進度追蹤</div>
+  <div class="tab" onclick="switchTab('reviews')">📖 週復盤紀錄</div>
+</div>
+
+<div class="tab-content active" id="tab-progress">
+  <div class="banner" id="banner">
+    <div class="banner-stat"><div class="banner-val" id="day-n">-</div><div class="banner-label">Day / 90</div></div>
+    <div class="banner-divider"></div>
+    <div class="banner-stat"><div class="banner-val" id="phase-label">-</div><div class="banner-label">階段</div></div>
+    <div class="banner-divider"></div>
+    <div class="banner-stat"><div class="banner-val" id="plan-ver">v1.0</div><div class="banner-label">Plan Version</div></div>
+    <div class="banner-divider"></div>
+    <div class="banner-next" id="next-ms">載入中…</div>
+  </div>
+  <div class="projects-area" id="projects-area">載入中…</div>
+  <div class="save-bar">
+    <span class="save-msg" id="save-msg"></span>
+    <button class="btn btn-primary" id="save-btn2" onclick="saveData()" disabled>儲存變更</button>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-reviews">
+  <div class="reviews-area" id="reviews-area">載入中…</div>
+</div>
+
+<script>
+var API = 'https://telegram-bot-t82n.onrender.com';
+var SECRET = '950157secret';
+var HEADERS = { 'Content-Type':'application/json', 'X-Secret':SECRET };
+var GET_HEADERS = { 'X-Secret':SECRET, 'Cache-Control':'no-store' };
+
+var _data = null;
+var _dirty = false;
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(function(t,i){ t.classList.toggle('active', ['progress','reviews'][i]===name); });
+  document.querySelectorAll('.tab-content').forEach(function(c){ c.classList.remove('active'); });
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function setDirty() {
+  _dirty = true;
+  document.getElementById('save-btn').disabled = false;
+  document.getElementById('save-btn2').disabled = false;
+  document.getElementById('save-msg').textContent = '有未儲存的變更';
+}
+
+async function loadData() {
+  document.getElementById('last-updated').textContent = '載入中…';
+  try {
+    var r = await fetch(API+'/api/anjen-data?t='+Date.now(), { cache:'no-store', headers:GET_HEADERS });
+    _data = await r.json();
+    renderAll();
+    document.getElementById('last-updated').textContent = '更新：'+new Date().toLocaleTimeString('zh-TW');
+    _dirty = false;
+    document.getElementById('save-btn').disabled = true;
+    document.getElementById('save-btn2').disabled = true;
+    document.getElementById('save-msg').textContent = '';
+  } catch(e) {
+    document.getElementById('last-updated').textContent = '載入失敗';
+    console.error(e);
+  }
+}
+
+function renderAll() {
+  if (!_data) return;
+  renderBanner();
+  renderProjects();
+  renderReviews();
+}
+
+function renderBanner() {
+  var meta = _data._meta || {};
+  var dayN = meta.current_day_n || 1;
+  document.getElementById('day-n').textContent = dayN + ' / 90';
+  var phaseMap = { phase_1:'Phase 1', phase_2:'Phase 2', phase_3:'Phase 3' };
+  document.getElementById('phase-label').textContent = phaseMap[meta.current_phase] || meta.current_phase || '-';
+  document.getElementById('plan-ver').textContent = meta.plan_version || 'v1.0';
+
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var nextMs = null, nextDays = Infinity;
+  (_data.projects||[]).forEach(function(proj) {
+    (proj.milestones||[]).forEach(function(ms) {
+      if (ms.status !== 'pending') return;
+      if (!ms.due_date) return;
+      var due = new Date(ms.due_date);
+      var days = Math.ceil((due-today)/(1000*60*60*24));
+      if (days < nextDays) { nextDays = days; nextMs = {ms:ms, proj:proj, days:days}; }
+    });
+  });
+  var nextEl = document.getElementById('next-ms');
+  if (nextMs) {
+    var daysText = nextMs.days < 0 ? '已逾期 '+Math.abs(nextMs.days)+' 天' : nextMs.days === 0 ? '今天到期' : '還有 '+nextMs.days+' 天';
+    nextEl.innerHTML = '下個里程碑：<strong>'+escHtml(nextMs.ms.name)+'</strong><br><span style="font-size:12px;color:rgba(255,255,255,.6)">'+escHtml(nextMs.proj.name)+' · '+daysText+'</span>';
+  } else {
+    nextEl.textContent = '所有里程碑已完成！';
+  }
+}
+
+function dueCls(dateStr) {
+  if (!dateStr) return '';
+  var today = new Date(); today.setHours(0,0,0,0);
+  var due = new Date(dateStr);
+  var days = Math.ceil((due-today)/(1000*60*60*24));
+  if (days < 0) return 'overdue';
+  if (days <= 3) return 'soon';
+  return '';
+}
+
+function statusLabel(s) {
+  var map = { pending:'待辦', in_progress:'進行中', done:'完成', blocked:'卡關' };
+  return map[s] || s;
+}
+
+function renderProjects() {
+  var el = document.getElementById('projects-area');
+  if (!_data || !_data.projects || !_data.projects.length) { el.innerHTML='<p style="color:var(--text-muted)">無資料</p>'; return; }
+  el.innerHTML = _data.projects.map(function(proj, pi) {
+    var msList = (proj.milestones||[]).map(function(ms, mi) {
+      var cls = dueCls(ms.due_date);
+      var criteriaHtml = '';
+      if (ms.criteria && ms.criteria.length) {
+        criteriaHtml = '<div class="ms-criteria"><strong>Criteria：</strong><ul>'+ms.criteria.map(function(c){ return '<li>'+escHtml(c)+'</li>'; }).join('')+'</ul></div>';
+      }
+      var stopHtml = ms.stop_loss ? '<div class="ms-stop-loss">🔴 '+escHtml(ms.stop_loss)+'</div>' : '';
+      var noteHtml = ms.note ? '<div class="ms-note">📌 '+escHtml(ms.note)+'</div>' : '';
+      return '<div class="ms-row">'+
+        '<div class="ms-top">'+
+          '<span class="ms-name">'+escHtml(ms.name)+'</span>'+
+          (ms.due_date ? '<span class="ms-due '+cls+'">'+ms.due_date+'</span>' : '')+
+          '<select class="ms-status-select" onchange="onStatusChange('+pi+','+mi+',this.value)">'+
+            ['pending','in_progress','done','blocked'].map(function(s){ return '<option value="'+s+'"'+(ms.status===s?' selected':'')+'>'+statusLabel(s)+'</option>'; }).join('')+
+          '</select>'+
+        '</div>'+
+        criteriaHtml + stopHtml + noteHtml +
+      '</div>';
+    }).join('');
+    return '<div class="proj-card">'+
+      '<div class="proj-header" onclick="toggleProj(this)">'+
+        '<span class="proj-icon">'+escHtml(proj.icon||'📁')+'</span>'+
+        '<span class="proj-name">'+escHtml(proj.name)+'</span>'+
+        '<span class="proj-toggle">▼</span>'+
+      '</div>'+
+      '<div class="proj-body">'+
+        '<div class="ms-list">'+msList+'</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function toggleProj(headerEl) {
+  headerEl.classList.toggle('open');
+  headerEl.nextElementSibling.classList.toggle('open');
+}
+
+function onStatusChange(pi, mi, val) {
+  if (!_data || !_data.projects[pi] || !_data.projects[pi].milestones[mi]) return;
+  _data.projects[pi].milestones[mi].status = val;
+  setDirty();
+}
+
+function renderReviews() {
+  var el = document.getElementById('reviews-area');
+  var reviews = (_data && _data.weekly_reviews) || [];
+  if (!reviews.length) { el.innerHTML='<div class="empty-state">尚無週復盤紀錄。<br>Routine（Phase 6.A.3）上線後自動寫入。</div>'; return; }
+  var sorted = reviews.slice().sort(function(a,b){ return (b.week_n||0)-(a.week_n||0); });
+  el.innerHTML = sorted.map(function(r) {
+    var msNames = (r.completed_milestones||[]).join(', ') || '（無）';
+    var reportLink = r.weekly_report_md
+      ? '<a class="review-link" href="https://github.com/che0319-debug/hy-data/blob/main/'+encodeURI(r.weekly_report_md.replace(/^hy-data\//,''))+'" target="_blank">📄 完整週報</a>'
+      : '';
+    var coworkLink = (_data.cowork_link) ? '<a class="review-link" href="'+escHtml(_data.cowork_link)+'" target="_blank">💬 深聊</a>' : '';
+    return '<div class="review-card">'+
+      '<div class="review-header" onclick="this.nextElementSibling.classList.toggle(\'open\')">'+
+        '<span class="review-week">W'+r.week_n+'</span>'+
+        '<span class="review-date">'+escHtml(r.date_range ? r.date_range[0]+' ~ '+r.date_range[1] : r.created_at||'')+'</span>'+
+      '</div>'+
+      '<div class="review-body">'+
+        '<div class="review-section"><h4>週報摘要</h4><p>'+escHtml(r.summary||'')+'</p></div>'+
+        (r.blockers ? '<div class="review-section"><h4>Blockers</h4><p>'+escHtml(r.blockers)+'</p></div>' : '')+
+        '<div class="review-section"><h4>完成里程碑</h4><p>'+escHtml(msNames)+'</p></div>'+
+        '<div style="display:flex;gap:12px;margin-top:6px;">'+reportLink+coworkLink+'</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+async function saveData() {
+  if (!_data || !_dirty) return;
+  document.getElementById('save-btn').disabled = true;
+  document.getElementById('save-btn2').disabled = true;
+  document.getElementById('save-msg').textContent = '儲存中…';
+  try {
+    var r = await fetch(API+'/api/anjen-data', { method:'POST', headers:HEADERS, body:JSON.stringify(_data), cache:'no-store' });
+    var res = await r.json();
+    if (res.ok) {
+      _dirty = false;
+      document.getElementById('save-msg').textContent = '已儲存 ✓';
+      document.getElementById('last-updated').textContent = '儲存：'+new Date().toLocaleTimeString('zh-TW');
+    } else {
+      document.getElementById('save-msg').textContent = '儲存失敗：'+(res.error||'未知錯誤');
+      document.getElementById('save-btn').disabled = false;
+      document.getElementById('save-btn2').disabled = false;
+    }
+  } catch(e) {
+    document.getElementById('save-msg').textContent = '儲存失敗：'+e.message;
+    document.getElementById('save-btn').disabled = false;
+    document.getElementById('save-btn2').disabled = false;
+  }
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+loadData();
+</script>
+</body>
+</html>

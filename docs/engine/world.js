@@ -811,6 +811,118 @@ const World = (() => {
       ctx.fillText(b.sublabel, x + SIDE + bw / 2, y + bh + 13);
       ctx.textAlign = 'left';
 
+    } else if (id === 'sam') {
+      // ════════════════════════════════
+      // Sam：副業作戰中心（商業大樓）
+      // ════════════════════════════════
+
+      // 側面（深灰）
+      ctx.fillStyle = '#1c1c2a';
+      ctx.beginPath();
+      ctx.moveTo(x, y + 8); ctx.lineTo(x + SIDE, y + 8);
+      ctx.lineTo(x + SIDE, y + bh); ctx.lineTo(x, y + bh);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#262636';
+      for (let sy = y + 12; sy < y + bh; sy += 12)
+        ctx.fillRect(x, sy, SIDE, 8);
+
+      // 主體（深灰外牆）
+      ctx.fillStyle = '#2e2e40';
+      ctx.fillRect(x + SIDE, y + 8, bw, bh - 8);
+      ctx.fillStyle = '#242434';
+      for (let sy = y + 20; sy < y + bh; sy += 12)
+        ctx.fillRect(x + SIDE, sy, bw, 1);
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      ctx.fillRect(x + SIDE, y + 8, bw, 3);
+
+      // 左右邊框（暗柱）
+      ctx.fillStyle = '#1e1e2e';
+      ctx.fillRect(x + SIDE, y + 8, 5, bh - 8);
+      ctx.fillRect(x + SIDE + bw - 5, y + 8, 5, bh - 8);
+      ctx.fillStyle = '#3e3e52';
+      ctx.fillRect(x + SIDE, y + 8, 2, bh - 8);
+      ctx.fillRect(x + SIDE + bw - 2, y + 8, 2, bh - 8);
+
+      // 暖色系窗戶（3 cols × 3 rows）
+      const sWinGap = Math.floor((bw - 16) / 3);
+      [[y + 22, 16], [y + 54, 16], [y + 86, 16]].forEach(([wy, wh]) => {
+        if (wy + wh > y + bh - 44) return;
+        for (let wi = 0; wi < 3; wi++) {
+          const wx = x + SIDE + 8 + wi * sWinGap;
+          ctx.fillStyle = '#14141e';
+          ctx.fillRect(wx - 2, wy - 2, sWinGap - 8, wh + 4);
+          const warmOn = Math.sin(Date.now() * 0.0018 + wi * 1.2 + wy * 0.015) > -0.4;
+          ctx.fillStyle = warmOn ? '#cc6e1a' : '#2e1c0a';
+          ctx.fillRect(wx, wy, sWinGap - 12, wh);
+          if (warmOn) {
+            ctx.fillStyle = 'rgba(255,160,60,0.22)';
+            ctx.fillRect(wx - 1, wy - 1, sWinGap - 10, wh + 2);
+            ctx.fillStyle = 'rgba(255,220,120,0.35)';
+            ctx.fillRect(wx + 1, wy + 1, Math.floor((sWinGap - 12) / 2), 5);
+          }
+          ctx.fillStyle = '#14141e';
+          ctx.fillRect(wx + Math.floor((sWinGap - 12) / 2) - 1, wy, 2, wh);
+          ctx.fillRect(wx, wy + Math.floor(wh / 2) - 1, sWinGap - 12, 1);
+        }
+      });
+
+      // 屋頂（平頂）
+      ctx.fillStyle = '#18182a';
+      ctx.fillRect(x + SIDE, y, bw, 10);
+      ctx.fillStyle = '#10101e';
+      ctx.beginPath();
+      ctx.moveTo(x, y + 8); ctx.lineTo(x + SIDE, y);
+      ctx.lineTo(x + SIDE, y + 10); ctx.lineTo(x, y + 18);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#3c3c54';
+      ctx.fillRect(x + SIDE, y, bw, 2);
+
+      // 屋頂霓虹招牌「SAM」
+      const sbcx = x + SIDE + Math.floor(bw / 2);
+      ctx.fillStyle = '#0a0a18';
+      ctx.fillRect(sbcx - 26, y - 12, 52, 13);
+      ctx.strokeStyle = '#ff8822'; ctx.lineWidth = 1;
+      ctx.strokeRect(sbcx - 25.5, y - 11.5, 51, 12);
+      ctx.fillStyle = 'rgba(255,136,34,0.18)';
+      ctx.fillRect(sbcx - 25, y - 11, 50, 11);
+      ctx.fillStyle = '#ffaa44';
+      ctx.font = 'bold 8px Courier New'; ctx.textAlign = 'center';
+      ctx.fillText('SAM', sbcx, y - 2);
+
+      // 商業大門
+      const dX4 = x + SIDE + Math.floor((bw - 28) / 2);
+      const dY4 = y + bh - 44;
+      ctx.fillStyle = '#10101e';
+      ctx.fillRect(dX4 - 2, dY4 - 2, 32, 46);
+      ctx.fillStyle = '#1e1428';
+      ctx.fillRect(dX4, dY4, 28, 42);
+      ctx.fillStyle = '#8a4a18';
+      ctx.fillRect(dX4 + 1, dY4 + 1, 12, 40);
+      ctx.fillRect(dX4 + 15, dY4 + 1, 12, 40);
+      ctx.fillStyle = 'rgba(255,180,80,0.18)';
+      ctx.fillRect(dX4 + 2, dY4 + 2, 5, 18);
+      ctx.fillRect(dX4 + 16, dY4 + 2, 5, 18);
+      ctx.fillStyle = '#10101e';
+      ctx.fillRect(dX4 + 13, dY4, 2, 42);
+      ctx.fillStyle = '#cc8844';
+      ctx.fillRect(dX4 + 8, dY4 + 18, 3, 8);
+      ctx.fillRect(dX4 + 17, dY4 + 18, 3, 8);
+      ctx.fillStyle = '#2e2e44';
+      ctx.fillRect(dX4 - 6, y + bh - 4, 40, 6);
+      ctx.fillStyle = '#3e3e56';
+      ctx.fillRect(dX4 - 6, y + bh - 4, 40, 2);
+      // 門廊暖燈
+      ctx.fillStyle = '#ffaa44';
+      ctx.beginPath(); ctx.arc(dX4 + 14, dY4 - 5, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,170,68,0.28)';
+      ctx.beginPath(); ctx.arc(dX4 + 14, dY4 - 5, 8, 0, Math.PI * 2); ctx.fill();
+
+      // 名牌
+      ctx.font = '8px Courier New'; ctx.fillStyle = '#aa6633';
+      ctx.textAlign = 'center';
+      ctx.fillText(b.sublabel, x + SIDE + bw / 2, y + bh + 13);
+      ctx.textAlign = 'left';
+
     } else {
       // ════════════════════════════════
       // 預設建築（其他 id）
@@ -1079,6 +1191,7 @@ const World = (() => {
     if      (hit.scene==='home') enterScene(HomeScene, ()=>HomeScene.init(data));
     else if (hit.scene==='hq')   enterScene(HQScene,   ()=>HQScene.init(data));
     else if (hit.scene==='itri') enterScene(ITRIScene, ()=>ITRIScene.init(data));
+    else if (hit.scene==='sam')  SamModal.open();
   }
 
   // ── Public API ─────────────────────────────────────────────────────────

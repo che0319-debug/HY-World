@@ -52,7 +52,7 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
 /* Tab content */
 .tab-content { display:none; flex:1; min-height:0; }
 .tab-content.active { display:flex; flex-direction:column; }
-#tab-health.active, #tab-leisure.active, #tab-growth.active { overflow-y:auto; }
+#tab-health.active, #tab-leisure.active, #tab-growth.active, #tab-goals.active { overflow-y:auto; }
 
 /* ══════════════ PROGRESS ══════════════ */
 .progress-area { flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-wrap:wrap; gap:16px; align-content:flex-start; }
@@ -127,6 +127,23 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
 .toast-success { background:var(--green); color:#fff; }
 .toast-error   { background:var(--red);   color:#fff; }
 
+/* ══════════════ GOALS MATRIX ══════════════ */
+.dim-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px; margin-bottom:16px; box-shadow:var(--shadow-sm); }
+.dim-header { display:flex; align-items:center; gap:8px; margin-bottom:14px; padding-bottom:11px; border-bottom:1px solid var(--border); }
+.dim-name-input { flex:1; background:#fff; border:1.5px solid var(--border); border-radius:6px; color:var(--text); font-size:14px; font-weight:700; padding:6px 10px; font-family:'Noto Sans TC',sans-serif; transition:border-color .15s; }
+.dim-name-input:focus { outline:none; border-color:var(--blue); }
+.dim-del-btn { background:none; border:1px solid #ffd2cc; color:var(--red); cursor:pointer; padding:4px 10px; font-size:12px; border-radius:4px; flex-shrink:0; transition:all .15s; }
+.dim-del-btn:hover { background:#ffebe6; }
+.goal-matrix-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+.goal-content-input { flex:2; min-width:120px; background:#fff; border:1.5px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; padding:6px 10px; font-family:'Noto Sans TC',sans-serif; transition:border-color .15s; }
+.goal-content-input:focus { outline:none; border-color:var(--blue); }
+.goal-status-input { flex:2; min-width:100px; background:#fff; border:1.5px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; padding:6px 10px; font-family:'Noto Sans TC',sans-serif; transition:border-color .15s; }
+.goal-status-input:focus { outline:none; border-color:var(--blue); }
+.goal-check-group { display:flex; align-items:center; gap:4px; flex-shrink:0; cursor:pointer; }
+.goal-check-group input[type="checkbox"] { width:15px; height:15px; accent-color:var(--blue); cursor:pointer; }
+.goal-check-group .check-label { font-size:11px; color:var(--text-muted); white-space:nowrap; user-select:none; }
+.goal-matrix-row.achieved .goal-content-input { text-decoration:line-through; color:var(--text-dim); background:#f8f9fb; }
+
 ::-webkit-scrollbar { width:5px; height:5px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:#c1c7d0; border-radius:3px; }
@@ -196,6 +213,7 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
   <div class="tab" data-tab="leisure">🎉 休閒</div>
   <div class="tab" data-tab="growth">📚 成長</div>
   <div class="tab" data-tab="weekly">📋 週覆盤</div>
+  <div class="tab" data-tab="goals">🌍 總體目標</div>
 </div>
 
 <!-- 進度追蹤 -->
@@ -254,6 +272,17 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
       </div>
     </div>
     <div id="weeklyContent"><div class="weekly-loading">選擇週次以載入資料…</div></div>
+  </div>
+</div>
+
+<!-- 總體目標 -->
+<div class="tab-content" id="tab-goals">
+  <div class="content-wrap">
+    <div id="goals-dimensions"></div>
+    <button class="add-list-btn" id="add-dimension-btn">＋ 新增維度</button>
+    <div style="margin-top:16px">
+      <button class="save-btn" id="saveGoalsBtn">儲存總體目標</button>
+    </div>
   </div>
 </div>
 
@@ -526,12 +555,14 @@ function loadData(){
     renderGoals('health-goals',  (personalData.health  &&personalData.health.goals)  ||[]);
     renderGoals('leisure-goals', (personalData.leisure &&personalData.leisure.goals) ||[]);
     renderGoals('growth-goals',  (personalData.growth  &&personalData.growth.goals)  ||[]);
+    renderGoalsTab();
   }).catch(function(e){
     personalData={}; progressData=[];
     document.getElementById('lastUpdated').textContent='⚠ 離線模式';
     console.error('[personal-dashboard] load:',e);
     renderProgress();
     renderGoals('health-goals',[]); renderGoals('leisure-goals',[]); renderGoals('growth-goals',[]);
+    renderGoalsTab();
   });
 }
 
@@ -784,6 +815,131 @@ document.querySelector('[data-tab="weekly"]').addEventListener('click', function
   if (!weeklyListLoaded) {
     loadWeeklyList(null);
   }
+});
+
+// ═══════════════ GOALS MATRIX ═══════════════
+
+function renderGoalsTab() {
+  var dims = (personalData.goals && personalData.goals.dimensions) || [];
+  var container = document.getElementById('goals-dimensions');
+  container.innerHTML = '';
+  dims.forEach(function(dim) { container.appendChild(buildDimCard(dim)); });
+}
+
+function buildDimCard(dim) {
+  var card = document.createElement('div');
+  card.className = 'dim-card section-card';
+  card.dataset.id = dim.id;
+
+  var hdr = document.createElement('div');
+  hdr.className = 'dim-header';
+  var nameInp = document.createElement('input');
+  nameInp.type = 'text'; nameInp.className = 'dim-name-input';
+  nameInp.placeholder = '維度名稱（例：財務、健康）'; nameInp.value = dim.name || '';
+  var delBtn = document.createElement('button');
+  delBtn.className = 'dim-del-btn'; delBtn.textContent = '✕ 刪除維度';
+  delBtn.addEventListener('click', function() { card.remove(); });
+  hdr.appendChild(nameInp); hdr.appendChild(delBtn);
+  card.appendChild(hdr);
+
+  var goalsList = document.createElement('div');
+  goalsList.className = 'goals-list';
+  (dim.goals || []).forEach(function(g) { goalsList.appendChild(buildGoalRow(g)); });
+  card.appendChild(goalsList);
+
+  var addBtn = document.createElement('button');
+  addBtn.className = 'add-list-btn'; addBtn.textContent = '＋ 新增目標';
+  addBtn.addEventListener('click', function() {
+    var row = buildGoalRow({ id:'goal_'+Date.now(), content:'', status:'', required:false, achieved:false });
+    goalsList.appendChild(row);
+    row.querySelector('.goal-content-input').focus();
+  });
+  card.appendChild(addBtn);
+  return card;
+}
+
+function buildGoalRow(g) {
+  var row = document.createElement('div');
+  row.className = 'goal-matrix-row' + (g.achieved ? ' achieved' : '');
+  row.dataset.id = g.id;
+
+  var contentInp = document.createElement('input');
+  contentInp.type = 'text'; contentInp.className = 'goal-content-input';
+  contentInp.placeholder = '目標內容…'; contentInp.value = g.content || '';
+
+  var statusInp = document.createElement('input');
+  statusInp.type = 'text'; statusInp.className = 'goal-status-input';
+  statusInp.placeholder = '現況（可留空）'; statusInp.value = g.status || '';
+
+  var reqGroup = document.createElement('label');
+  reqGroup.className = 'goal-check-group';
+  var reqCb = document.createElement('input'); reqCb.type = 'checkbox'; reqCb.checked = !!g.required;
+  var reqLabel = document.createElement('span'); reqLabel.className = 'check-label'; reqLabel.textContent = '必要條件';
+  reqGroup.appendChild(reqCb); reqGroup.appendChild(reqLabel);
+
+  var achGroup = document.createElement('label');
+  achGroup.className = 'goal-check-group';
+  var achCb = document.createElement('input'); achCb.type = 'checkbox'; achCb.checked = !!g.achieved;
+  achCb.addEventListener('change', function() { row.classList.toggle('achieved', this.checked); });
+  var achLabel = document.createElement('span'); achLabel.className = 'check-label'; achLabel.textContent = '已達成';
+  achGroup.appendChild(achCb); achGroup.appendChild(achLabel);
+
+  var delBtn = document.createElement('button');
+  delBtn.className = 'del-btn'; delBtn.textContent = '✕';
+  delBtn.addEventListener('click', function() { row.remove(); });
+
+  row.appendChild(contentInp); row.appendChild(statusInp);
+  row.appendChild(reqGroup); row.appendChild(achGroup); row.appendChild(delBtn);
+  return row;
+}
+
+function readGoalsFromDOM() {
+  var dims = [];
+  document.querySelectorAll('#goals-dimensions .dim-card').forEach(function(card) {
+    var nameInp = card.querySelector('.dim-name-input');
+    var goals = [];
+    card.querySelectorAll('.goal-matrix-row').forEach(function(row) {
+      var cbs = row.querySelectorAll('input[type="checkbox"]');
+      goals.push({
+        id: row.dataset.id || ('goal_'+Date.now()),
+        content: (row.querySelector('.goal-content-input') || {}).value || '',
+        status:  (row.querySelector('.goal-status-input')  || {}).value || '',
+        required: cbs[0] ? cbs[0].checked : false,
+        achieved: cbs[1] ? cbs[1].checked : false
+      });
+    });
+    dims.push({ id: card.dataset.id || ('dim_'+Date.now()), name: nameInp ? nameInp.value.trim() : '', goals: goals });
+  });
+  return { dimensions: dims };
+}
+
+document.getElementById('add-dimension-btn').addEventListener('click', function() {
+  var card = buildDimCard({ id:'dim_'+Date.now(), name:'', goals:[] });
+  document.getElementById('goals-dimensions').appendChild(card);
+  card.querySelector('.dim-name-input').focus();
+});
+
+document.getElementById('saveGoalsBtn').addEventListener('click', function() {
+  if (Object.keys(personalData).length === 0) {
+    showToast('⚠ 離線模式，請先成功重新整理再儲存', 'error'); return;
+  }
+  var payload = JSON.parse(JSON.stringify(personalData));
+  if (!payload.summary) payload.summary = {};
+  payload.summary.last_updated = new Date().toISOString();
+  payload.goals = readGoalsFromDOM();
+  if (Object.keys(payload).length < 9) {
+    showToast('⚠ 資料不完整，已中止儲存，請重新整理', 'error'); return;
+  }
+  var btn = this; btn.disabled = true;
+  fetch(API+'/api/personal-data', { method:'POST', headers:HEADERS, body:JSON.stringify(payload), cache:'no-store' })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function() {
+      personalData = payload;
+      document.getElementById('lastUpdated').textContent = '更新：'+payload.summary.last_updated.slice(0,10);
+      showToast('✓ 總體目標已儲存', 'success');
+      btn.disabled = false;
+    })
+    .catch(function(e) { showToast('❌ 儲存失敗：'+e.message, 'error'); btn.disabled = false; });
 });
 </script>
 </body>

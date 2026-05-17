@@ -134,17 +134,17 @@ function render(ctx) {
              worldState === 'busy'    ? '📋' :
              worldState === 'idle'    ? '☕' : '';
   if (icon) {
-    var p        = isoXY(CHAR_GX, CHAR_GY);          // same anchor as drawAt
-    var iconSize = Math.round(IMG_S * 0.13);           // x: bound to IMG_S (sprite display width)
-    var iconX    = p.x - ANCHOR_X + IMG_S / 2;        // x: sprite horizontal center via p.x
-    var iconY    = (p.y - ANCHOR_Y) - iconSize / 2 + 6; // y: sprite_top (p.y-ANCHOR_Y) shifted down 6px to center near head
+    var p        = isoXY(CHAR_GX, CHAR_GY);
+    var iconSize = Math.round(IMG_S * 0.13);
+    var iconX    = p.x - ANCHOR_X + IMG_S / 2;
+    // EXPERIMENT 1: iconY = sprite visual center → should land on character body mid-point
+    var iconY    = p.y - ANCHOR_Y + IMG_S / 2;
     ctx.save();
-    ctx.globalAlpha              = 1.0;    // guard against alpha bleed from earlier draws
-    ctx.globalCompositeOperation = 'source-over';  // guard against compositeOp bleed
-    ctx.font         = iconSize + 'px serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(icon, iconX, iconY);
+    ctx.globalAlpha              = 1.0;
+    ctx.globalCompositeOperation = 'source-over';
+    // EXPERIMENT 2: draw red rect instead of emoji → if solid red, emoji rendering is the transparency source
+    ctx.fillStyle = 'red';
+    ctx.fillRect(iconX - iconSize / 2, iconY - iconSize / 2, iconSize, iconSize);
     ctx.restore();
   }
 }

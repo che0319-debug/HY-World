@@ -103,9 +103,15 @@ function loadAll() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// World status  (null = pending, 'overdue' | 'busy' | 'idle')
+// ═══════════════════════════════════════════════════════════════════════════
+var worldState = null;
+var charFrame  = 0;
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Render
 // ═══════════════════════════════════════════════════════════════════════════
-function render(ctx, charFrame) {
+function render(ctx) {
   ctx.clearRect(0, 0, CW, CH);
 
   // Painter's algorithm: sort by gx+gy ascending (back → front).
@@ -119,8 +125,21 @@ function render(ctx, charFrame) {
     drawAt(ctx, imgs[sorted[i][2]], sorted[i][0], sorted[i][1]);
   }
 
-  // Character drawn last — same anchor convention, appears on top of tiles
-  drawAt(ctx, charFrame === 0 ? imgs.hy_stand : imgs.hy_walk, CHAR_GX, CHAR_GY);
+  // Character: animate only when busy
+  var sprite = (worldState === 'busy' && charFrame === 1) ? imgs.hy_walk : imgs.hy_stand;
+  drawAt(ctx, sprite, CHAR_GX, CHAR_GY);
+
+  // Status icon above character's head
+  var icon = worldState === 'overdue' ? '⚠️' :
+             worldState === 'busy'    ? '📋' :
+             worldState === 'idle'    ? '☕' : '';
+  if (icon) {
+    var p = isoXY(CHAR_GX, CHAR_GY);
+    ctx.font = Math.round(IMG_S * 0.35) + 'px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(icon, p.x, p.y - ANCHOR_Y - IMG_S * 0.1);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -135,22 +154,38 @@ var ctx = canvas.getContext('2d');
 ctx.fillStyle = 'rgba(255,255,255,0.18)';
 ctx.font = '13px Courier New, monospace';
 ctx.textAlign = 'center';
+ctx.textBaseline = 'alphabetic';
 ctx.fillText('載入素材中…', CW / 2, CH / 2);
 
 loadAll()
   .then(function() {
-    var frame = 0;
-    render(ctx, frame);
+    render(ctx);
     setInterval(function() {
-      frame = 1 - frame;
-      render(ctx, frame);
+      charFrame = (worldState === 'busy') ? 1 - charFrame : 0;
+      render(ctx);
     }, 500);
+
+    // Non-blocking fetch — map renders first, state applied when ready
+    fetch('https://telegram-bot-t82n.onrender.com/api/world-status')
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function(data) {
+        var s = data.state;
+        worldState = (s === 'overdue' || s === 'busy' || s === 'idle') ? s : 'idle';
+        render(ctx);
+      })
+      .catch(function(err) {
+        console.warn('[hy-map] world-status fetch failed:', err);
+      });
   })
   .catch(function(err) {
     ctx.clearRect(0, 0, CW, CH);
     ctx.fillStyle = '#ff7755';
     ctx.font = '13px Courier New, monospace';
     ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
     ctx.fillText('❌ ' + err.message, 20, 40);
     console.error('[hy-map]', err);
   });

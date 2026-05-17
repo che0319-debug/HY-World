@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HY World — 等距地圖</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #2a5590;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Courier New', monospace;
+  }
+  canvas {
+    display: block;
+    /* keep pixel art crisp */
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  #back-link {
+    margin-top: 14px;
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+    text-decoration: none;
+    letter-spacing: 1px;
+    transition: color 0.15s;
+  }
+  #back-link:hover { color: rgba(255,255,255,0.75); }
+</style>
+</head>
+<body>
+
+<canvas id="map"></canvas>
+<a id="back-link" href="index.html">← 返回 HY World</a>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// Geometry constants
+// ═══════════════════════════════════════════════════════════════════════════
+var TILE_W  = 160;                       // scaled diamond width (px)
+var TILE_H  = TILE_W / 2;               // = 80, 2:1 isometric
+var SRC_DW  = 985;                       // diamond width inside source 1024-px PNG
+var SCALE   = TILE_W / SRC_DW;          // ≈ 0.1624
+var IMG_S   = Math.round(1024 * SCALE); // ≈ 166  – each PNG drawn at this px size
+
+// Canvas
+var CW = 960, CH = 540;
+
+// Origin = screen position of the top-vertex of inner grid cell (0,0).
+// We want the 3×3 inner grid centred around screen (CW/2, CH*0.46).
+// Centre cell is (1,1). Its top-vertex is offset from (0,0) by (+0, +TILE_H).
+// So: ORIGIN = centre_screen - (0, TILE_H) = (CW/2, CH*0.46 - TILE_H).
+var ORIGIN_X = CW / 2;
+var ORIGIN_Y = Math.round(CH * 0.46 - TILE_H);  // ≈ 168
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Grid helpers
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Isometric grid → screen top-vertex of diamond
+function isoXY(gx, gy) {
+  return {
+    x: ORIGIN_X + (gx - gy) * (TILE_W / 2),
+    y: ORIGIN_Y + (gx + gy) * (TILE_H / 2)
+  };
+}
+
+// Draw a tile PNG at grid cell (gx, gy), optionally rotated.
+// Rotation is around the PNG centre; V1 approximation — fine for road ring.
+function drawTile(ctx, img, gx, gy, rot) {
+  var p = isoXY(gx, gy);
+  var s = IMG_S;
+  if (!rot) {
+    ctx.drawImage(img, p.x - s / 2, p.y, s, s);
+  } else {
+    ctx.save();
+    ctx.translate(p.x, p.y + s / 2);
+    ctx.rotate(rot);
+    ctx.drawImage(img, -s / 2, -s / 2, s, s);
+    ctx.restore();
+  }
+}
+
+// Draw character sprite. Bottom of PNG aligns to diamond bottom-vertex (ground).
+function drawChar(ctx, img, gx, gy) {
+  var p  = isoXY(gx, gy);
+  var s  = IMG_S;
+  var gndY = p.y + TILE_H;            // bottom vertex of diamond = ground level
+  ctx.drawImage(img, p.x - s / 2, gndY - s, s, s);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Map layout
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Inner 3×3 tiles  [gx, gy, tileName]
+var INNER = [
+  [0, 0, 'tile_grass'],
+  [1, 0, 'tile_plot'],
+  [2, 0, 'tile_grass'],
+  [0, 1, 'tile_plot'],
+  [1, 1, 'garage'],      // central building — self-contained base
+  [2, 1, 'tile_grass'],
+  [0, 2, 'tile_grass'],
+  [1, 2, 'tile_grass'],
+  [2, 2, 'tile_grass']
+];
+
+// HY character standing position
+var CHAR_GX = 2, CHAR_GY = 1;
+
+// Road tile spec for outer ring cells
+function getRoadSpec(gx, gy) {
+  var top = gy === -1, bot = gy === 3;
+  var lft = gx === -1, rgt = gx === 3;
+  // Four corners — road_corner rotated 0 / 90° / 180° / -90°
+  if (lft && top) return { key: 'road_corner', rot: 0 };
+  if (rgt && top) return { key: 'road_corner', rot:  Math.PI / 2 };
+  if (rgt && bot) return { key: 'road_corner', rot:  Math.PI };
+  if (lft && bot) return { key: 'road_corner', rot: -Math.PI / 2 };
+  // Top / bottom edges (iso-Y direction)
+  if (top || bot)  return { key: 'road_straight', rot: Math.PI / 2 };
+  // Left / right edges (iso-X direction, original orientation)
+  return { key: 'road_straight', rot: 0 };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Image loading
+// ═══════════════════════════════════════════════════════════════════════════
+var BASE = '../assets/tiles/';
+var KEYS = ['garage', 'tile_plot', 'tile_grass',
+            'road_straight', 'road_corner',
+            'hy_stand', 'hy_walk'];
+
+var imgs = {};
+
+function loadAll() {
+  return Promise.all(KEYS.map(function(k) {
+    return new Promise(function(resolve, reject) {
+      var img = new Image();
+      img.onload  = function() { imgs[k] = img; resolve(); };
+      img.onerror = function() { reject(new Error('Load failed: ' + k + '.png')); };
+      img.src = BASE + k + '.png';
+    });
+  }));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Render
+// ═══════════════════════════════════════════════════════════════════════════
+function render(ctx, charFrame) {
+  ctx.clearRect(0, 0, CW, CH);
+
+  // Collect all cells
+  var cells = [];
+
+  // Road ring: 5×5 outer frame (gx/gy ∈ -1..3), skip inner 3×3
+  for (var gx = -1; gx <= 3; gx++) {
+    for (var gy = -1; gy <= 3; gy++) {
+      if (gx >= 0 && gx <= 2 && gy >= 0 && gy <= 2) continue;
+      cells.push({ gx: gx, gy: gy, type: 'road' });
+    }
+  }
+
+  // Inner grid
+  for (var i = 0; i < INNER.length; i++) {
+    cells.push({ gx: INNER[i][0], gy: INNER[i][1], type: 'inner', tile: INNER[i][2] });
+  }
+
+  // Painter's sort: smaller gx+gy first (back→front); tiebreak by gx
+  cells.sort(function(a, b) {
+    var da = a.gx + a.gy, db = b.gx + b.gy;
+    return da !== db ? da - db : a.gx - b.gx;
+  });
+
+  // Draw tiles
+  for (var j = 0; j < cells.length; j++) {
+    var c = cells[j];
+    if (c.type === 'road') {
+      var spec = getRoadSpec(c.gx, c.gy);
+      drawTile(ctx, imgs[spec.key], c.gx, c.gy, spec.rot);
+    } else {
+      drawTile(ctx, imgs[c.tile], c.gx, c.gy, 0);
+    }
+  }
+
+  // Character drawn last so it appears above all tiles
+  var charImg = charFrame === 0 ? imgs.hy_stand : imgs.hy_walk;
+  drawChar(ctx, charImg, CHAR_GX, CHAR_GY);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Bootstrap
+// ═══════════════════════════════════════════════════════════════════════════
+var canvas = document.getElementById('map');
+canvas.width  = CW;
+canvas.height = CH;
+var ctx = canvas.getContext('2d');
+
+// Loading indicator
+ctx.fillStyle = 'rgba(255,255,255,0.2)';
+ctx.font = '13px Courier New, monospace';
+ctx.textAlign = 'center';
+ctx.fillText('載入素材中…', CW / 2, CH / 2);
+
+loadAll()
+  .then(function() {
+    var frame = 0;
+    render(ctx, frame);
+
+    // Sprite animation: swap stand / walk every 500 ms
+    setInterval(function() {
+      frame = 1 - frame;
+      render(ctx, frame);
+    }, 500);
+  })
+  .catch(function(err) {
+    ctx.clearRect(0, 0, CW, CH);
+    ctx.fillStyle = '#ff7755';
+    ctx.font = '13px Courier New, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('❌ ' + err.message, 20, 40);
+    console.error('[hy-map]', err);
+  });
+</script>
+</body>
+</html>

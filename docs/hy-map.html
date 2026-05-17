@@ -135,10 +135,12 @@ function render(ctx) {
              worldState === 'idle'    ? '☕' : '';
   if (icon) {
     var p = isoXY(CHAR_GX, CHAR_GY);
+    // sprite top-left is (p.x - ANCHOR_X, p.y - ANCHOR_Y); character head is ~25% into sprite.
+    // Place icon bottom just above head: sprite_top + 15% of sprite height.
     ctx.font = Math.round(IMG_S * 0.35) + 'px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText(icon, p.x, p.y - ANCHOR_Y - IMG_S * 0.1);
+    ctx.fillText(icon, p.x - ANCHOR_X + IMG_S / 2, p.y - ANCHOR_Y + IMG_S * 0.15);
   }
 }
 

@@ -103,6 +103,20 @@ function loadAll() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Status icon PNGs — loaded gracefully; missing file → no icon drawn, no throw
+// ═══════════════════════════════════════════════════════════════════════════
+var ICON_SRCS = {
+  overdue: 'assets/icons/icon_overdue.png',
+  busy:    'assets/icons/icon_busy.png',
+  idle:    'assets/icons/icon_idle.png'
+};
+Object.keys(ICON_SRCS).forEach(function(k) {
+  var img = new Image();
+  img.onload = function() { imgs['icon_' + k] = img; };
+  img.src = ICON_SRCS[k];
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // World status  (null = pending, 'overdue' | 'busy' | 'idle')
 // ═══════════════════════════════════════════════════════════════════════════
 var worldState = null;
@@ -129,22 +143,19 @@ function render(ctx) {
   var sprite = (worldState === 'busy' && charFrame === 1) ? imgs.hy_walk : imgs.hy_stand;
   drawAt(ctx, sprite, CHAR_GX, CHAR_GY);
 
-  // Status icon above character's head
-  var icon = worldState === 'overdue' ? '⚠️' :
-             worldState === 'busy'    ? '📋' :
-             worldState === 'idle'    ? '☕' : '';
-  if (icon) {
-    var p        = isoXY(CHAR_GX, CHAR_GY);
+  // Status icon above character's head (PNG drawImage)
+  var iconImg = worldState ? imgs['icon_' + worldState] : null;
+  if (iconImg) {
+    var p        = isoXY(CHAR_GX, CHAR_GY);           // same anchor as drawAt
     var iconSize = Math.round(IMG_S * 0.13);
-    var iconX    = p.x - ANCHOR_X + IMG_S / 2;
-    // EXPERIMENT 1: iconY = sprite visual center → should land on character body mid-point
-    var iconY    = p.y - ANCHOR_Y + IMG_S / 2;
+    // iconCenterX: sprite horizontal center (p.x - ANCHOR_X + IMG_S/2)
+    // iconCenterY: red-rect baseline (p.y - ANCHOR_Y + IMG_S/2) shifted up by iconSize → bottom lands at head top
+    var iconCenterX = p.x - ANCHOR_X + IMG_S / 2;
+    var iconCenterY = (p.y - ANCHOR_Y + IMG_S / 2) - iconSize;
     ctx.save();
     ctx.globalAlpha              = 1.0;
     ctx.globalCompositeOperation = 'source-over';
-    // EXPERIMENT 2: draw red rect instead of emoji → if solid red, emoji rendering is the transparency source
-    ctx.fillStyle = 'red';
-    ctx.fillRect(iconX - iconSize / 2, iconY - iconSize / 2, iconSize, iconSize);
+    ctx.drawImage(iconImg, iconCenterX - iconSize / 2, iconCenterY - iconSize / 2, iconSize, iconSize);
     ctx.restore();
   }
 }

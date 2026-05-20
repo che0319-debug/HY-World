@@ -8,6 +8,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <style>
 :root {
+  /* Bot 識別變數（小因專屬） */
+  --brand-color: #c0392b;
+  --brand-name: '家庭';
+  --brand-sub: '小因管家';
+
+  /* 通用變數（不變） */
   --bg: #f0f2f5;
   --col-bg: #e4e6ea;
   --card-bg: #ffffff;
@@ -33,7 +39,7 @@ body { background:var(--bg); color:var(--text); font-family:'Noto Sans TC',sans-
 /* Header */
 header { background:var(--header-bg); padding:0 24px; display:flex; align-items:center; gap:16px; height:56px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.06); }
 .logo-wrap { display:flex; align-items:center; gap:10px; }
-.logo-badge { background:#c35; color:#fff; font-family:'Syne',sans-serif; font-weight:800; font-size:14px; padding:3px 10px; border-radius:4px; letter-spacing:.5px; }
+.logo-badge { background:var(--brand-color); color:#fff; font-family:'Syne',sans-serif; font-weight:800; font-size:14px; padding:3px 10px; border-radius:4px; letter-spacing:.5px; }
 .logo-sub { font-size:13px; color:rgba(255,255,255,.45); font-weight:500; }
 .header-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
 .last-updated { font-size:12px; color:rgba(255,255,255,.4); background:rgba(255,255,255,.06); padding:4px 10px; border-radius:20px; border:1px solid rgba(255,255,255,.08); }
@@ -48,7 +54,7 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
 .tabs { background:#fff; border-bottom:1px solid var(--border); padding:0 24px; display:flex; box-shadow:var(--shadow-sm); flex-shrink:0; }
 .tab { padding:14px 18px; font-size:13px; font-weight:500; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; user-select:none; white-space:nowrap; }
 .tab:hover { color:var(--text); }
-.tab.active { color:var(--blue); border-bottom-color:var(--blue); font-weight:700; }
+.tab.active { color:var(--brand-color); border-bottom-color:var(--brand-color); font-weight:700; }
 
 /* Tab content */
 .tab-content { display:none; flex:1; min-height:0; }
@@ -78,17 +84,9 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
 
 .kcard-title { font-size:13px; font-weight:600; color:var(--text); line-height:1.4; margin-bottom:8px; }
 .kcard-meta { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:6px; align-items:center; }
-.status-pill { font-size:11px; font-weight:600; padding:2px 8px; border-radius:10px; white-space:nowrap; }
-.s-未開始 { background:#e4e6ea; color:#5e6c84; }
-.s-進行中 { background:var(--blue-light); color:var(--blue); }
-.s-完成   { background:#e3fcef; color:var(--green); }
-.s-延遲   { background:#ffebe6; color:var(--red); }
-.s-擱置   { background:#fff0e6; color:var(--orange); }
 .due-chip { font-size:11px; padding:2px 7px; border-radius:10px; background:#f4f5f7; color:var(--text-muted); font-weight:500; }
 .due-chip.overdue { background:#ffebe6; color:var(--red); font-weight:700; }
 .kcard-desc { font-size:12px; color:var(--text-muted); line-height:1.45; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.kcard-blockers { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }
-.blocker-tag { font-size:10px; padding:2px 6px; border-radius:4px; background:#fff0e6; color:var(--orange); font-weight:600; }
 
 .kcard-execute { display:flex; align-items:center; justify-content:space-between; padding-top:8px; border-top:1px solid var(--border); margin-top:2px; }
 .execute-label { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-muted); cursor:pointer; }
@@ -127,13 +125,6 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
 .m-row2 { display:flex; gap:12px; }
 .m-row2 .m-field { flex:1; }
 
-.blocker-item { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
-.blocker-item .m-select { flex:0 0 130px; }
-.blocker-item .m-input { flex:1; }
-.blocker-del-btn { background:none; border:1px solid #ffd2cc; color:var(--red); cursor:pointer; padding:5px 8px; font-size:12px; border-radius:4px; flex-shrink:0; transition:all .15s; }
-.blocker-del-btn:hover { background:#ffebe6; }
-.add-blocker-btn { display:inline-flex; align-items:center; gap:6px; background:#fff; border:2px dashed var(--border); border-radius:6px; color:var(--text-muted); font-size:12px; font-family:'Noto Sans TC',sans-serif; padding:5px 12px; cursor:pointer; transition:all .15s; }
-.add-blocker-btn:hover { border-color:var(--blue); color:var(--blue); background:var(--blue-light); }
 
 .btn-del { background:#fff; border:1.5px solid #ffd2cc; color:var(--red); padding:7px 14px; border-radius:6px; font-size:13px; cursor:pointer; font-family:'Noto Sans TC',sans-serif; transition:all .15s; }
 .btn-del:hover { background:#ffebe6; }
@@ -224,7 +215,7 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
 <header>
   <div class="logo-wrap">
     <div class="logo-badge">家庭</div>
-    <div class="logo-sub">小因控制台</div>
+    <div class="logo-sub">小因管家</div>
   </div>
   <div class="header-right">
     <span class="last-updated" id="lastUpdated">載入中…</span>
@@ -302,30 +293,13 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
         <label class="m-label">標題</label>
         <input class="m-input" id="m-title" placeholder="任務標題…">
       </div>
-      <div class="m-row2">
-        <div class="m-field">
-          <label class="m-label">狀態</label>
-          <select class="m-select" id="m-status">
-            <option>未開始</option><option>進行中</option><option>延遲</option><option>擱置</option>
-          </select>
-        </div>
-        <div class="m-field">
-          <label class="m-label">截止日期</label>
-          <input class="m-input" type="date" id="m-due">
-        </div>
+      <div class="m-field">
+        <label class="m-label">截止日期</label>
+        <input class="m-input" type="date" id="m-due">
       </div>
       <div class="m-field">
         <label class="m-label">執行描述（告訴小因要做什麼）</label>
         <textarea class="m-textarea" id="m-desc" placeholder="詳細說明任務內容…"></textarea>
-      </div>
-      <div class="m-field">
-        <label class="m-label">卡點</label>
-        <div id="m-blockers"></div>
-        <button class="add-blocker-btn" id="addBlockerBtn" type="button">＋ 新增卡點</button>
-      </div>
-      <div class="m-field">
-        <label class="m-label">備註</label>
-        <textarea class="m-textarea" id="m-note" placeholder="其他備注…" style="min-height:56px"></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -369,8 +343,6 @@ var EXEC_LABELS = {
   pending_execute:'⏳ 等待確認', pending_confirm:'💬 確認中', confirming:'💬 確認中',
   executing:'⚡ 執行中', done:'✅ 已完成', cancelled:'❌ 已取消', failed:'⚠️ 失敗'
 };
-var BLOCKER_TYPES = ['等待確認','需要討論','時間衝突','其他'];
-
 // modal state
 var mProjId = null, mMilestone = null, mIsNew = false;
 
@@ -446,8 +418,6 @@ function makeCard(m, projId){
   card.appendChild(titleEl);
 
   var meta = document.createElement('div'); meta.className='kcard-meta';
-  var pill = document.createElement('span'); pill.className='status-pill s-'+(m.status||'未開始'); pill.textContent = m.status||'未開始';
-  meta.appendChild(pill);
   if (m.due){
     var dd = dueDisplay(m.due);
     var chip = document.createElement('span'); chip.className='due-chip'+(dd.over?' overdue':'');
@@ -459,12 +429,6 @@ function makeCard(m, projId){
     var desc = document.createElement('div'); desc.className='kcard-desc'; desc.textContent = m.description;
     card.appendChild(desc);
   }
-  if (m.blockers && m.blockers.length){
-    var bd = document.createElement('div'); bd.className='kcard-blockers';
-    m.blockers.forEach(function(b){ var t=document.createElement('span'); t.className='blocker-tag'; t.textContent='🚧 '+(b.type||b); bd.appendChild(t); });
-    card.appendChild(bd);
-  }
-
   // execute row
   var execRow = document.createElement('div'); execRow.className='kcard-execute';
   var lbl = document.createElement('label'); lbl.className='execute-label';
@@ -541,7 +505,7 @@ function deleteColumn(projId){
 function openModal(projId, m, isNew){
   mProjId=projId; mIsNew=isNew;
   if (isNew){
-    mMilestone={ id:'M_'+Date.now(), title:'', status:'未開始', due:'', description:'', note:'', blockers:[], execute_status:'' };
+    mMilestone = { id:'M_'+Date.now(), title:'', due:'', description:'', execute_status:'' };
     document.getElementById('m-modal-title').textContent='新增任務';
     document.getElementById('m-delete').style.display='none';
   } else {
@@ -549,58 +513,22 @@ function openModal(projId, m, isNew){
     document.getElementById('m-modal-title').textContent='編輯任務';
     document.getElementById('m-delete').style.display='';
   }
-  document.getElementById('m-title').value  = mMilestone.title||'';
-  document.getElementById('m-status').value = mMilestone.status||'未開始';
-  document.getElementById('m-due').value    = dueToInput(mMilestone.due);
-  document.getElementById('m-desc').value   = mMilestone.description||'';
-  document.getElementById('m-note').value   = mMilestone.note||'';
-  renderModalBlockers(mMilestone.blockers||[]);
+  document.getElementById('m-title').value = mMilestone.title||'';
+  document.getElementById('m-due').value   = dueToInput(mMilestone.due);
+  document.getElementById('m-desc').value  = mMilestone.description||'';
   document.getElementById('cardModal').classList.add('open');
   setTimeout(function(){ document.getElementById('m-title').focus(); },50);
 }
 
 function closeModal(){ document.getElementById('cardModal').classList.remove('open'); mMilestone=null; }
 
-function renderModalBlockers(list){
-  var c=document.getElementById('m-blockers'); c.innerHTML='';
-  list.forEach(function(b,i){ c.appendChild(makeBlockerRow(b,i)); });
-}
-
-function makeBlockerRow(b, idx){
-  var row=document.createElement('div'); row.className='blocker-item'; row.dataset.idx=idx;
-  var sel=document.createElement('select'); sel.className='m-select';
-  BLOCKER_TYPES.forEach(function(t){ var o=document.createElement('option'); o.value=t; o.textContent=t; if (b.type===t) o.selected=true; sel.appendChild(o); });
-  var inp=document.createElement('input'); inp.className='m-input'; inp.placeholder='說明（選填）…'; inp.value=b.desc||'';
-  var del=document.createElement('button'); del.className='blocker-del-btn'; del.textContent='✕'; del.type='button';
-  del.addEventListener('click', function(){ row.remove(); });
-  row.appendChild(sel); row.appendChild(inp); row.appendChild(del);
-  return row;
-}
-
-function readModalBlockers(){
-  var result=[];
-  document.querySelectorAll('#m-blockers .blocker-item').forEach(function(row){
-    var s=row.querySelector('select'), i=row.querySelector('input');
-    result.push({ type:s?s.value:'', desc:i?i.value.trim():'' });
-  });
-  return result;
-}
-
-document.getElementById('addBlockerBtn').addEventListener('click', function(){
-  var c=document.getElementById('m-blockers');
-  c.appendChild(makeBlockerRow({ type:'等待確認', desc:'' }, c.querySelectorAll('.blocker-item').length));
-});
-
 function saveModal(){
   if (!mMilestone) return;
   var title=document.getElementById('m-title').value.trim();
   if (!title){ showToast('請輸入標題','error'); return; }
   mMilestone.title       = title;
-  mMilestone.status      = document.getElementById('m-status').value;
   mMilestone.due         = inputToDue(document.getElementById('m-due').value);
   mMilestone.description = document.getElementById('m-desc').value.trim();
-  mMilestone.note        = document.getElementById('m-note').value.trim();
-  mMilestone.blockers    = readModalBlockers();
   if (mIsNew){
     var proj=kanban.projects.find(function(p){ return p.id===mProjId; });
     if (proj) proj.milestones.push(mMilestone);

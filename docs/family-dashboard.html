@@ -374,6 +374,11 @@ function dueDisplay(d){
 function renderBoard(){
   var board = document.getElementById('board');
   board.innerHTML = '';
+  kanban.projects.forEach(function(p){
+    p.milestones.forEach(function(m){
+      if (m.delegated_to_family === undefined) m.delegated_to_family = false;
+    });
+  });
   kanban.projects.forEach(function(proj){ board.appendChild(makeCol(proj)); });
   var btn = document.createElement('button');
   btn.className = 'add-col-btn'; btn.title = '新增欄位'; btn.textContent = '＋';
@@ -433,7 +438,7 @@ function makeCard(m, projId){
   var execRow = document.createElement('div'); execRow.className='kcard-execute';
   var lbl = document.createElement('label'); lbl.className='execute-label';
   lbl.addEventListener('click', function(e){ e.stopPropagation(); });
-  var cb = document.createElement('input'); cb.type='checkbox'; cb.checked=!!m.execute_status;
+  var cb = document.createElement('input'); cb.type='checkbox'; cb.checked=!!m.delegated_to_family;
   cb.addEventListener('change', function(e){ e.stopPropagation(); toggleExecute(m.id); });
   lbl.appendChild(cb); lbl.appendChild(document.createTextNode('交給小因'));
   execRow.appendChild(lbl);
@@ -477,7 +482,8 @@ function findM(mid){
 
 function toggleExecute(mid){
   var m=findM(mid); if (!m) return;
-  m.execute_status = m.execute_status ? '' : 'pending_execute';
+  m.delegated_to_family = !m.delegated_to_family;
+  if (!m.delegated_to_family) m.execute_status = '';
   renderBoard(); familyData._kanban=kanban; saveData(null);
 }
 

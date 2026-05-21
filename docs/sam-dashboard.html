@@ -810,7 +810,7 @@ async function loadData() {
     data = await progressRes.json();
 
     renderBoard();
-    document.getElementById('lastUpdated').textContent = '更新：' + (data.last_updated || '—');
+    document.getElementById('lastUpdated').textContent = '更新：' + (data._kanban.last_updated || '—');
   } catch(e) {
     showToast('⚠️ 無法載入資料：' + e.message, 'error');
     document.getElementById('lastUpdated').textContent = '載入失敗';
@@ -834,7 +834,7 @@ async function saveData() {
     showToast('✅ 設定已儲存', 'success');
     btn.textContent = '✓ 已儲存';
     btn.classList.add('saved');
-    document.getElementById('lastUpdated').textContent = '更新：' + (data.last_updated || '—');
+    document.getElementById('lastUpdated').textContent = '更新：' + (data._kanban.last_updated || '—');
     setTimeout(() => {
       btn.textContent = '✓ 儲存';
       btn.classList.remove('saved');
@@ -850,7 +850,7 @@ async function saveData() {
 // ── BOARD ─────────────────────────────────────────
 function renderBoard() {
   // 補齊舊資料缺少的 id（舊專案可能沒有 id 欄位）
-  data.projects.forEach((p, i) => {
+  data._kanban.projects.forEach((p, i) => {
     if (!p.id) p.id = 'P_legacy_' + i + '_' + Math.random().toString(36).slice(2,6);
     if (!p.milestones) p.milestones = [];
     p.milestones.forEach((m, mi) => {
@@ -864,13 +864,13 @@ function renderBoard() {
   sortables = [];
 
   const board = document.getElementById('board');
-  board.innerHTML = data.projects.map(p => renderColumnHTML(p)).join('') + `
+  board.innerHTML = data._kanban.projects.map(p => renderColumnHTML(p)).join('') + `
     <div class="add-col">
       <button class="add-col-btn" onclick="addProject()">＋ 新增專案</button>
     </div>`;
 
   // Init drag-drop for each column's cards
-  data.projects.forEach(p => {
+  data._kanban.projects.forEach(p => {
     const el = document.querySelector(`[data-pid="${p.id}"] .col-cards`);
     if (!el) return;
     const s = Sortable.create(el, {
@@ -884,8 +884,8 @@ function renderBoard() {
         setTimeout(() => { isDragging = false; }, 100);
         const fromPid = evt.from.closest('[data-pid]').dataset.pid;
         const toPid   = evt.to.closest('[data-pid]').dataset.pid;
-        const fromP   = data.projects.find(x => x.id === fromPid);
-        const toP     = data.projects.find(x => x.id === toPid);
+        const fromP   = data._kanban.projects.find(x => x.id === fromPid);
+        const toP     = data._kanban.projects.find(x => x.id === toPid);
         const [moved] = fromP.milestones.splice(evt.oldIndex, 1);
         toP.milestones.splice(evt.newIndex, 0, moved);
         updateColCount(fromPid);
@@ -903,16 +903,16 @@ function renderBoard() {
     ghostClass: 'sortable-ghost',
     filter: '.add-col',
     onEnd(evt) {
-      if (evt.newIndex >= data.projects.length) return; // dragged to add-col zone
-      const [moved] = data.projects.splice(evt.oldIndex, 1);
-      data.projects.splice(evt.newIndex, 0, moved);
+      if (evt.newIndex >= data._kanban.projects.length) return; // dragged to add-col zone
+      const [moved] = data._kanban.projects.splice(evt.oldIndex, 1);
+      data._kanban.projects.splice(evt.newIndex, 0, moved);
     }
   });
   sortables.push(colSort);
 }
 
 function updateColCount(pid) {
-  const p = data.projects.find(x => x.id === pid);
+  const p = data._kanban.projects.find(x => x.id === pid);
   if (!p) return;
   const el = document.querySelector(`[data-pid="${pid}"] .col-count`);
   if (el) {
@@ -1011,7 +1011,7 @@ function deleteCardDirect(pid, mi) {
   saveData();
 }
 
-function getProject(pid) { return data.projects.find(p => p.id === pid); }
+function getProject(pid) { return data._kanban.projects.find(p => p.id === pid); }
 
 function updateProjectName(pid, name) {
   const trimmed = name.trim();
@@ -1130,10 +1130,10 @@ function deleteCard() {
 function addProject() {
   const name = prompt('新專案名稱：');
   if (!name || !name.trim()) return;
-  data.projects.push({
+  data._kanban.projects.push({
     id: 'P_' + Date.now(),
     name: name.trim(),
-    color: PROJECT_COLORS[data.projects.length % PROJECT_COLORS.length],
+    color: PROJECT_COLORS[data._kanban.projects.length % PROJECT_COLORS.length],
     milestones: []
   });
   renderBoard();
@@ -1143,7 +1143,7 @@ function removeProject(pid) {
   const p = getProject(pid);
   if (!p) return;
   if (!confirm(`確定刪除專案「${p.name}」及其所有里程碑？`)) return;
-  data.projects = data.projects.filter(x => x.id !== pid);
+  data._kanban.projects = data._kanban.projects.filter(x => x.id !== pid);
   renderBoard();
 }
 

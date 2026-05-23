@@ -5,8 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HY 個人控制中心</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <style>
 :root {
+  /* Bot 識別變數（HY 專屬） */
+  --brand-color: #16a34a;
+  --brand-name: 'HY';
+  --brand-sub: 'HY 領域';
+
   --bg: #f0f2f5;
   --col-bg: #e4e6ea;
   --card-bg: #ffffff;
@@ -32,7 +38,7 @@ body { background:var(--bg); color:var(--text); font-family:'Noto Sans TC',sans-
 /* Header */
 header { background:var(--header-bg); padding:0 24px; display:flex; align-items:center; gap:16px; height:56px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.06); }
 .logo-wrap { display:flex; align-items:center; gap:10px; }
-.logo-badge { background:var(--blue); color:#fff; font-family:'Syne',sans-serif; font-weight:800; font-size:14px; padding:3px 10px; border-radius:4px; letter-spacing:.5px; }
+.logo-badge { background:var(--brand-color); color:#fff; font-family:'Syne',sans-serif; font-weight:800; font-size:14px; padding:3px 10px; border-radius:4px; letter-spacing:.5px; }
 .logo-sub { font-size:13px; color:rgba(255,255,255,.45); font-weight:500; }
 .header-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
 .last-updated { font-size:12px; color:rgba(255,255,255,.4); background:rgba(255,255,255,.06); padding:4px 10px; border-radius:20px; border:1px solid rgba(255,255,255,.08); }
@@ -40,6 +46,7 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
 .btn-blue { background:var(--blue); color:#fff; }
 .btn-blue:hover { background:#0065ff; }
 .btn-blue:disabled { opacity:.6; cursor:not-allowed; }
+.btn-blue.saved { background: var(--green); }
 .btn-ghost { background:rgba(255,255,255,.08); color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.12); }
 .btn-ghost:hover { background:rgba(255,255,255,.14); color:#fff; }
 
@@ -47,38 +54,166 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
 .tabs { background:#fff; border-bottom:1px solid var(--border); padding:0 24px; display:flex; box-shadow:var(--shadow-sm); flex-shrink:0; }
 .tab { padding:14px 18px; font-size:13px; font-weight:500; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; user-select:none; white-space:nowrap; }
 .tab:hover { color:var(--text); }
-.tab.active { color:var(--blue); border-bottom-color:var(--blue); font-weight:700; }
+.tab.active { color:var(--brand-color); border-bottom-color:var(--brand-color); font-weight:700; }
 
 /* Tab content */
 .tab-content { display:none; flex:1; min-height:0; }
 .tab-content.active { display:flex; flex-direction:column; }
-#tab-health.active, #tab-leisure.active, #tab-growth.active, #tab-goals.active { overflow-y:auto; }
+#tab-goals.active { overflow-y:auto; }
 
-/* ══════════════ PROGRESS ══════════════ */
-.progress-area { flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-wrap:wrap; gap:16px; align-content:flex-start; }
-.proj-card { background:var(--card-bg); border:1px solid var(--border); border-radius:10px; width:320px; box-shadow:var(--shadow-sm); flex-shrink:0; overflow:hidden; }
-.proj-header { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
-.proj-color-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
-.proj-name { font-size:14px; font-weight:700; color:var(--text); flex:1; }
-.proj-del-btn { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:4px; transition:all .15s; }
-.proj-del-btn:hover { color:var(--red); background:#ffebe6; }
-.ms-list { padding:6px 12px 4px; min-height:16px; }
-.ms-row { display:flex; align-items:center; gap:6px; padding:6px 4px; border-radius:4px; cursor:pointer; }
-.ms-row:hover { background:var(--blue-light); }
-.ms-title { flex:1; font-size:13px; color:var(--text); }
-.ms-due-chip { font-size:11px; padding:2px 6px; border-radius:10px; background:#f4f5f7; color:var(--text-muted); font-weight:500; white-space:nowrap; }
-.ms-due-chip.overdue { background:#ffebe6; color:var(--red); font-weight:700; }
-.add-ms-btn { display:block; width:100%; padding:8px 16px; background:none; border:none; border-top:1px solid var(--border); text-align:left; color:var(--text-muted); font-size:12px; cursor:pointer; font-family:'Noto Sans TC',sans-serif; transition:all .15s; }
-.add-ms-btn:hover { color:var(--blue); background:var(--blue-light); }
-.progress-footer { padding:12px 24px; border-top:1px solid var(--border); flex-shrink:0; }
+/* ══════════════ PROGRESS (Kanban) ══════════════ */
+.board-wrap { flex: 1; overflow-x: auto; overflow-y: auto; padding: 20px 24px; min-height: 0; }
+.board { display: flex; gap: 14px; align-items: flex-start; }
 
-/* Status pills */
-.status-pill { font-size:11px; font-weight:600; padding:2px 7px; border-radius:10px; white-space:nowrap; flex-shrink:0; }
-.s-未開始 { background:#e4e6ea; color:#5e6c84; }
-.s-進行中 { background:var(--blue-light); color:var(--blue); }
-.s-完成   { background:#e3fcef; color:var(--green); }
-.s-延遲   { background:#ffebe6; color:var(--red); }
-.s-擱置   { background:#fff0e6; color:var(--orange); }
+.column {
+  width: 284px;
+  flex-shrink: 0;
+  background: var(--col-bg);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.col-header {
+  padding: 12px 12px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.col-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.col-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+  cursor: text;
+  outline: none;
+  border-radius: 4px;
+  padding: 2px 5px;
+  margin: -2px -5px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.col-title:focus {
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--brand-color);
+  white-space: normal;
+  overflow: visible;
+}
+.col-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: rgba(0,0,0,0.07);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.col-del {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.column:hover .col-del { opacity: 1; }
+.col-del:hover { background: rgba(0,0,0,0.08); color: var(--red); }
+.card-del-btn {
+  background: none; border: none; cursor: pointer; padding: 2px 4px;
+  color: var(--text-dim); font-size: 13px; border-radius: 4px;
+  opacity: 0; transition: opacity 0.15s; flex-shrink: 0;
+}
+.card:hover .card-del-btn { opacity: 1; }
+.card-del-btn:hover { background: rgba(0,0,0,0.08); color: var(--red); }
+
+.col-cards {
+  padding: 0 8px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-height: 48px;
+}
+.sortable-ghost { opacity: 0.35; }
+.sortable-drag { opacity: 0.9; box-shadow: var(--shadow-lg) !important; }
+
+.card {
+  background: #fff;
+  border-radius: 7px;
+  padding: 11px 12px;
+  cursor: grab;
+  transition: box-shadow 0.15s, transform 0.15s;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  position: relative;
+}
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.card:active { cursor: grabbing; }
+.card-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 9px; }
+.card-title { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; line-height: 1.45; }
+.card-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 7px; line-height: 1.5; white-space: pre-wrap; }
+.card-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 7px;
+}
+.due-chip {
+  background: var(--bg);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 11px;
+}
+.due-chip.overdue { color: var(--red); background: #fff0ee; }
+
+.add-card-btn {
+  margin: 5px 8px 8px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 7px 10px;
+  cursor: pointer;
+  width: calc(100% - 16px);
+  text-align: left;
+  font-family: 'Noto Sans TC', sans-serif;
+  transition: all 0.15s;
+  font-weight: 500;
+}
+.add-card-btn:hover { background: rgba(0,0,0,0.05); color: var(--text); }
+
+.add-col { width: 220px; flex-shrink: 0; }
+.add-col-btn {
+  width: 100%;
+  background: rgba(0,0,0,0.04);
+  border: 2px dashed rgba(0,0,0,0.12);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 14px 16px;
+  cursor: pointer;
+  font-family: 'Noto Sans TC', sans-serif;
+  text-align: left;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.add-col-btn:hover { background: rgba(0,0,0,0.07); border-color: rgba(0,0,0,0.2); color: var(--text); }
+
 
 /* ══════════════ MODAL ══════════════ */
 .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }
@@ -93,8 +228,9 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
 .modal-footer .del-side { margin-right:auto; }
 .m-field { display:flex; flex-direction:column; gap:5px; }
 .m-label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
-.m-input,.m-select { width:100%; background:#fff; border:1.5px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; padding:8px 10px; font-family:'Noto Sans TC',sans-serif; transition:border-color .15s; }
-.m-input:focus,.m-select:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(0,82,204,.1); }
+.m-input,.m-select,.m-textarea { width:100%; background:#fff; border:1.5px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; padding:8px 10px; font-family:'Noto Sans TC',sans-serif; transition:border-color .15s; }
+.m-input:focus,.m-select:focus,.m-textarea:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(0,82,204,.1); }
+.m-textarea { resize:vertical; min-height:76px; line-height:1.55; }
 .m-row2 { display:flex; gap:12px; }
 .m-row2 .m-field { flex:1; }
 .btn-del { background:#fff; border:1.5px solid #ffd2cc; color:var(--red); padding:7px 14px; border-radius:6px; font-size:13px; cursor:pointer; font-family:'Noto Sans TC',sans-serif; transition:all .15s; }
@@ -199,64 +335,27 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
 <header>
   <div class="logo-wrap">
     <div class="logo-badge">HY</div>
-    <div class="logo-sub">個人控制中心</div>
+    <div class="logo-sub">HY 領域</div>
   </div>
   <div class="header-right">
     <span class="last-updated" id="lastUpdated">載入中…</span>
     <button class="btn btn-ghost" id="refreshBtn">↺ 重新整理</button>
+    <button class="btn btn-blue" id="saveBtn">✓ 儲存</button>
   </div>
 </header>
 
 <div class="tabs">
   <div class="tab active" data-tab="progress">🎯 進度追蹤</div>
-  <div class="tab" data-tab="health">💪 健康</div>
-  <div class="tab" data-tab="leisure">🎉 休閒</div>
-  <div class="tab" data-tab="growth">📚 成長</div>
   <div class="tab" data-tab="weekly">📋 週覆盤</div>
   <div class="tab" data-tab="goals">🌍 總體目標</div>
 </div>
 
 <!-- 進度追蹤 -->
 <div class="tab-content active" id="tab-progress">
-  <div class="progress-area" id="progress-area"></div>
-  <div class="progress-footer">
-    <button class="btn btn-blue" id="addProjectBtn">＋ 新增專案</button>
-  </div>
-</div>
-
-<!-- 健康 -->
-<div class="tab-content" id="tab-health">
-  <div class="content-wrap">
-    <div class="section-card">
-      <div class="section-title">🏃 健康目標</div>
-      <div id="health-goals"></div>
-      <button class="add-list-btn" id="add-health-goal">＋ 新增目標</button>
+  <div class="board-wrap">
+    <div class="board" id="board">
+      <div style="color:var(--text-dim);padding:32px 0;width:100%;text-align:center;">⏳ 載入中…</div>
     </div>
-    <button class="save-btn" id="saveHealthBtn">儲存健康目標</button>
-  </div>
-</div>
-
-<!-- 休閒 -->
-<div class="tab-content" id="tab-leisure">
-  <div class="content-wrap">
-    <div class="section-card">
-      <div class="section-title">🎉 休閒目標</div>
-      <div id="leisure-goals"></div>
-      <button class="add-list-btn" id="add-leisure-goal">＋ 新增目標</button>
-    </div>
-    <button class="save-btn" id="saveLeisureBtn">儲存休閒目標</button>
-  </div>
-</div>
-
-<!-- 成長 -->
-<div class="tab-content" id="tab-growth">
-  <div class="content-wrap">
-    <div class="section-card">
-      <div class="section-title">📚 成長目標</div>
-      <div id="growth-goals"></div>
-      <button class="add-list-btn" id="add-growth-goal">＋ 新增目標</button>
-    </div>
-    <button class="save-btn" id="saveGrowthBtn">儲存成長目標</button>
   </div>
 </div>
 
@@ -298,17 +397,13 @@ header { background:var(--header-bg); padding:0 24px; display:flex; align-items:
         <label class="m-label">標題</label>
         <input class="m-input" id="ms-title" placeholder="里程碑標題…">
       </div>
-      <div class="m-row2">
-        <div class="m-field">
-          <label class="m-label">狀態</label>
-          <select class="m-select" id="ms-status">
-            <option>未開始</option><option>進行中</option><option>完成</option><option>延遲</option><option>擱置</option>
-          </select>
-        </div>
-        <div class="m-field">
-          <label class="m-label">截止日期</label>
-          <input class="m-input" type="date" id="ms-due">
-        </div>
+      <div class="m-field">
+        <label class="m-label">截止日期</label>
+        <input class="m-input" type="date" id="ms-due">
+      </div>
+      <div class="m-field">
+        <label class="m-label">執行描述（HY bot 會指派其他 bot 執行）</label>
+        <textarea class="m-textarea" id="ms-desc" placeholder="詳細說明任務內容…"></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -332,6 +427,8 @@ var progressData = [];
 var today        = new Date().toISOString().slice(0,10);
 
 var msProjIdx = null, msMsIdx = null, msIsNew = false;
+var sortables = [];
+var isDragging = false;
 
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showToast(msg,type){ var t=document.getElementById('toast'); t.textContent=msg; t.className='toast show toast-'+(type||'success'); setTimeout(function(){ t.className='toast'; },2200); }
@@ -356,75 +453,209 @@ function dueDisplay(d){
   return { text: p[1]+'/'+p[2], over: cmp < today };
 }
 
-// ═══════════════ PROGRESS ═══════════════
+// ═══════════════ PROGRESS (Kanban) ═══════════════
+
+function escHtml(s){ return String(s||'').replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+function updateColCount(pid){
+  var p = progressData.find(function(x){ return x.id === pid; });
+  if (!p) return;
+  var el = document.querySelector('[data-pid="'+pid+'"] .col-count');
+  if (el) el.textContent = (p.milestones||[]).length;
+}
+
+function renderCardHTML(p, m, mi){
+  var dueHtml = '';
+  if (m.due){
+    var dd = dueDisplay(m.due);
+    if (dd){
+      dueHtml = '<div class="due-chip'+(dd.over?' overdue':'')+'">📅 '+(dd.over?'⚠ ':'')+escHtml(dd.text)+'</div>';
+    }
+  }
+  var descHtml = m.description
+    ? '<div class="card-desc">📋 '+escHtml(m.description)+'</div>'
+    : '';
+  return '<div class="card" data-pid="'+p.id+'" data-mi="'+mi+'">'
+    + '<div class="card-top">'
+    +   '<div class="card-title">'+escHtml(m.title)+'</div>'
+    +   '<button class="card-del-btn" title="刪除此里程碑" data-action="del-card" data-pid="'+p.id+'" data-mi="'+mi+'">✗</button>'
+    + '</div>'
+    + descHtml
+    + (dueHtml ? '<div class="card-footer">'+dueHtml+'</div>' : '')
+    + '</div>';
+}
+
+function renderColumnHTML(p){
+  return '<div class="column" data-pid="'+p.id+'">'
+    + '<div class="col-header" style="cursor:grab">'
+    +   '<div class="col-dot" style="background:'+(p.color||'#6b778c')+'"></div>'
+    +   '<div class="col-title" contenteditable="true"'
+    +     ' data-pid="'+p.id+'"'
+    +     ' onblur="updateProjectName(\''+p.id+'\',this.textContent)"'
+    +     ' onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}"'
+    +   '>'+escHtml(p.name)+'</div>'
+    +   '<div class="col-count">'+(p.milestones||[]).length+'</div>'
+    +   '<button class="col-del" title="刪除專案" data-action="del-project" data-pid="'+p.id+'">✕</button>'
+    + '</div>'
+    + '<div class="col-cards">'
+    +   (p.milestones||[]).map(function(m,mi){ return renderCardHTML(p,m,mi); }).join('')
+    + '</div>'
+    + '<button class="add-card-btn" data-action="add-card" data-pid="'+p.id+'">＋ 新增里程碑</button>'
+    + '</div>';
+}
 
 function renderProgress(){
-  var area=document.getElementById('progress-area');
-  area.innerHTML='';
-  if (!progressData.length){
-    var hint=document.createElement('div');
-    hint.style.cssText='color:var(--text-dim);font-size:14px;padding:32px 0;width:100%;';
-    hint.textContent='尚無專案，點擊下方「＋ 新增專案」開始追蹤';
-    area.appendChild(hint); return;
-  }
-  progressData.forEach(function(proj, pi){
-    var card=document.createElement('div'); card.className='proj-card';
-
-    var hdr=document.createElement('div'); hdr.className='proj-header';
-    var dot=document.createElement('div'); dot.className='proj-color-dot'; dot.style.background=proj.color||'#6b778c';
-    var nm=document.createElement('span'); nm.className='proj-name'; nm.textContent=proj.name;
-    var del=document.createElement('button'); del.className='proj-del-btn'; del.textContent='✕'; del.title='刪除專案';
-    del.addEventListener('click', function(e){ e.stopPropagation(); deleteProject(pi); });
-    hdr.appendChild(dot); hdr.appendChild(nm); hdr.appendChild(del);
-    card.appendChild(hdr);
-
-    var msList=document.createElement('div'); msList.className='ms-list';
-    (proj.milestones||[]).forEach(function(m, mi){
-      var row=document.createElement('div'); row.className='ms-row';
-      var pill=document.createElement('span'); pill.className='status-pill s-'+(m.status||'未開始'); pill.textContent=m.status||'未開始';
-      var title=document.createElement('span'); title.className='ms-title'; title.textContent=m.title;
-      row.appendChild(pill); row.appendChild(title);
-      if (m.due){
-        var dd=dueDisplay(m.due);
-        if (dd){ var chip=document.createElement('span'); chip.className='ms-due-chip'+(dd.over?' overdue':''); chip.textContent=(dd.over?'⚠ ':'')+dd.text; row.appendChild(chip); }
-      }
-      row.addEventListener('click', function(){ openMsModal(pi, mi, false); });
-      msList.appendChild(row);
+  progressData.forEach(function(p, i){
+    if (!p.id) p.id = 'P_legacy_'+i+'_'+Math.random().toString(36).slice(2,6);
+    if (!p.milestones) p.milestones = [];
+    p.milestones.forEach(function(m, mi){
+      if (!m.id) m.id = p.id + '_M' + mi;
     });
-    card.appendChild(msList);
-
-    var addMs=document.createElement('button'); addMs.className='add-ms-btn'; addMs.textContent='＋ 新增里程碑';
-    addMs.addEventListener('click', function(){ openMsModal(pi, null, true); });
-    card.appendChild(addMs);
-
-    area.appendChild(card);
   });
+
+  sortables.forEach(function(s){ s.destroy(); });
+  sortables = [];
+
+  var board = document.getElementById('board');
+  if (!progressData.length){
+    board.innerHTML = '<div style="color:var(--text-dim);padding:32px 0;width:100%;text-align:center;font-size:14px;">尚無專案，點擊右側「＋ 新增專案」開始追蹤</div>'
+      + '<div class="add-col"><button class="add-col-btn" data-action="add-project">＋ 新增專案</button></div>';
+    return;
+  }
+
+  board.innerHTML = progressData.map(renderColumnHTML).join('')
+    + '<div class="add-col"><button class="add-col-btn" data-action="add-project">＋ 新增專案</button></div>';
+
+  progressData.forEach(function(p){
+    var el = document.querySelector('[data-pid="'+p.id+'"] .col-cards');
+    if (!el) return;
+    var s = Sortable.create(el, {
+      group: 'cards',
+      animation: 160,
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      handle: '.card',
+      onStart: function(){ isDragging = true; },
+      onEnd: function(evt){
+        setTimeout(function(){ isDragging = false; }, 100);
+        var fromPid = evt.from.closest('[data-pid]').dataset.pid;
+        var toPid   = evt.to.closest('[data-pid]').dataset.pid;
+        var fromP   = progressData.find(function(x){ return x.id === fromPid; });
+        var toP     = progressData.find(function(x){ return x.id === toPid; });
+        var moved   = fromP.milestones.splice(evt.oldIndex, 1)[0];
+        toP.milestones.splice(evt.newIndex, 0, moved);
+        updateColCount(fromPid);
+        updateColCount(toPid);
+        saveProgress(null);
+      }
+    });
+    sortables.push(s);
+  });
+
+  var boardEl = document.getElementById('board');
+  var colSort = Sortable.create(boardEl, {
+    animation: 160,
+    handle: '.col-header',
+    ghostClass: 'sortable-ghost',
+    filter: '.add-col',
+    onEnd: function(evt){
+      if (evt.newIndex >= progressData.length) return;
+      var moved = progressData.splice(evt.oldIndex, 1)[0];
+      progressData.splice(evt.newIndex, 0, moved);
+      saveProgress(null);
+    }
+  });
+  sortables.push(colSort);
 }
 
-function deleteProject(pi){
-  var proj=progressData[pi];
-  if (proj.milestones&&proj.milestones.length&&!confirm('確定刪除「'+proj.name+'」及其 '+proj.milestones.length+' 個里程碑？')) return;
-  progressData.splice(pi, 1);
-  renderProgress(); saveProgress(null);
+function updateProjectName(pid, name){
+  var trimmed = (name||'').trim();
+  if (!trimmed) return;
+  var p = progressData.find(function(x){ return x.id === pid; });
+  if (p){ p.name = trimmed; saveProgress(null); }
 }
 
-document.getElementById('addProjectBtn').addEventListener('click', function(){
-  var name=prompt('新專案名稱：'); if (!name||!name.trim()) return;
-  var colors=['#0052cc','#006644','#974f0c','#5243aa','#006b75','#403294'];
-  progressData.push({ id:'P_'+Date.now(), name:name.trim(), color:colors[progressData.length%colors.length], milestones:[] });
+function addProject(){
+  var name = prompt('新專案名稱：');
+  if (!name || !name.trim()) return;
+  var colors = ['#0052cc','#006644','#974f0c','#5243aa','#006b75','#403294'];
+  progressData.push({
+    id: 'P_'+Date.now(),
+    name: name.trim(),
+    color: colors[progressData.length % colors.length],
+    milestones: []
+  });
   renderProgress();
+  saveProgress(null);
+}
+
+function removeProject(pid){
+  var p = progressData.find(function(x){ return x.id === pid; });
+  if (!p) return;
+  if (p.milestones && p.milestones.length){
+    if (!confirm('確定刪除「'+p.name+'」及其 '+p.milestones.length+' 個里程碑？')) return;
+  } else {
+    if (!confirm('確定刪除專案「'+p.name+'」？')) return;
+  }
+  progressData = progressData.filter(function(x){ return x.id !== pid; });
+  renderProgress();
+  saveProgress(null);
+}
+
+function deleteCardDirect(pid, mi){
+  var p = progressData.find(function(x){ return x.id === pid; });
+  if (!p) return;
+  var m = p.milestones[mi];
+  var title = m ? m.title : '此里程碑';
+  if (!confirm('確定移除「'+title+'」？')) return;
+  p.milestones.splice(mi, 1);
+  renderProgress();
+  saveProgress(null);
+}
+
+document.getElementById('board').addEventListener('click', function(e){
+  if (isDragging) return;
+  var delCardBtn = e.target.closest('[data-action="del-card"]');
+  if (delCardBtn){
+    e.stopPropagation();
+    deleteCardDirect(delCardBtn.dataset.pid, parseInt(delCardBtn.dataset.mi));
+    return;
+  }
+  var card = e.target.closest('.card');
+  if (card){
+    var pi = progressData.findIndex(function(x){ return x.id === card.dataset.pid; });
+    var mi = parseInt(card.dataset.mi);
+    if (pi >= 0) openMsModal(pi, mi, false);
+    return;
+  }
+  var addBtn = e.target.closest('[data-action="add-card"]');
+  if (addBtn){
+    var pi2 = progressData.findIndex(function(x){ return x.id === addBtn.dataset.pid; });
+    if (pi2 >= 0) openMsModal(pi2, null, true);
+    return;
+  }
+  var delProj = e.target.closest('[data-action="del-project"]');
+  if (delProj){
+    removeProject(delProj.dataset.pid);
+    return;
+  }
+  var addProj = e.target.closest('[data-action="add-project"]');
+  if (addProj){
+    addProject();
+    return;
+  }
 });
 
 // ─── Milestone Modal ───
 
 function openMsModal(pi, mi, isNew){
   msProjIdx=pi; msMsIdx=mi; msIsNew=isNew;
-  var m=isNew ? { title:'', status:'未開始', due:'' } : progressData[pi].milestones[mi];
+  var m=isNew ? { title:'', due:'', description:'' } : progressData[pi].milestones[mi];
   document.getElementById('ms-modal-title').textContent=isNew?'新增里程碑':'編輯里程碑';
   document.getElementById('ms-delete').style.display=isNew?'none':'';
   document.getElementById('ms-title').value=m.title||'';
-  document.getElementById('ms-status').value=m.status||'未開始';
   document.getElementById('ms-due').value=dueToInput(m.due);
+  document.getElementById('ms-desc').value=m.description||'';
   document.getElementById('msModal').classList.add('open');
   setTimeout(function(){ document.getElementById('ms-title').focus(); },50);
 }
@@ -434,15 +665,13 @@ function closeMsModal(){ document.getElementById('msModal').classList.remove('op
 function saveMsModal(){
   var title=document.getElementById('ms-title').value.trim();
   if (!title){ showToast('請輸入標題','error'); return; }
-  var m={ title:title, status:document.getElementById('ms-status').value, due:inputToDue(document.getElementById('ms-due').value) };
+  var m={ title:title, due:inputToDue(document.getElementById('ms-due').value), description:document.getElementById('ms-desc').value };
   if (msIsNew){
     m.id='M_'+Date.now();
     progressData[msProjIdx].milestones.push(m);
   } else {
     var old=progressData[msProjIdx].milestones[msMsIdx];
     m.id=old.id;
-    if (old.gcal_event_id) m.gcal_event_id=old.gcal_event_id;
-    if (old.reminder_sent) m.reminder_sent=old.reminder_sent;
     progressData[msProjIdx].milestones[msMsIdx]=m;
   }
   closeMsModal(); renderProgress(); saveProgress('milestone');
@@ -465,69 +694,26 @@ document.addEventListener('keydown', function(e){
   if ((e.ctrlKey||e.metaKey)&&e.key==='s'){ e.preventDefault(); if (document.getElementById('msModal').classList.contains('open')) saveMsModal(); }
 });
 
-// ═══════════════ GOALS ═══════════════
-
-function renderGoals(containerId, goals){
-  var list=document.getElementById(containerId); list.innerHTML='';
-  (goals||[]).forEach(function(g){
-    var item=document.createElement('div');
-    item.className='goal-item'+(g.done?' done':'');
-    item.dataset.id=g.id;
-    var cb=document.createElement('input'); cb.type='checkbox'; cb.className='goal-check'; cb.checked=!!g.done;
-    cb.addEventListener('change', function(){ g.done=this.checked; item.className='goal-item'+(g.done?' done':''); });
-    var inp=document.createElement('input'); inp.type='text'; inp.className='goal-label'; inp.value=g.label||''; inp.placeholder='目標內容…';
-    inp.addEventListener('change', function(){ g.label=this.value; });
-    var del=document.createElement('button'); del.className='del-btn'; del.textContent='✕';
-    del.addEventListener('click', function(){ item.remove(); });
-    item.appendChild(cb); item.appendChild(inp); item.appendChild(del);
-    list.appendChild(item);
-  });
-}
-
-function readGoals(containerId){
-  var goals=[];
-  document.querySelectorAll('#'+containerId+' .goal-item').forEach(function(item){
-    var cb=item.querySelector('.goal-check');
-    var inp=item.querySelector('.goal-label');
-    goals.push({ id: item.dataset.id||('g_'+Date.now()), label: inp?inp.value.trim():'', done: cb?cb.checked:false });
-  });
-  return goals;
-}
-
-function addGoalItem(containerId, prefix){
-  var list=document.getElementById(containerId);
-  var item=document.createElement('div'); item.className='goal-item'; item.dataset.id=prefix+'_'+Date.now();
-  var cb=document.createElement('input'); cb.type='checkbox'; cb.className='goal-check';
-  cb.addEventListener('change', function(){ item.className='goal-item'+(this.checked?' done':''); });
-  var inp=document.createElement('input'); inp.type='text'; inp.className='goal-label'; inp.placeholder='目標內容…';
-  var del=document.createElement('button'); del.className='del-btn'; del.textContent='✕';
-  del.addEventListener('click', function(){ item.remove(); });
-  item.appendChild(cb); item.appendChild(inp); item.appendChild(del);
-  list.appendChild(item); inp.focus();
-}
-
-document.getElementById('add-health-goal').addEventListener('click',  function(){ addGoalItem('health-goals','h'); });
-document.getElementById('add-leisure-goal').addEventListener('click', function(){ addGoalItem('leisure-goals','l'); });
-document.getElementById('add-growth-goal').addEventListener('click',  function(){ addGoalItem('growth-goals','g'); });
-
-function saveGoals(section, btn){
-  btn.disabled=true;
-  var sectionMap={ health:'health-goals', leisure:'leisure-goals', growth:'growth-goals' };
-  if (!personalData[section]) personalData[section]={};
-  personalData[section].goals=readGoals(sectionMap[section]);
-  saveData(section, function(){ btn.disabled=false; });
-}
-
-document.getElementById('saveHealthBtn').addEventListener('click',  function(){ saveGoals('health',  this); });
-document.getElementById('saveLeisureBtn').addEventListener('click', function(){ saveGoals('leisure', this); });
-document.getElementById('saveGrowthBtn').addEventListener('click',  function(){ saveGoals('growth',  this); });
 
 // ═══════════════ API ═══════════════
 
 function saveProgress(ctx, cb){
+  var btn = document.getElementById('saveBtn');
   fetch(API+'/api/personal-progress',{ method:'POST', headers:HEADERS, body:JSON.stringify({ projects:progressData }), cache:'no-store' })
     .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-    .then(function(d){ if (d.projects) progressData=d.projects; if (ctx) showToast('✓ 已儲存','success'); if (cb) cb(); })
+    .then(function(d){
+      if (d.projects) progressData=d.projects;
+      if (ctx) showToast('✓ 已儲存','success');
+      if (btn){
+        btn.classList.add('saved');
+        btn.textContent = '✓ 已儲存';
+        setTimeout(function(){
+          btn.classList.remove('saved');
+          btn.textContent = '✓ 儲存';
+        }, 2500);
+      }
+      if (cb) cb();
+    })
     .catch(function(e){ showToast('❌ 儲存失敗','error'); console.error('[progress] save:',e); if (cb) cb(); });
 }
 
@@ -552,21 +738,20 @@ function loadData(){
     var lu=(personalData.summary&&personalData.summary.last_updated)||'—';
     document.getElementById('lastUpdated').textContent='更新：'+lu.slice(0,10);
     renderProgress();
-    renderGoals('health-goals',  (personalData.health  &&personalData.health.goals)  ||[]);
-    renderGoals('leisure-goals', (personalData.leisure &&personalData.leisure.goals) ||[]);
-    renderGoals('growth-goals',  (personalData.growth  &&personalData.growth.goals)  ||[]);
     renderGoalsTab();
   }).catch(function(e){
     personalData={}; progressData=[];
     document.getElementById('lastUpdated').textContent='⚠ 離線模式';
     console.error('[personal-dashboard] load:',e);
     renderProgress();
-    renderGoals('health-goals',[]); renderGoals('leisure-goals',[]); renderGoals('growth-goals',[]);
     renderGoalsTab();
   });
 }
 
 document.getElementById('refreshBtn').addEventListener('click', loadData);
+document.getElementById('saveBtn').addEventListener('click', function(){
+  saveProgress('manual');
+});
 loadData();
 
 // ═══════════════ WEEKLY REVIEW ═══════════════

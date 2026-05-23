@@ -444,6 +444,35 @@ header {
 /* Date input fix */
 input[type="date"] { color-scheme: light; }
 
+/* ── PORTFOLIO TAB ── */
+.portfolio-wrap { padding: 24px; max-width: 860px; }
+.portfolio-header-row { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
+.biz-list { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+.biz-item {
+  background: var(--card-bg); border-radius: var(--radius);
+  border: 1px solid var(--border); padding: 14px 16px;
+  display:flex; align-items:center; gap:12px;
+  box-shadow: var(--shadow-sm);
+}
+.biz-item-name { font-size:14px; font-weight:600; color:var(--text); flex:1; }
+.biz-item-meta { font-size:12px; color:var(--text-muted); }
+.biz-empty { color:var(--text-muted); font-size:13px; padding:32px 0; text-align:center; }
+.help-text { font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.5; }
+.freq-fields { display:none; }
+.freq-fields.active { display:block; }
+.form-row { display:flex; gap:12px; margin-bottom:14px; }
+.section-divider {
+  font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px;
+  color:var(--text-muted); margin: 18px 0 12px; padding-bottom:6px;
+  border-bottom:1px solid var(--border);
+}
+.biz-modal .modal { width:600px; }
+.monthly-records-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.monthly-rec-chip {
+  font-size:11px; background:var(--bg); border:1px solid var(--border);
+  border-radius:4px; padding:3px 8px; color:var(--text-muted);
+}
+
 /* ── WEEKLY TAB ── */
 .weekly-wrap { padding: 24px; max-width: 900px; }
 .weekly-header-row { display:flex; align-items:center; gap:16px; margin-bottom:24px; flex-wrap:wrap; }
@@ -498,6 +527,7 @@ input[type="date"] { color-scheme: light; }
 <div class="tabs">
   <div class="tab active" onclick="switchTab('progress')">📊 進度追蹤</div>
   <div class="tab" onclick="switchTab('weekly')">📅 週覆盤</div>
+  <div class="tab" onclick="switchTab('portfolio')">💼 投資組合</div>
 </div>
 
 <!-- TAB 1: PROGRESS -->
@@ -564,6 +594,219 @@ input[type="date"] { color-scheme: light; }
   </div>
 </div>
 
+<!-- TAB 3: PORTFOLIO -->
+<div class="tab-content" id="tab-portfolio">
+  <div class="portfolio-wrap">
+    <div class="portfolio-header-row">
+      <div class="section-title" style="margin:0">💼 投資組合</div>
+      <button class="btn btn-green btn-sm" style="margin-left:auto" onclick="openNewBiz()">＋ 新增副業</button>
+    </div>
+    <div id="bizList">
+      <div class="biz-empty">⏳ 載入中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- BIZ MODAL -->
+<div class="modal-overlay biz-modal" id="bizModalOverlay" style="display:none" onclick="closeBizModalOverlay(event)">
+  <div class="modal" style="width:600px" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="bizModalTitle">新增副業</div>
+      <button class="modal-close" onclick="closeBizModal()">✕</button>
+    </div>
+
+    <!-- 基本資料 -->
+    <div class="section-divider">基本資料</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">顯示名稱</label>
+        <input class="form-input" id="bDisplayName" type="text" placeholder="北海岸海鮮">
+      </div>
+      <div class="form-group">
+        <label class="form-label">狀態</label>
+        <select class="form-input" id="bStatus">
+          <option value="active">active</option>
+          <option value="paused">paused</option>
+          <option value="closed">closed</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label">Kanban Column 名稱</label>
+      <input class="form-input" id="bKanbanCol" type="text" placeholder="副業1. 北海岸">
+      <div class="help-text">對應到「進度追蹤」tab 的 column 名稱，rollover 結算卡會丟進這個 column</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">產業</label>
+        <input class="form-input" id="bIndustry" type="text" placeholder="食品 / 海鮮加工">
+      </div>
+      <div class="form-group">
+        <label class="form-label">地區</label>
+        <input class="form-input" id="bRegion" type="text" placeholder="北海岸">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">上線日期</label>
+        <input class="form-input" id="bLaunchedAt" type="date">
+      </div>
+    </div>
+
+    <!-- 我的角色 -->
+    <div class="section-divider">我的角色</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">角色</label>
+        <select class="form-input" id="bRole">
+          <option value="shareholder">shareholder</option>
+          <option value="shareholder_advisor">shareholder_advisor</option>
+          <option value="co_operator">co_operator</option>
+          <option value="self_operated">self_operated</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">持股 %</label>
+        <input class="form-input" id="bEquity" type="number" min="0" max="100" step="0.1" placeholder="40">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">投資金額</label>
+        <input class="form-input" id="bInvestAmt" type="number" min="0" placeholder="200000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">投資日期</label>
+        <input class="form-input" id="bInvestDate" type="date">
+      </div>
+    </div>
+
+    <!-- 財務約定 -->
+    <div class="section-divider">財務約定</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">約定型態</label>
+        <select class="form-input" id="bAgreement">
+          <option value="guaranteed">guaranteed</option>
+          <option value="dividend">dividend</option>
+          <option value="mixed">mixed</option>
+          <option value="none">none</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">入帳節奏</label>
+        <select class="form-input" id="bFreq" onchange="onBizFreqChange(this.value)">
+          <option value="monthly">monthly</option>
+          <option value="quarterly">quarterly</option>
+          <option value="yearly">yearly</option>
+          <option value="irregular">irregular</option>
+        </select>
+      </div>
+    </div>
+    <!-- monthly fields -->
+    <div class="freq-fields active" id="freq-monthly">
+      <div class="form-row">
+        <div class="form-group" style="flex:0 0 100px">
+          <label class="form-label">結算日</label>
+          <input class="form-input" id="bSettleDay" type="number" min="1" max="31" placeholder="5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">月入帳金額</label>
+          <input class="form-input" id="bMonthlyAmt" type="number" min="0" placeholder="8000">
+        </div>
+      </div>
+    </div>
+    <!-- quarterly fields -->
+    <div class="freq-fields" id="freq-quarterly">
+      <div class="form-row">
+        <div class="form-group" style="flex:0 0 100px">
+          <label class="form-label">結算日</label>
+          <input class="form-input" id="bQSettleDay" type="number" min="1" max="31" placeholder="5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">季入帳金額</label>
+          <input class="form-input" id="bQuarterlyAmt" type="number" min="0" placeholder="">
+        </div>
+      </div>
+    </div>
+    <!-- yearly fields -->
+    <div class="freq-fields" id="freq-yearly">
+      <div class="form-row">
+        <div class="form-group" style="flex:0 0 100px">
+          <label class="form-label">結算月</label>
+          <input class="form-input" id="bSettleMonth" type="number" min="1" max="12" placeholder="12">
+        </div>
+        <div class="form-group" style="flex:0 0 100px">
+          <label class="form-label">結算日</label>
+          <input class="form-input" id="bYSettleDay" type="number" min="1" max="31" placeholder="5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">年入帳金額</label>
+          <input class="form-input" id="bYearlyAmt" type="number" min="0" placeholder="">
+        </div>
+      </div>
+    </div>
+    <!-- irregular -->
+    <div class="freq-fields" id="freq-irregular">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">不規則入帳，不需填結算日</div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label">年化預估</label>
+      <input class="form-input" id="bExpectedAnnual" type="number" min="0" placeholder="">
+      <div class="help-text">= 月 × 12 / 季 × 4 / 年 × 1，可手動覆蓋</div>
+    </div>
+
+    <!-- 入帳追蹤 -->
+    <div class="section-divider">入帳追蹤</div>
+    <div class="form-row" style="align-items:center">
+      <div class="form-group">
+        <label class="form-label">累計回收（manual_override 或月記錄加總）</label>
+        <input class="form-input" id="bOverrideTotal" type="number" min="0" placeholder="留空則自動加總月記錄">
+      </div>
+      <div id="bInvestRef" style="font-size:12px;color:var(--text-muted);white-space:nowrap;flex-shrink:0">/ 投資 —</div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px">月度記錄（v1 純顯示）</div>
+      <div class="monthly-records-list" id="bMonthlyList"></div>
+    </div>
+
+    <!-- 戰略標籤 -->
+    <div class="section-divider">戰略標籤</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">客戶屬性（逗號分隔）</label>
+        <input class="form-input" id="bCustAttrs" type="text" placeholder="B2C, 家庭">
+      </div>
+      <div class="form-group">
+        <label class="form-label">通路（逗號分隔）</label>
+        <input class="form-input" id="bChannels" type="text" placeholder="線上, 實體">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">季節性</label>
+        <select class="form-input" id="bSeasonality">
+          <option value="strong">strong</option>
+          <option value="mild">mild</option>
+          <option value="none">none</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">關鍵字（逗號分隔）</label>
+        <input class="form-input" id="bKeywords" type="text" placeholder="海鮮, 加工">
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="bizDeleteBtn" onclick="deleteBiz()" style="display:none">🗑 刪除副業</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-outline" onclick="closeBizModal()">取消</button>
+        <button class="btn btn-blue" onclick="saveBiz()">✓ 儲存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- CARD MODAL -->
 <div class="modal-overlay" id="modalOverlay" style="display:none" onclick="closeModalOverlay(event)">
   <div class="modal" onclick="event.stopPropagation()">
@@ -621,13 +864,14 @@ let isDragging = false; // prevent click-after-drag
 
 // ── TABS ──────────────────────────────────────────
 function switchTab(tab) {
-  const names = ['progress','weekly'];
+  const names = ['progress','weekly','portfolio'];
   document.querySelectorAll('.tab').forEach((t,i) => {
     t.classList.toggle('active', names[i] === tab);
   });
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   if (tab === 'weekly') initWeeklyTab();
+  if (tab === 'portfolio') renderPortfolioTab();
 }
 
 // ── WEEKLY PACKAGE ────────────────────────────────
@@ -808,6 +1052,7 @@ async function loadData() {
     const progressRes = await fetch(API + '/api/sam-data', { headers: GET_HEADERS });
     if (!progressRes.ok) throw new Error(`HTTP ${progressRes.status}`);
     data = await progressRes.json();
+    if (!data.business_ops) data.business_ops = { businesses: [], last_updated: '' };
 
     renderBoard();
     document.getElementById('lastUpdated').textContent = '更新：' + (data._kanban.last_updated || '—');
@@ -1169,6 +1414,233 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ── PORTFOLIO ─────────────────────────────────────
+let editingBizId = null;
+
+function renderPortfolioTab() {
+  const el = document.getElementById('bizList');
+  if (!data) {
+    el.innerHTML = '<div class="biz-empty">⚠️ 資料未載入，請按右上「↺ 重新整理」</div>';
+    return;
+  }
+  if (!data.business_ops) data.business_ops = { businesses: [], last_updated: '' };
+  const businesses = data.business_ops.businesses;
+  if (!businesses.length) {
+    el.innerHTML = '<div class="biz-empty">尚未新增副業，點右上「＋ 新增副業」開始</div>';
+    return;
+  }
+  el.innerHTML = '<div class="biz-list">' + businesses.map(b => `
+    <div class="biz-item">
+      <div>
+        <div class="biz-item-name">${escHtml(b.display_name || '—')}</div>
+        <div class="biz-item-meta">${escHtml(b.basic.industry || '')} · ${escHtml(b.basic.region || '')} · ${escHtml(b.status || '')}</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="openEditBiz('${b.id}')">編輯</button>
+    </div>`).join('') + '</div>';
+}
+
+function openNewBiz() {
+  if (!data) data = { _kanban: { projects: [], last_updated: '' }, _pending_confirm: null };
+  if (!data.business_ops) data.business_ops = { businesses: [], last_updated: '' };
+  editingBizId = null;
+  document.getElementById('bizModalTitle').textContent = '新增副業';
+  document.getElementById('bizDeleteBtn').style.display = 'none';
+  // reset all fields to defaults
+  document.getElementById('bDisplayName').value = '';
+  document.getElementById('bStatus').value = 'active';
+  document.getElementById('bKanbanCol').value = '';
+  document.getElementById('bIndustry').value = '';
+  document.getElementById('bRegion').value = '';
+  document.getElementById('bLaunchedAt').value = '';
+  document.getElementById('bRole').value = 'shareholder';
+  document.getElementById('bEquity').value = '';
+  document.getElementById('bInvestAmt').value = '';
+  document.getElementById('bInvestDate').value = '';
+  document.getElementById('bAgreement').value = 'guaranteed';
+  document.getElementById('bFreq').value = 'monthly';
+  onBizFreqChange('monthly');
+  document.getElementById('bSettleDay').value = '';
+  document.getElementById('bMonthlyAmt').value = '';
+  document.getElementById('bQSettleDay').value = '';
+  document.getElementById('bQuarterlyAmt').value = '';
+  document.getElementById('bSettleMonth').value = '';
+  document.getElementById('bYSettleDay').value = '';
+  document.getElementById('bYearlyAmt').value = '';
+  document.getElementById('bExpectedAnnual').value = '';
+  document.getElementById('bOverrideTotal').value = '';
+  document.getElementById('bInvestRef').textContent = '/ 投資 —';
+  document.getElementById('bMonthlyList').innerHTML = '<span style="font-size:12px;color:var(--text-muted)">—</span>';
+  document.getElementById('bCustAttrs').value = '';
+  document.getElementById('bChannels').value = '';
+  document.getElementById('bSeasonality').value = 'strong';
+  document.getElementById('bKeywords').value = '';
+  document.getElementById('bizModalOverlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('bDisplayName').focus(), 50);
+}
+
+function openEditBiz(id) {
+  const b = data.business_ops.businesses.find(x => x.id === id);
+  if (!b) return;
+  editingBizId = id;
+  document.getElementById('bizModalTitle').textContent = '編輯副業：' + (b.display_name || '');
+  document.getElementById('bizDeleteBtn').style.display = 'inline-flex';
+
+  document.getElementById('bDisplayName').value = b.display_name || '';
+  document.getElementById('bStatus').value = b.status || 'active';
+  document.getElementById('bKanbanCol').value = b.kanban_column_name || '';
+  document.getElementById('bIndustry').value = (b.basic || {}).industry || '';
+  document.getElementById('bRegion').value = (b.basic || {}).region || '';
+  document.getElementById('bLaunchedAt').value = ((b.basic || {}).launched_at || '').replace(/\//g, '-');
+  document.getElementById('bRole').value = (b.my_role || {}).role || 'shareholder';
+  document.getElementById('bEquity').value = (b.my_role || {}).equity_percent ?? '';
+  document.getElementById('bInvestAmt').value = (b.my_role || {}).investment_amount ?? '';
+  document.getElementById('bInvestDate').value = ((b.my_role || {}).investment_date || '').replace(/\//g, '-');
+
+  const ft = b.financial_terms || {};
+  document.getElementById('bAgreement').value = ft.agreement_type || 'guaranteed';
+  const freq = ft.income_frequency || 'monthly';
+  document.getElementById('bFreq').value = freq;
+  onBizFreqChange(freq);
+  document.getElementById('bSettleDay').value = ft.settlement_day ?? '';
+  document.getElementById('bMonthlyAmt').value = ft.monthly_amount ?? '';
+  document.getElementById('bQSettleDay').value = ft.settlement_day ?? '';
+  document.getElementById('bQuarterlyAmt').value = ft.quarterly_amount ?? '';
+  document.getElementById('bSettleMonth').value = ft.settlement_month ?? '';
+  document.getElementById('bYSettleDay').value = ft.settlement_day ?? '';
+  document.getElementById('bYearlyAmt').value = ft.yearly_amount ?? '';
+  document.getElementById('bExpectedAnnual').value = ft.expected_annual_total ?? '';
+
+  const it = b.income_tracking || {};
+  const records = it.monthly_records || {};
+  const autoTotal = Object.values(records).reduce((s, v) => s + (Number(v) || 0), 0);
+  const displayTotal = it.manual_override_total != null ? it.manual_override_total : autoTotal;
+  document.getElementById('bOverrideTotal').value = it.manual_override_total ?? '';
+  const investAmt = (b.my_role || {}).investment_amount;
+  document.getElementById('bInvestRef').textContent = investAmt != null ? `/ 投資 ${Number(investAmt).toLocaleString()}` : '/ 投資 —';
+  const months = Object.entries(records);
+  document.getElementById('bMonthlyList').innerHTML = months.length
+    ? months.map(([m, v]) => `<span class="monthly-rec-chip">${escHtml(m)}: ${Number(v).toLocaleString()}</span>`).join('')
+    : '<span style="font-size:12px;color:var(--text-muted)">尚無記錄</span>';
+
+  const st = b.strategic_tags || {};
+  document.getElementById('bCustAttrs').value = (st.customer_attributes || []).join(', ');
+  document.getElementById('bChannels').value = (st.channels || []).join(', ');
+  document.getElementById('bSeasonality').value = st.seasonality || 'strong';
+  document.getElementById('bKeywords').value = (st.keywords || []).join(', ');
+
+  document.getElementById('bizModalOverlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('bDisplayName').focus(), 50);
+}
+
+function closeBizModal() {
+  document.getElementById('bizModalOverlay').style.display = 'none';
+}
+
+function closeBizModalOverlay(e) {
+  if (e.target === document.getElementById('bizModalOverlay')) closeBizModal();
+}
+
+function onBizFreqChange(freq) {
+  ['monthly','quarterly','yearly','irregular'].forEach(f => {
+    document.getElementById('freq-' + f).classList.toggle('active', f === freq);
+  });
+}
+
+function splitTags(str) {
+  return str.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function saveBiz() {
+  if (!data) data = { _kanban: { projects: [], last_updated: '' }, _pending_confirm: null };
+  if (!data.business_ops) data.business_ops = { businesses: [], last_updated: '' };
+  const displayName = document.getElementById('bDisplayName').value.trim();
+  if (!displayName) { document.getElementById('bDisplayName').focus(); return; }
+
+  const freq = document.getElementById('bFreq').value;
+  let settlementDay = null, settlementMonth = null, monthlyAmt = null, quarterlyAmt = null, yearlyAmt = null;
+  if (freq === 'monthly') {
+    settlementDay = Number(document.getElementById('bSettleDay').value) || null;
+    monthlyAmt = document.getElementById('bMonthlyAmt').value !== '' ? Number(document.getElementById('bMonthlyAmt').value) : null;
+  } else if (freq === 'quarterly') {
+    settlementDay = Number(document.getElementById('bQSettleDay').value) || null;
+    quarterlyAmt = document.getElementById('bQuarterlyAmt').value !== '' ? Number(document.getElementById('bQuarterlyAmt').value) : null;
+  } else if (freq === 'yearly') {
+    settlementMonth = Number(document.getElementById('bSettleMonth').value) || null;
+    settlementDay = Number(document.getElementById('bYSettleDay').value) || null;
+    yearlyAmt = document.getElementById('bYearlyAmt').value !== '' ? Number(document.getElementById('bYearlyAmt').value) : null;
+  }
+
+  const overrideTotalRaw = document.getElementById('bOverrideTotal').value;
+  const overrideTotal = overrideTotalRaw !== '' ? Number(overrideTotalRaw) : null;
+
+  // preserve existing income_tracking.monthly_records if editing
+  let existingMonthlyRecords = {};
+  if (editingBizId) {
+    const existing = data.business_ops.businesses.find(x => x.id === editingBizId);
+    existingMonthlyRecords = (existing && existing.income_tracking) ? (existing.income_tracking.monthly_records || {}) : {};
+  }
+
+  const biz = {
+    id: editingBizId || ('biz_' + Date.now()),
+    display_name: displayName,
+    kanban_column_name: document.getElementById('bKanbanCol').value.trim(),
+    status: document.getElementById('bStatus').value,
+    basic: {
+      industry: document.getElementById('bIndustry').value.trim(),
+      region: document.getElementById('bRegion').value.trim(),
+      launched_at: document.getElementById('bLaunchedAt').value,
+    },
+    my_role: {
+      role: document.getElementById('bRole').value,
+      equity_percent: document.getElementById('bEquity').value !== '' ? Number(document.getElementById('bEquity').value) : null,
+      investment_amount: document.getElementById('bInvestAmt').value !== '' ? Number(document.getElementById('bInvestAmt').value) : null,
+      investment_date: document.getElementById('bInvestDate').value,
+    },
+    financial_terms: {
+      agreement_type: document.getElementById('bAgreement').value,
+      income_frequency: freq,
+      monthly_amount: monthlyAmt,
+      quarterly_amount: quarterlyAmt,
+      yearly_amount: yearlyAmt,
+      settlement_day: settlementDay,
+      settlement_month: settlementMonth,
+      expected_annual_total: document.getElementById('bExpectedAnnual').value !== '' ? Number(document.getElementById('bExpectedAnnual').value) : null,
+    },
+    monitoring: { warning_rule_delay_days: 14 },
+    strategic_tags: {
+      customer_attributes: splitTags(document.getElementById('bCustAttrs').value),
+      channels: splitTags(document.getElementById('bChannels').value),
+      seasonality: document.getElementById('bSeasonality').value,
+      keywords: splitTags(document.getElementById('bKeywords').value),
+    },
+    income_tracking: {
+      monthly_records: existingMonthlyRecords,
+      manual_override_total: overrideTotal,
+    },
+  };
+
+  if (editingBizId) {
+    const idx = data.business_ops.businesses.findIndex(x => x.id === editingBizId);
+    if (idx >= 0) data.business_ops.businesses[idx] = biz;
+    else data.business_ops.businesses.push(biz);
+  } else {
+    data.business_ops.businesses.push(biz);
+  }
+
+  closeBizModal();
+  renderPortfolioTab();
+}
+
+function deleteBiz() {
+  if (!data || !data.business_ops) return;
+  const b = data.business_ops.businesses.find(x => x.id === editingBizId);
+  if (!b) return;
+  if (!confirm(`確定刪除副業「${b.display_name}」？\n此動作不可復原。`)) return;
+  data.business_ops.businesses = data.business_ops.businesses.filter(x => x.id !== editingBizId);
+  closeBizModal();
+  renderPortfolioTab();
+}
+
 // ── INIT ─────────────────────────────────────────
 loadData();
 
@@ -1176,7 +1648,7 @@ loadData();
 (function() {
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab');
-  if (tab && ['progress','weekly'].includes(tab)) {
+  if (tab && ['progress','weekly','portfolio'].includes(tab)) {
     switchTab(tab);
     const week = params.get('week');
     if (tab === 'weekly' && week) {

@@ -669,7 +669,7 @@ input[type="date"] { color-scheme: light; }
 </div>
 
 <!-- TAB 4: STRATEGY -->
-<div class="tab-content" id="tab-strategy" style="display:none;">
+<div class="tab-content" id="tab-strategy">
   <div class="strategy-wrap">
     <div id="strategy-alignment"></div>
     <div id="strategy-contribution"></div>
@@ -945,7 +945,7 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
   if (tab === 'weekly') initWeeklyTab();
   if (tab === 'portfolio') renderPortfolioTab();
-  if (tab === 'strategy') renderStrategyTab();
+  if (tab === 'strategy') { console.log('switching to strategy'); renderStrategyTab(); }
 }
 
 // ── WEEKLY PACKAGE ────────────────────────────────
@@ -2038,6 +2038,7 @@ async function loadStrategyIncomeTarget() {
 }
 
 async function renderStrategyTab() {
+  console.log('renderStrategyTab called, data=' + (data ? 'exists' : 'null'));
   if (!data) {
     ['strategy-alignment','strategy-contribution','strategy-chart','strategy-health','strategy-suggestion'].forEach(id => {
       document.getElementById(id).innerHTML = '<div class="strategy-card"><span style="color:var(--text-muted)">⚠️ 資料未載入，請按右上「↺ 重新整理」</span></div>';
@@ -2053,22 +2054,27 @@ async function renderStrategyTab() {
   }
   const target = await loadStrategyIncomeTarget();
   const activeBizs = businesses.filter(b => b.status === 'active');
+  console.log('rendering strategy-alignment');
   try { renderStrategyAlignment(activeBizs, target); } catch(e) {
     document.getElementById('strategy-alignment').innerHTML = '<div class="strategy-card"><p>⚠️ 載入失敗</p></div>';
     console.error('strategy-alignment failed', e);
   }
+  console.log('rendering strategy-contribution');
   try { renderStrategyContribution(activeBizs, target); } catch(e) {
     document.getElementById('strategy-contribution').innerHTML = '<div class="strategy-card"><p>⚠️ 載入失敗</p></div>';
     console.error('strategy-contribution failed', e);
   }
+  console.log('rendering strategy-chart');
   try { renderStrategyChart(activeBizs); } catch(e) {
     document.getElementById('strategy-chart').innerHTML = '<div class="strategy-card"><p>⚠️ 載入失敗</p></div>';
     console.error('strategy-chart failed', e);
   }
+  console.log('rendering strategy-health');
   try { renderStrategyHealth(activeBizs); } catch(e) {
     document.getElementById('strategy-health').innerHTML = '<div class="strategy-card"><p>⚠️ 載入失敗</p></div>';
     console.error('strategy-health failed', e);
   }
+  console.log('rendering strategy-suggestion');
   try { renderStrategySuggestion(); } catch(e) {
     document.getElementById('strategy-suggestion').innerHTML = '<div class="strategy-card"><p>⚠️ 載入失敗</p></div>';
     console.error('strategy-suggestion failed', e);

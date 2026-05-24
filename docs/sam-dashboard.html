@@ -473,6 +473,49 @@ input[type="date"] { color-scheme: light; }
   border-radius:4px; padding:3px 8px; color:var(--text-muted);
 }
 
+/* ── PORTFOLIO 5.8-B ── */
+.cashflow-card { background:var(--card-bg); border-radius:var(--radius); border:1px solid var(--border); padding:16px 20px; margin-bottom:20px; box-shadow:var(--shadow-sm); }
+.cashflow-month-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.cashflow-month-sel { padding:5px 10px; border-radius:5px; border:1px solid var(--border); font-size:13px; background:#fff; color:var(--text); cursor:pointer; font-family:'Noto Sans TC',sans-serif; }
+.cashflow-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:10px; }
+.cashflow-item { background:var(--bg); border-radius:6px; padding:10px 14px; }
+.cashflow-item-label { font-size:11px; color:var(--text-muted); margin-bottom:4px; }
+.cashflow-item-val { font-size:18px; font-weight:700; color:var(--text); }
+.cashflow-item-val.green { color:var(--green); }
+.cashflow-item-val.red { color:var(--red); }
+.biz-table-wrap { margin-bottom:20px; }
+.biz-table { width:100%; border-collapse:collapse; font-size:13px; }
+.biz-table th { text-align:left; padding:8px 10px; background:var(--bg); color:var(--text-muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; }
+.biz-table td { padding:10px 10px; border-top:1px solid var(--border); vertical-align:middle; }
+.biz-table tr:hover td { background:var(--bg); }
+.timeline-wrap { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; margin-bottom:20px; box-shadow:var(--shadow-sm); }
+.timeline-title { font-weight:700; font-size:14px; margin-bottom:14px; }
+.timeline-row { display:flex; align-items:center; gap:10px; margin-bottom:7px; font-size:12px; }
+.timeline-month { width:52px; flex-shrink:0; color:var(--text-muted); }
+.timeline-bar-wrap { flex:1; background:var(--bg); border-radius:4px; height:16px; overflow:hidden; }
+.timeline-bar { height:100%; background:var(--brand-color); border-radius:4px; min-width:2px; }
+.timeline-bar.has-actual { background:var(--green); }
+.timeline-amount { width:160px; font-size:12px; color:var(--text-muted); flex-shrink:0; text-align:right; }
+.health-wrap { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; margin-bottom:20px; box-shadow:var(--shadow-sm); }
+.health-title { font-weight:700; font-size:14px; margin-bottom:14px; }
+.health-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.health-row:last-child { border-bottom:none; }
+.health-label { flex:1; color:var(--text-muted); }
+.health-val { font-weight:600; }
+.alerts-wrap { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; margin-bottom:20px; box-shadow:var(--shadow-sm); }
+.alerts-title { font-weight:700; font-size:14px; margin-bottom:10px; }
+.alert-row { padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.alert-row:last-child { border-bottom:none; }
+.month-grid-year { margin-bottom:12px; }
+.month-grid-year-label { font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px; display:flex; align-items:center; gap:8px; user-select:none; }
+.toggle-year-btn { font-size:11px; color:var(--blue); cursor:pointer; }
+.month-grid-cells { display:grid; gap:4px; margin-bottom:6px; }
+.month-cell { border:1.5px solid var(--border); border-radius:4px; padding:5px 2px; text-align:center; cursor:pointer; font-size:11px; font-weight:600; color:var(--text-muted); background:#fff; transition:all 0.12s; user-select:none; }
+.month-cell:hover { border-color:var(--brand-color); color:var(--brand-color); }
+.month-cell.checked { background:var(--brand-color); border-color:var(--brand-color); color:#fff; }
+.month-cell.future { opacity:0.45; cursor:default; }
+.month-grid-amount { font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+
 /* ── WEEKLY TAB ── */
 .weekly-wrap { padding: 24px; max-width: 900px; }
 .weekly-header-row { display:flex; align-items:center; gap:16px; margin-bottom:24px; flex-wrap:wrap; }
@@ -758,16 +801,17 @@ input[type="date"] { color-scheme: light; }
 
     <!-- 入帳追蹤 -->
     <div class="section-divider">入帳追蹤</div>
-    <div class="form-row" style="align-items:center">
+    <div style="font-size:14px;font-weight:700;color:var(--blue);margin-bottom:10px" id="bTotalDisplay">—</div>
+    <div class="form-row" style="align-items:center;margin-bottom:14px">
       <div class="form-group">
-        <label class="form-label">累計回收（manual_override 或月記錄加總）</label>
-        <input class="form-input" id="bOverrideTotal" type="number" min="0" placeholder="留空則自動加總月記錄">
+        <label class="form-label">手動覆蓋累計（留空則自動加總）</label>
+        <input class="form-input" id="bOverrideTotal" type="number" min="0" placeholder="留空則自動加總月記錄" oninput="updateMonthlyTotalDisplay()">
       </div>
       <div id="bInvestRef" style="font-size:12px;color:var(--text-muted);white-space:nowrap;flex-shrink:0">/ 投資 —</div>
     </div>
     <div>
-      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px">月度記錄（v1 純顯示）</div>
-      <div class="monthly-records-list" id="bMonthlyList"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">月度記錄</div>
+      <div id="bMonthlyGrid"></div>
     </div>
 
     <!-- 戰略標籤 -->
@@ -1416,27 +1460,230 @@ document.addEventListener('keydown', e => {
 
 // ── PORTFOLIO ─────────────────────────────────────
 let editingBizId = null;
+let editingBizMonthlyRecords = {};
+let portfolioSelectedYM = '';
+
+const ROLE_MAP = {shareholder:'純股東',shareholder_advisor:'股東+顧問',co_operator:'合夥',self_operated:'自營'};
+const FREQ_MAP = {monthly:'月',quarterly:'季',yearly:'年',irregular:'不定期'};
+
+function getCurrentYM() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
+}
+
+function getExpectedForMonth(ft, year, month) {
+  const freq = ft.income_frequency;
+  if (freq === 'monthly' && ft.settlement_day) return ft.monthly_amount || 0;
+  if (freq === 'quarterly' && [3,6,9,12].includes(month) && ft.settlement_day) return ft.quarterly_amount || 0;
+  if (freq === 'yearly' && month === ft.settlement_month && ft.settlement_day) return ft.yearly_amount || 0;
+  return 0;
+}
+
+function getRecordKey(ft, year, month) {
+  const freq = ft.income_frequency;
+  if (freq === 'monthly') return `${year}-${String(month).padStart(2,'0')}`;
+  if (freq === 'quarterly') return `${year}Q${Math.ceil(month/3)}`;
+  if (freq === 'yearly') return `${year}`;
+  return null;
+}
+
+function calcCashflow(ym, businesses) {
+  const [selYear, selMonth] = ym.split('-').map(Number);
+  const pd = new Date(selYear, selMonth - 2, 1);
+  const [py, pm] = [pd.getFullYear(), pd.getMonth()+1];
+  let expectedThis=0, actualThis=0, expectedPrev=0, actualPrev=0, ytdActual=0, fullYearExpected=0;
+  for (const biz of businesses) {
+    if (biz.status !== 'active') continue;
+    const ft = biz.financial_terms || {};
+    const records = (biz.income_tracking || {}).monthly_records || {};
+    expectedThis += getExpectedForMonth(ft, selYear, selMonth);
+    expectedPrev += getExpectedForMonth(ft, py, pm);
+    fullYearExpected += ft.expected_annual_total || 0;
+    const tk = getRecordKey(ft, selYear, selMonth);
+    if (tk && records[tk] != null) actualThis += Number(records[tk])||0;
+    const pk = getRecordKey(ft, py, pm);
+    if (pk && records[pk] != null) actualPrev += Number(records[pk])||0;
+    for (const [k, v] of Object.entries(records)) {
+      if (k.startsWith(String(selYear)+'-') || k.startsWith(String(selYear)+'Q') || k === String(selYear))
+        ytdActual += Number(v)||0;
+    }
+  }
+  return { expectedThis, actualThis, pending: Math.max(0, expectedThis-actualThis),
+    overdue: Math.max(0, expectedPrev-actualPrev), ytdActual, fullYearExpected };
+}
+
+function getBizStatusIcon(biz, ym) {
+  if (biz.status !== 'active') return '⚪';
+  const [selYear, selMonth] = ym.split('-').map(Number);
+  const ft = biz.financial_terms || {};
+  const records = (biz.income_tracking || {}).monthly_records || {};
+  const expected = getExpectedForMonth(ft, selYear, selMonth);
+  if (expected === 0) return '⚪';
+  const key = getRecordKey(ft, selYear, selMonth);
+  if (key && records[key] != null) return '🟢';
+  const today = new Date();
+  const sd = ft.settlement_day || 1;
+  const settleDate = new Date(selYear, selMonth-1, sd);
+  if (today < settleDate) return '🟡';
+  const delayDays = Math.floor((today - settleDate) / 86400000);
+  return delayDays > ((biz.monitoring||{}).warning_rule_delay_days || 14) ? '🔴' : '🟡';
+}
 
 function renderPortfolioTab() {
-  const el = document.getElementById('bizList');
+  const wrap = document.querySelector('#tab-portfolio .portfolio-wrap');
   if (!data) {
-    el.innerHTML = '<div class="biz-empty">⚠️ 資料未載入，請按右上「↺ 重新整理」</div>';
+    wrap.innerHTML = '<div class="portfolio-header-row"><div class="section-title" style="margin:0">💼 投資組合</div><button class="btn btn-green btn-sm" style="margin-left:auto" onclick="openNewBiz()">＋ 新增副業</button></div><div class="biz-empty">⚠️ 資料未載入，請按右上「↺ 重新整理」</div><div id="bizList" style="display:none"></div>';
     return;
   }
   if (!data.business_ops) data.business_ops = { businesses: [], last_updated: '' };
-  const businesses = data.business_ops.businesses;
+  const businesses = data.business_ops.businesses || [];
+  if (!portfolioSelectedYM) portfolioSelectedYM = getCurrentYM();
+
+  const headerRow = `<div class="portfolio-header-row">
+    <div class="section-title" style="margin:0">💼 投資組合</div>
+    <button class="btn btn-green btn-sm" style="margin-left:auto" onclick="openNewBiz()">＋ 新增副業</button>
+  </div>`;
+
   if (!businesses.length) {
-    el.innerHTML = '<div class="biz-empty">尚未新增副業，點右上「＋ 新增副業」開始</div>';
+    wrap.innerHTML = headerRow + '<div class="biz-empty">尚未新增副業，點右上「＋ 新增副業」開始</div><div id="bizList" style="display:none"></div>';
     return;
   }
-  el.innerHTML = '<div class="biz-list">' + businesses.map(b => `
-    <div class="biz-item">
-      <div>
-        <div class="biz-item-name">${escHtml(b.display_name || '—')}</div>
-        <div class="biz-item-meta">${escHtml(b.basic.industry || '')} · ${escHtml(b.basic.region || '')} · ${escHtml(b.status || '')}</div>
-      </div>
-      <button class="btn btn-outline btn-sm" onclick="openEditBiz('${b.id}')">編輯</button>
-    </div>`).join('') + '</div>';
+
+  const now = new Date();
+  let monthOptions = '';
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    monthOptions += `<option value="${ym}" ${ym===portfolioSelectedYM?'selected':''}>${d.getFullYear()} 年 ${d.getMonth()+1} 月</option>`;
+  }
+
+  const cf = calcCashflow(portfolioSelectedYM, businesses);
+
+  const cashflowHtml = `<div class="cashflow-card">
+    <div class="cashflow-month-row">
+      <span style="font-weight:700;font-size:14px">📅 現金流</span>
+      <select class="cashflow-month-sel" onchange="portfolioSelectedYM=this.value;renderPortfolioTab()">${monthOptions}</select>
+    </div>
+    <div class="cashflow-grid">
+      <div class="cashflow-item"><div class="cashflow-item-label">本月預期應收</div><div class="cashflow-item-val">${cf.expectedThis.toLocaleString()}</div></div>
+      <div class="cashflow-item"><div class="cashflow-item-label">本月實際已收</div><div class="cashflow-item-val ${cf.actualThis>=cf.expectedThis&&cf.expectedThis>0?'green':''}">${cf.actualThis.toLocaleString()}${cf.actualThis>=cf.expectedThis&&cf.expectedThis>0?' ✅':''}</div></div>
+      <div class="cashflow-item"><div class="cashflow-item-label">待收</div><div class="cashflow-item-val ${cf.pending>0?'red':''}">${cf.pending.toLocaleString()}</div></div>
+    </div>
+    <div class="cashflow-grid">
+      <div class="cashflow-item"><div class="cashflow-item-label">上月逾期</div><div class="cashflow-item-val ${cf.overdue>0?'red':'green'}">${cf.overdue>0?cf.overdue.toLocaleString():'0 ✅'}</div></div>
+      <div class="cashflow-item"><div class="cashflow-item-label">年初至今累計</div><div class="cashflow-item-val">${cf.ytdActual.toLocaleString()}</div></div>
+      <div class="cashflow-item"><div class="cashflow-item-label">全年預估總入帳</div><div class="cashflow-item-val">~${cf.fullYearExpected.toLocaleString()}</div></div>
+    </div>
+  </div>`;
+
+  // 1-B: biz table
+  const bizRows = businesses.map(biz => {
+    const ft = biz.financial_terms || {};
+    const [sy, sm] = portfolioSelectedYM.split('-').map(Number);
+    const key = getRecordKey(ft, sy, sm);
+    const records = (biz.income_tracking||{}).monthly_records || {};
+    const thisAmt = key && records[key]!=null ? Number(records[key]) : null;
+    const autoTotal = Object.values(records).reduce((s,v)=>s+(Number(v)||0),0);
+    const cumTotal = (biz.income_tracking||{}).manual_override_total != null ? (biz.income_tracking||{}).manual_override_total : autoTotal;
+    return `<tr>
+      <td><strong>${escHtml(biz.display_name||'—')}</strong></td>
+      <td>${ROLE_MAP[(biz.my_role||{}).role]||(biz.my_role||{}).role||'—'}</td>
+      <td>${FREQ_MAP[ft.income_frequency]||'—'}</td>
+      <td>${thisAmt!=null?'+'+Number(thisAmt).toLocaleString():'—'}</td>
+      <td>${cumTotal?cumTotal.toLocaleString():'—'}</td>
+      <td>${getBizStatusIcon(biz, portfolioSelectedYM)}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="openEditBiz('${biz.id}')">編輯</button></td>
+    </tr>`;
+  }).join('');
+  const bizTableHtml = `<div class="biz-table-wrap">
+    <table class="biz-table">
+      <thead><tr><th>副業</th><th>角色</th><th>節奏</th><th>本月</th><th>累計</th><th>狀態</th><th>操作</th></tr></thead>
+      <tbody>${bizRows}</tbody>
+    </table>
+  </div>`;
+
+  // 1-C: timeline
+  const now2 = new Date();
+  const months12 = Array.from({length:12},(_,i)=>{const d=new Date(now2.getFullYear(),now2.getMonth()+i,1);return{year:d.getFullYear(),month:d.getMonth()+1};});
+  const activeBizs = businesses.filter(b=>b.status==='active');
+  const maxExp = Math.max(1,...months12.map(({year,month})=>activeBizs.reduce((s,biz)=>s+getExpectedForMonth(biz.financial_terms||{},year,month),0)));
+  const timelineRows = months12.map(({year,month})=>{
+    let exp=0,act=0,hasAct=false;
+    for(const biz of activeBizs){
+      const ft=biz.financial_terms||{};
+      exp+=getExpectedForMonth(ft,year,month);
+      const k=getRecordKey(ft,year,month);
+      const r=(biz.income_tracking||{}).monthly_records||{};
+      if(k&&r[k]!=null){act+=Number(r[k])||0;hasAct=true;}
+    }
+    const barPct=Math.round(exp/maxExp*100);
+    const label=year!==now2.getFullYear()?`${year}/${String(month).padStart(2,'0')}`:month+'月';
+    const amtLabel=exp>0?`${exp.toLocaleString()}${hasAct?` (已收 ${act.toLocaleString()} ✅)`:' (待收)'}` :'—';
+    return `<div class="timeline-row">
+      <div class="timeline-month">${label}</div>
+      <div class="timeline-bar-wrap"><div class="timeline-bar ${hasAct?'has-actual':''}" style="width:${barPct}%"></div></div>
+      <div class="timeline-amount">${amtLabel}</div>
+    </div>`;
+  }).join('');
+  const timelineHtml = `<div class="timeline-wrap"><div class="timeline-title">📊 入帳時間軸（未來 12 個月）</div>${timelineRows}</div>`;
+
+  // 1-D: health
+  let industryMap={},totalAnnual=0,monthlyAnnual=0;
+  const regions=new Set();
+  for(const biz of activeBizs){
+    const ind=(biz.basic||{}).industry||'未知';
+    const annual=(biz.financial_terms||{}).expected_annual_total||0;
+    industryMap[ind]=(industryMap[ind]||0)+annual;
+    totalAnnual+=annual;
+    if((biz.financial_terms||{}).income_frequency==='monthly') monthlyAnnual+=annual;
+    if((biz.basic||{}).region) regions.add((biz.basic||{}).region);
+  }
+  let maxInd='—',maxPct=0;
+  for(const[ind,val] of Object.entries(industryMap)){const p=totalAnnual>0?Math.round(val/totalAnnual*100):0;if(p>maxPct){maxInd=ind;maxPct=p;}}
+  const riskIcon=maxPct<=60?'🟢':maxPct<=80?'🟡':'🔴';
+  const regIcon=regions.size>=3?'🟢':regions.size===2?'🟡':'🔴';
+  const mPct=totalAnnual>0?Math.round(monthlyAnnual/totalAnnual*100):0;
+  const stableIcon=mPct<=80?'🟢':'🟡';
+  const healthHtml = activeBizs.length ? `<div class="health-wrap">
+    <div class="health-title">💊 組合健康度</div>
+    <div class="health-row"><div class="health-label">風險集中</div><div class="health-val">${riskIcon} ${maxPct}% 集中在「${escHtml(maxInd)}」產業</div></div>
+    <div class="health-row"><div class="health-label">地區分布</div><div class="health-val">${regIcon} ${regions.size} 個地區：${escHtml([...regions].join('、')||'—')}</div></div>
+    <div class="health-row"><div class="health-label">入帳穩定度</div><div class="health-val">${stableIcon} ${mPct}% 集中月度入帳</div></div>
+    <div class="health-row"><div class="health-label">入帳準時度</div><div class="health-val">🟢 平均拖款 0 天（v1 暫寫死）</div></div>
+  </div>` : '';
+
+  // 1-E: alerts
+  const [sy2, sm2] = portfolioSelectedYM.split('-').map(Number);
+  const today2 = new Date();
+  const alertItems = [];
+  for(const biz of businesses){
+    if(biz.status!=='active') continue;
+    const ft=biz.financial_terms||{};
+    const records=(biz.income_tracking||{}).monthly_records||{};
+    if(Object.keys(records).length===0&&(biz.basic||{}).launched_at){
+      const launched=new Date((biz.basic||{}).launched_at);
+      if(launched<today2){alertItems.push(`🟡 ${escHtml(biz.display_name)}：上線後尚未首次入帳`);continue;}
+    }
+    const exp=getExpectedForMonth(ft,sy2,sm2);
+    if(exp>0){
+      const key=getRecordKey(ft,sy2,sm2);
+      if(!(key&&records[key]!=null)){
+        const sd=ft.settlement_day||1;
+        const settleDate=new Date(sy2,sm2-1,sd);
+        if(today2>=settleDate){
+          const delay=Math.floor((today2-settleDate)/86400000);
+          const wd=(biz.monitoring||{}).warning_rule_delay_days||14;
+          alertItems.push(`${delay>wd?'🔴':'🟡'} ${escHtml(biz.display_name)}：本月應收尚未勾選（超過結算日 ${delay} 天）`);
+        }
+      }
+    }
+  }
+  const alertsHtml = `<div class="alerts-wrap">
+    <div class="alerts-title">⚠️ 近期警示</div>
+    ${alertItems.length?alertItems.map(a=>`<div class="alert-row">${a}</div>`).join(''):'<div class="alert-row">✅ 所有副業正常</div>'}
+  </div>`;
+
+  wrap.innerHTML = headerRow + cashflowHtml + bizTableHtml + timelineHtml + healthHtml + alertsHtml + '<div id="bizList" style="display:none"></div>';
 }
 
 function openNewBiz() {
@@ -1469,7 +1716,8 @@ function openNewBiz() {
   document.getElementById('bExpectedAnnual').value = '';
   document.getElementById('bOverrideTotal').value = '';
   document.getElementById('bInvestRef').textContent = '/ 投資 —';
-  document.getElementById('bMonthlyList').innerHTML = '<span style="font-size:12px;color:var(--text-muted)">—</span>';
+  editingBizMonthlyRecords = {};
+  renderMonthlyGrid(null);
   document.getElementById('bCustAttrs').value = '';
   document.getElementById('bChannels').value = '';
   document.getElementById('bSeasonality').value = 'strong';
@@ -1512,15 +1760,12 @@ function openEditBiz(id) {
 
   const it = b.income_tracking || {};
   const records = it.monthly_records || {};
-  const autoTotal = Object.values(records).reduce((s, v) => s + (Number(v) || 0), 0);
-  const displayTotal = it.manual_override_total != null ? it.manual_override_total : autoTotal;
   document.getElementById('bOverrideTotal').value = it.manual_override_total ?? '';
   const investAmt = (b.my_role || {}).investment_amount;
   document.getElementById('bInvestRef').textContent = investAmt != null ? `/ 投資 ${Number(investAmt).toLocaleString()}` : '/ 投資 —';
-  const months = Object.entries(records);
-  document.getElementById('bMonthlyList').innerHTML = months.length
-    ? months.map(([m, v]) => `<span class="monthly-rec-chip">${escHtml(m)}: ${Number(v).toLocaleString()}</span>`).join('')
-    : '<span style="font-size:12px;color:var(--text-muted)">尚無記錄</span>';
+  editingBizMonthlyRecords = { ...records };
+  renderMonthlyGrid(b);
+  updateMonthlyTotalDisplay();
 
   const st = b.strategic_tags || {};
   document.getElementById('bCustAttrs').value = (st.customer_attributes || []).join(', ');
@@ -1544,6 +1789,7 @@ function onBizFreqChange(freq) {
   ['monthly','quarterly','yearly','irregular'].forEach(f => {
     document.getElementById('freq-' + f).classList.toggle('active', f === freq);
   });
+  renderMonthlyGrid(null);
 }
 
 function splitTags(str) {
@@ -1572,13 +1818,6 @@ function saveBiz() {
 
   const overrideTotalRaw = document.getElementById('bOverrideTotal').value;
   const overrideTotal = overrideTotalRaw !== '' ? Number(overrideTotalRaw) : null;
-
-  // preserve existing income_tracking.monthly_records if editing
-  let existingMonthlyRecords = {};
-  if (editingBizId) {
-    const existing = data.business_ops.businesses.find(x => x.id === editingBizId);
-    existingMonthlyRecords = (existing && existing.income_tracking) ? (existing.income_tracking.monthly_records || {}) : {};
-  }
 
   const biz = {
     id: editingBizId || ('biz_' + Date.now()),
@@ -1614,7 +1853,7 @@ function saveBiz() {
       keywords: splitTags(document.getElementById('bKeywords').value),
     },
     income_tracking: {
-      monthly_records: existingMonthlyRecords,
+      monthly_records: { ...editingBizMonthlyRecords },
       manual_override_total: overrideTotal,
     },
   };
@@ -1639,6 +1878,114 @@ function deleteBiz() {
   data.business_ops.businesses = data.business_ops.businesses.filter(x => x.id !== editingBizId);
   closeBizModal();
   renderPortfolioTab();
+}
+
+// ── MONTHLY GRID (modal) ──────────────────────────
+
+function renderMonthlyGrid(biz) {
+  const container = document.getElementById('bMonthlyGrid');
+  if (!container) return;
+  const freqEl = document.getElementById('bFreq');
+  const freq = freqEl ? freqEl.value : 'monthly';
+  if (freq === 'irregular') {
+    container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:4px 0">不規則入帳，使用上方手動覆蓋累計欄位。</div>';
+    updateMonthlyTotalDisplay();
+    return;
+  }
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const years = [currentYear, currentYear-1, currentYear-2].filter(y => y >= 2020);
+  container.innerHTML = years.map((year, yi) => buildYearGridHtml(year, freq, yi > 0)).join('');
+  updateMonthlyTotalDisplay();
+}
+
+function buildYearGridHtml(year, freq, collapsed) {
+  const today = new Date();
+  let cells = [];
+  if (freq === 'monthly') {
+    for (let m = 1; m <= 12; m++) {
+      const key = `${year}-${String(m).padStart(2,'0')}`;
+      cells.push({ key, label: String(m).padStart(2,'0'), checked: editingBizMonthlyRecords[key]!=null, future: new Date(year,m-1,28) > today });
+    }
+  } else if (freq === 'quarterly') {
+    for (let q = 1; q <= 4; q++) {
+      const key = `${year}Q${q}`;
+      cells.push({ key, label: `Q${q}`, checked: editingBizMonthlyRecords[key]!=null, future: new Date(year,q*3-1,28) > today });
+    }
+  } else {
+    const key = `${year}`;
+    cells.push({ key, label: `${year}`, checked: editingBizMonthlyRecords[key]!=null, future: year > today.getFullYear() });
+  }
+  const cols = freq === 'quarterly' ? 4 : freq === 'yearly' ? 1 : 12;
+  const cellsHtml = cells.map(c =>
+    `<div class="month-cell${c.checked?' checked':''}${c.future?' future':''}" onclick="${c.future?'':'toggleMonthCell(\''+c.key+'\')'}">${c.label}</div>`
+  ).join('');
+  const defaultAmt = getDefaultGridAmount(freq);
+  return `<div class="month-grid-year">
+    <div class="month-grid-year-label">
+      <span>${year}</span>
+      <span class="toggle-year-btn" id="ytoggle_${year}" onclick="toggleYearSection(${year})">${collapsed?'▶ 展開':'▼ 摺疊'}</span>
+    </div>
+    <div id="mgCells_${year}" style="${collapsed?'display:none':''}">
+      <div class="month-grid-cells" style="grid-template-columns:repeat(${cols},1fr)">${cellsHtml}</div>
+      <div class="month-grid-amount">每期金額：<input type="number" id="mgAmt_${year}" value="${defaultAmt}" placeholder="金額" onchange="updateGridAmount(${year})" style="width:100px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px"></div>
+    </div>
+  </div>`;
+}
+
+function getDefaultGridAmount(freq) {
+  if (!freq) { const el = document.getElementById('bFreq'); freq = el ? el.value : 'monthly'; }
+  const map = { monthly:'bMonthlyAmt', quarterly:'bQuarterlyAmt', yearly:'bYearlyAmt' };
+  const fieldId = map[freq];
+  if (fieldId) { const el = document.getElementById(fieldId); if (el && el.value) return el.value; }
+  return '';
+}
+
+function toggleYearSection(year) {
+  const cells = document.getElementById('mgCells_' + year);
+  const toggle = document.getElementById('ytoggle_' + year);
+  if (!cells || !toggle) return;
+  const hidden = cells.style.display === 'none';
+  cells.style.display = hidden ? '' : 'none';
+  toggle.textContent = hidden ? '▼ 摺疊' : '▶ 展開';
+}
+
+function toggleMonthCell(key) {
+  if (editingBizMonthlyRecords[key] != null) {
+    delete editingBizMonthlyRecords[key];
+  } else {
+    const year = key.includes('Q') ? parseInt(key) : key.includes('-') ? parseInt(key.split('-')[0]) : parseInt(key);
+    const amtEl = document.getElementById('mgAmt_' + year);
+    editingBizMonthlyRecords[key] = amtEl ? (Number(amtEl.value) || 0) : 0;
+  }
+  // Refresh cell visual state
+  document.querySelectorAll('.month-cell').forEach(cell => {
+    const onclick = cell.getAttribute('onclick') || '';
+    const m = onclick.match(/toggleMonthCell\('([^']+)'\)/);
+    if (m) cell.classList.toggle('checked', editingBizMonthlyRecords[m[1]] != null);
+  });
+  updateMonthlyTotalDisplay();
+}
+
+function updateGridAmount(year) {
+  const amtEl = document.getElementById('mgAmt_' + year);
+  const newAmt = amtEl ? (Number(amtEl.value) || 0) : 0;
+  for (const key of Object.keys(editingBizMonthlyRecords)) {
+    const ky = key.includes('Q') ? parseInt(key) : key.includes('-') ? parseInt(key.split('-')[0]) : parseInt(key);
+    if (ky === year) editingBizMonthlyRecords[key] = newAmt;
+  }
+  updateMonthlyTotalDisplay();
+}
+
+function updateMonthlyTotalDisplay() {
+  const autoTotal = Object.values(editingBizMonthlyRecords).reduce((s, v) => s + (Number(v)||0), 0);
+  const overEl = document.getElementById('bOverrideTotal');
+  const invEl = document.getElementById('bInvestAmt');
+  const investAmt = invEl ? (Number(invEl.value) || 0) : 0;
+  const displayTotal = overEl && overEl.value !== '' ? Number(overEl.value) : autoTotal;
+  const pct = investAmt > 0 ? (displayTotal / investAmt * 100).toFixed(1) : null;
+  const el = document.getElementById('bTotalDisplay');
+  if (el) el.textContent = displayTotal.toLocaleString() + (investAmt > 0 ? ` / ${investAmt.toLocaleString()} (${pct}%)` : '');
 }
 
 // ── INIT ─────────────────────────────────────────

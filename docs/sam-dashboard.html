@@ -2053,11 +2053,26 @@ async function renderStrategyTab() {
   }
   const target = await loadStrategyIncomeTarget();
   const activeBizs = businesses.filter(b => b.status === 'active');
-  renderStrategyAlignment(activeBizs, target);
-  renderStrategyContribution(activeBizs, target);
-  renderStrategyChart(activeBizs);
-  renderStrategyHealth(activeBizs);
-  renderStrategySuggestion();
+  try { renderStrategyAlignment(activeBizs, target); } catch(e) {
+    document.getElementById('strategy-alignment').innerHTML = '<div class="strategy-card"><p>⚠️ 載入失敗</p></div>';
+    console.error('strategy-alignment failed', e);
+  }
+  try { renderStrategyContribution(activeBizs, target); } catch(e) {
+    document.getElementById('strategy-contribution').innerHTML = '<div class="strategy-card"><p>⚠️ 載入失敗</p></div>';
+    console.error('strategy-contribution failed', e);
+  }
+  try { renderStrategyChart(activeBizs); } catch(e) {
+    document.getElementById('strategy-chart').innerHTML = '<div class="strategy-card"><p>⚠️ 載入失敗</p></div>';
+    console.error('strategy-chart failed', e);
+  }
+  try { renderStrategyHealth(activeBizs); } catch(e) {
+    document.getElementById('strategy-health').innerHTML = '<div class="strategy-card"><p>⚠️ 載入失敗</p></div>';
+    console.error('strategy-health failed', e);
+  }
+  try { renderStrategySuggestion(); } catch(e) {
+    document.getElementById('strategy-suggestion').innerHTML = '<div class="strategy-card"><p>⚠️ 載入失敗</p></div>';
+    console.error('strategy-suggestion failed', e);
+  }
 }
 
 function renderStrategyAlignment(activeBizs, target) {

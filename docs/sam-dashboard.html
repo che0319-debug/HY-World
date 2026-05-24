@@ -9,6 +9,7 @@
 <title>Sam 事業助理</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root {
   /* Bot 識別變數（Sam 專屬） */
@@ -551,6 +552,22 @@ input[type="date"] { color-scheme: light; }
 .risk-high { color: var(--red); font-weight:600; }
 .risk-medium { color: var(--orange); font-weight:600; }
 .weekly-empty { color: var(--text-dim); font-size:13px; padding: 8px 0; }
+/* Phase 5.8-C: 戰略視角 */
+.strategy-wrap { padding:20px; max-width:900px; }
+.strategy-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; margin-bottom:20px; box-shadow:var(--shadow-sm); }
+.strategy-title { font-weight:700; font-size:14px; margin-bottom:14px; }
+.strategy-row { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.strategy-row:last-child { border-bottom:none; }
+.strategy-label { flex:1; color:var(--text-muted); }
+.strategy-val { font-weight:600; }
+.strategy-chart-wrap { position:relative; height:320px; width:100%; }
+.strategy-chart-summary { font-size:13px; color:var(--text-muted); margin-top:10px; }
+.contrib-table { width:100%; border-collapse:collapse; font-size:13px; }
+.contrib-table th { text-align:left; padding:8px 10px; background:var(--bg); color:var(--text-muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; }
+.contrib-table td { padding:10px 10px; border-top:1px solid var(--border); vertical-align:middle; }
+.contrib-table tr:hover td { background:var(--bg); }
+.contrib-table tfoot td { font-weight:700; border-top:2px solid var(--border); }
+.strategy-suggestion-text { font-size:13px; color:var(--text-muted); line-height:1.7; }
 </style>
 </head>
 <body>
@@ -571,6 +588,7 @@ input[type="date"] { color-scheme: light; }
   <div class="tab active" onclick="switchTab('progress')">📊 進度追蹤</div>
   <div class="tab" onclick="switchTab('weekly')">📅 週覆盤</div>
   <div class="tab" onclick="switchTab('portfolio')">💼 投資組合</div>
+  <div class="tab" onclick="switchTab('strategy')">🎯 戰略視角</div>
 </div>
 
 <!-- TAB 1: PROGRESS -->
@@ -647,6 +665,17 @@ input[type="date"] { color-scheme: light; }
     <div id="bizList">
       <div class="biz-empty">⏳ 載入中...</div>
     </div>
+  </div>
+</div>
+
+<!-- TAB 4: STRATEGY -->
+<div class="tab-content" id="tab-strategy" style="display:none;">
+  <div class="strategy-wrap">
+    <div id="strategy-alignment"></div>
+    <div id="strategy-contribution"></div>
+    <div id="strategy-chart"></div>
+    <div id="strategy-health"></div>
+    <div id="strategy-suggestion"></div>
   </div>
 </div>
 
@@ -908,7 +937,7 @@ let isDragging = false; // prevent click-after-drag
 
 // ── TABS ──────────────────────────────────────────
 function switchTab(tab) {
-  const names = ['progress','weekly','portfolio'];
+  const names = ['progress','weekly','portfolio','strategy'];
   document.querySelectorAll('.tab').forEach((t,i) => {
     t.classList.toggle('active', names[i] === tab);
   });
@@ -916,6 +945,7 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
   if (tab === 'weekly') initWeeklyTab();
   if (tab === 'portfolio') renderPortfolioTab();
+  if (tab === 'strategy') renderStrategyTab();
 }
 
 // ── WEEKLY PACKAGE ────────────────────────────────
@@ -1988,6 +2018,181 @@ function updateMonthlyTotalDisplay() {
   if (el) el.textContent = displayTotal.toLocaleString() + (investAmt > 0 ? ` / ${investAmt.toLocaleString()} (${pct}%)` : '');
 }
 
+// ── STRATEGY TAB (Phase 5.8-C) ───────────────────
+// income_yearly_target fallback: key not present in personal_data.json as of 2026-05-24
+const STRATEGY_INCOME_TARGET_FALLBACK = 1200000;
+let strategyIncomeTarget = null; // loaded async from /api/personal-data
+
+async function loadStrategyIncomeTarget() {
+  if (strategyIncomeTarget !== null) return strategyIncomeTarget;
+  try {
+    const res = await fetch(API + '/api/personal-data', { headers: GET_HEADERS });
+    if (!res.ok) throw new Error('non-200');
+    const pd = await res.json();
+    const val = (pd.goals || {}).income_yearly_target;
+    strategyIncomeTarget = (val != null && !isNaN(Number(val))) ? Number(val) : STRATEGY_INCOME_TARGET_FALLBACK;
+  } catch(e) {
+    strategyIncomeTarget = STRATEGY_INCOME_TARGET_FALLBACK;
+  }
+  return strategyIncomeTarget;
+}
+
+async function renderStrategyTab() {
+  if (!data) {
+    ['strategy-alignment','strategy-contribution','strategy-chart','strategy-health','strategy-suggestion'].forEach(id => {
+      document.getElementById(id).innerHTML = '<div class="strategy-card"><span style="color:var(--text-muted)">⚠️ 資料未載入，請按右上「↺ 重新整理」</span></div>';
+    });
+    return;
+  }
+  const businesses = ((data.business_ops || {}).businesses || []);
+  if (!businesses.length) {
+    document.getElementById('strategy-alignment').innerHTML = '<div class="strategy-card"><span style="color:var(--text-muted)">尚未新增副業</span></div>';
+    ['strategy-contribution','strategy-chart','strategy-health'].forEach(id => { document.getElementById(id).innerHTML = ''; });
+    renderStrategySuggestion();
+    return;
+  }
+  const target = await loadStrategyIncomeTarget();
+  const activeBizs = businesses.filter(b => b.status === 'active');
+  renderStrategyAlignment(activeBizs, target);
+  renderStrategyContribution(activeBizs, target);
+  renderStrategyChart(activeBizs);
+  renderStrategyHealth(activeBizs);
+  renderStrategySuggestion();
+}
+
+function renderStrategyAlignment(activeBizs, target) {
+  const nowYear = new Date().getFullYear();
+  const nowYearStr = String(nowYear);
+  let ytdActual = 0;
+  for (const biz of activeBizs) {
+    const records = ((biz.income_tracking || {}).monthly_records) || {};
+    for (const [k, v] of Object.entries(records)) {
+      if (k.startsWith(nowYearStr)) ytdActual += Number(v) || 0;
+    }
+  }
+  const annualized = activeBizs.reduce((s, b) => s + (((b.financial_terms || {}).expected_annual_total) || 0), 0);
+  const ytdPct = target > 0 ? (ytdActual / target * 100).toFixed(1) : 0;
+  const gap = target - annualized;
+  const gapIcon = annualized >= target ? '✅' : '❌';
+  const targetNote = strategyIncomeTarget === STRATEGY_INCOME_TARGET_FALLBACK ? ' <span style="color:var(--text-muted);font-size:11px">(demo 預設值，personal_data 無 income_yearly_target)</span>' : '';
+  document.getElementById('strategy-alignment').innerHTML = `
+    <div class="strategy-card">
+      <div class="strategy-title">🎯 總目標對齊</div>
+      <div class="strategy-row"><div class="strategy-label">年被動收入目標</div><div class="strategy-val">${target.toLocaleString()}${targetNote}</div></div>
+      <div class="strategy-row"><div class="strategy-label">今年累計入帳</div><div class="strategy-val">${ytdActual.toLocaleString()} (${ytdPct}%)</div></div>
+      <div class="strategy-row"><div class="strategy-label">依年化推估</div><div class="strategy-val">${gapIcon} ~${annualized.toLocaleString()}${gap > 0 ? ' 差距 ' + gap.toLocaleString() : ' 已達標'}</div></div>
+    </div>`;
+}
+
+function renderStrategyContribution(activeBizs, target) {
+  const totalAnnual = activeBizs.reduce((s, b) => s + ((b.financial_terms || {}).expected_annual_total || 0), 0);
+  const gap = Math.max(0, target - totalAnnual);
+  const rows = activeBizs.map(biz => {
+    const annual = (biz.financial_terms || {}).expected_annual_total || 0;
+    const pct = target > 0 ? (annual / target * 100).toFixed(1) : '0.0';
+    return `<tr><td>${escHtml(biz.display_name)}</td><td>${annual.toLocaleString()}</td><td>${pct}%</td></tr>`;
+  }).join('');
+  const totalPct = target > 0 ? (totalAnnual / target * 100).toFixed(1) : '0.0';
+  const gapPct = target > 0 ? (gap / target * 100).toFixed(1) : '0.0';
+  document.getElementById('strategy-contribution').innerHTML = `
+    <div class="strategy-card">
+      <div class="strategy-title">📊 副業貢獻</div>
+      <table class="contrib-table">
+        <thead><tr><th>副業</th><th>年化</th><th>占比</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr><td>總年化</td><td>${totalAnnual.toLocaleString()}</td><td>${totalPct}%</td></tr>
+          <tr><td>缺口</td><td>${gap.toLocaleString()}</td><td>${gapPct}%</td></tr>
+        </tfoot>
+      </table>
+    </div>`;
+}
+
+let strategyChartInstance = null;
+function renderStrategyChart(activeBizs) {
+  const nowYear = new Date().getFullYear();
+  const estimated = [], actual = [];
+  for (let m = 1; m <= 12; m++) {
+    let exp = 0, act = 0;
+    for (const biz of activeBizs) {
+      const ft = biz.financial_terms || {};
+      const records = (biz.income_tracking || {}).monthly_records || {};
+      exp += getExpectedForMonth(ft, nowYear, m);
+      const key = getRecordKey(ft, nowYear, m);
+      if (key && records[key] != null) act += Number(records[key]) || 0;
+    }
+    estimated.push(exp);
+    actual.push(act);
+  }
+  const totalEst = estimated.reduce((s, v) => s + v, 0);
+  const totalAct = actual.reduce((s, v) => s + v, 0);
+  const achPct = totalEst > 0 ? (totalAct / totalEst * 100).toFixed(1) : '0.0';
+  document.getElementById('strategy-chart').innerHTML = `
+    <div class="strategy-card">
+      <div class="strategy-title">📈 ${nowYear} 月度入帳 預估 vs 實際</div>
+      <div class="strategy-chart-wrap"><canvas id="strategyBarCanvas"></canvas></div>
+      <div class="strategy-chart-summary">年度合計：預估 ${totalEst.toLocaleString()} / 實際 ${totalAct.toLocaleString()} / 達成 ${achPct}%</div>
+    </div>`;
+  if (strategyChartInstance) { strategyChartInstance.destroy(); strategyChartInstance = null; }
+  const ctx = document.getElementById('strategyBarCanvas').getContext('2d');
+  strategyChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+      datasets: [
+        { label: '預估', data: estimated, backgroundColor: 'rgba(34,197,94,0.3)' },
+        { label: '實際', data: actual, backgroundColor: 'rgba(34,197,94,0.9)' }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } }
+    }
+  });
+}
+
+function renderStrategyHealth(activeBizs) {
+  let industryMap = {}, totalAnnual = 0, monthlyAnnual = 0;
+  const regions = new Set();
+  for (const biz of activeBizs) {
+    const ind = (biz.basic || {}).industry || '未知';
+    const annual = (biz.financial_terms || {}).expected_annual_total || 0;
+    industryMap[ind] = (industryMap[ind] || 0) + annual;
+    totalAnnual += annual;
+    if ((biz.financial_terms || {}).income_frequency === 'monthly') monthlyAnnual += annual;
+    if ((biz.basic || {}).region) regions.add((biz.basic || {}).region);
+  }
+  let maxInd = '—', maxPct = 0;
+  for (const [ind, val] of Object.entries(industryMap)) {
+    const p = totalAnnual > 0 ? Math.round(val / totalAnnual * 100) : 0;
+    if (p > maxPct) { maxInd = ind; maxPct = p; }
+  }
+  const riskIcon = maxPct <= 60 ? '🟢' : maxPct <= 80 ? '🟡' : '🔴';
+  const regIcon = regions.size >= 3 ? '🟢' : regions.size === 2 ? '🟡' : '🔴';
+  const mPct = totalAnnual > 0 ? Math.round(monthlyAnnual / totalAnnual * 100) : 0;
+  const stableIcon = mPct <= 80 ? '🟢' : '🟡';
+  document.getElementById('strategy-health').innerHTML = activeBizs.length ? `
+    <div class="strategy-card">
+      <div class="strategy-title">💊 組合健康度</div>
+      <div class="strategy-row"><div class="strategy-label">風險集中</div><div class="strategy-val">${riskIcon} ${maxPct}% 集中在「${escHtml(maxInd)}」產業</div></div>
+      <div class="strategy-row"><div class="strategy-label">地區分布</div><div class="strategy-val">${regIcon} ${regions.size} 個地區：${escHtml([...regions].join('、') || '—')}</div></div>
+      <div class="strategy-row"><div class="strategy-label">入帳穩定度</div><div class="strategy-val">${stableIcon} ${mPct}% 集中月度入帳</div></div>
+      <div class="strategy-row"><div class="strategy-label">入帳準時度</div><div class="strategy-val">🟢 平均拖款 0 天（v1 暫寫死）</div></div>
+    </div>` : '';
+}
+
+function renderStrategySuggestion() {
+  document.getElementById('strategy-suggestion').innerHTML = `
+    <div class="strategy-card">
+      <div class="strategy-title">💡 配置建議</div>
+      <div class="strategy-suggestion-text">
+        此區塊規劃留給 HY 跟 Opus 在 Cowork「Sam-事業作戰中心」做戰略對話。<br><br>
+        v1 不自動計算建議，避免低品質建議干擾思考。
+      </div>
+    </div>`;
+}
+
 // ── INIT ─────────────────────────────────────────
 loadData();
 
@@ -1995,7 +2200,7 @@ loadData();
 (function() {
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab');
-  if (tab && ['progress','weekly','portfolio'].includes(tab)) {
+  if (tab && ['progress','weekly','portfolio','strategy'].includes(tab)) {
     switchTab(tab);
     const week = params.get('week');
     if (tab === 'weekly' && week) {

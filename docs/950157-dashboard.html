@@ -1102,7 +1102,10 @@ function getCardBorderClass(es) {
 
 function renderCardHTML(p, m, mi) {
   const overdue = isOverdue(m.due);
-  const gcalIcon = m.gcal_event_id ? ' <span title="已同步 Google Calendar">✅</span>' : '';
+  const gcalIcon = (() => {
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' }).replace(/-/g, '/');
+    return m.due === today ? ' <span title="今日到期">🔔</span>' : '';
+  })();
   const dueHtml = m.due
     ? `<div class="due-chip${overdue?' overdue':''}">📅 ${formatDisplayDate(m.due)}${gcalIcon}</div>`
     : '';
